@@ -1,14 +1,11 @@
 # StepsTrack
 
-A simple JS implementation for tracking the time-used and data of the intermediate steps in a long function. Useful for enhancing performance of a pipeline-like functions that consists of parallel async functions.
-
-
-StepTracker is a simple Typescript library for tracking the execution time of the intermediate steps in a long function. Useful for enhancing performance of a pipeline-like function that consists of multiple steps and/or conccurent async functions.
+StepsTrack is a simple library for tracking the time and data of the intermediate steps in a function for further debugging / enchancements. Useful for enhancing performance of a pipeline-like function that consists of multiple steps and/or conccurent async functions.
 
 ## Features
 
-- Track intermediates data, results and execution time of all sub-steps
-- Create Gantt chart URLs for visual representation of step durations
+- Track intermediates data, results and execution time of all sub-steps.
+- Generate **Gantt chart** for visual representation of step durations.
 
 ## Installation
 
