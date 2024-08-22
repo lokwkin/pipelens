@@ -10,22 +10,14 @@ StepsTrack is a simple library for tracking the time and data of the intermediat
 ## Installation
 
 ```
-npm install step-tracker
+npm install steps-track
 ```
 
 ## Example
 
 #### Sample Code
 ```
-import { StepTracker } from '../dist';
-
-const fetch = (url: string) => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(url);
-        }, Math.floor(Math.random() * 3000) + 500);
-    });
-}
+import { StepTracker } from 'steps-track';
 
 async function main() {
         
@@ -64,6 +56,7 @@ async function main() {
     console.log(JSON.stringify(mainTracker.output(), null, 2));
 
     console.log(mainTracker.ganttUrl());
+
 }
 
 main();

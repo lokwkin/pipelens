@@ -1,4 +1,4 @@
-import { StepTracker } from '../dist';
+import { StepTracker } from 'steps-track';
 
 const fetch = (url: string) => {
     return new Promise((resolve) => {
