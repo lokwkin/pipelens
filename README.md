@@ -16,7 +16,7 @@ npm install steps-track
 ## Example
 
 #### Sample Code
-```
+```js
 import { StepTracker } from 'steps-track';
 
 async function main() {
@@ -62,7 +62,7 @@ async function main() {
 main();
 ```
 #### Gantt Chart Output
-![Sample Gantt Chart](./sample/sample-gantt.png)
+<img src="./sample/sample-gantt.png" width="50%">
 
 ## To Do
 - Generate speed analysis based on multiple runs of the same function
