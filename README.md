@@ -1,4 +1,4 @@
-# StepTracker
+# StepsTrack
 
 A simple JS implementation for tracking the time-used and data of the intermediate steps in a long function. Useful for enhancing performance of a pipeline-like functions that consists of parallel async functions.
 
