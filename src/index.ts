@@ -39,17 +39,23 @@ export class StepTracker {
         return this.result;
     }
 
-    public async track(callable: (st: StepTracker) => Promise<any>) {
+    public async track<T>(callable: (st: StepTracker) => Promise<T>): Promise<T> {
         return await this.run(callable);
     }
 
-    public async step(key: string, callable: (st: StepTracker) => Promise<any>) {
+    public async step<T>(key: string, callable: (st: StepTracker) => Promise<T>): Promise<T> {
         const subtracker = new StepTracker(`${this.key}.${key}`);
         this.subtrackers[key] = subtracker;
         return await subtracker.run(callable);
     }
 
     public log(key: string, data: any) {
+        // deprecated, use record instead
+        console.warn('StepTracker.log() is deprecated, use StepTracker.record() instead');
+        return this.record(key, data);
+    }
+
+    public record(key: string, data: any) {
         this.records[key] = data;
         return this;
     }

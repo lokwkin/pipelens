@@ -28,18 +28,18 @@ async function main() {
         await st.step('demo', async (st: StepTracker) => {
         
             // Your logic here
-            st.log('foo', 'bar');
+            st.record('foo', 'bar');
             await new Promise(resolve => setTimeout(resolve, 200));
         });
         
-        const urls = ['https://url1.com', 'https://url2.com', 'https://url3.com'];
         await st.step('fetch', async (st: StepTracker) => {
                 
-            await st.step('preprocess', async (st: StepTracker) => {
+            const urls = await st.step('preprocess', async (st: StepTracker) => {
                 
                 // Some preprocess logic
-                st.log('someData', 12345);
+                st.record('someData', 12345);
                 await new Promise(resolve => setTimeout(resolve, 1000));
+                return ['https://url1.com', 'https://url2.com', 'https://url3.com'];
             });
         
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -56,13 +56,11 @@ async function main() {
     console.log(JSON.stringify(mainTracker.output(), null, 2));
 
     console.log(mainTracker.ganttUrl());
-
 }
 
-main();
 ```
 #### Gantt Chart Output
-<img src="./sample/sample-gantt.png" width="50%">
+<img src="./sample/sample-gantt.png" width="70%">
 
 ## To Do
 - Generate speed analysis based on multiple runs of the same function
