@@ -108,7 +108,7 @@ export class StepTracker {
                             position: 'top',
                             ticks: {
                                 min: 0,
-                                max: maxEndTs - this.time.startTs,
+                                max: (maxEndTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000),
                             },
                         },
                     ],
