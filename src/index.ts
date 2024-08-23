@@ -80,7 +80,7 @@ export class StepTracker {
         }].concat(substeps.flat());
     }
 
-    public ganttUrl(): string {
+    public ganttUrl(unit: 'ms' | 's' = 'ms'): string {
         const substeps = this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
@@ -92,8 +92,8 @@ export class StepTracker {
                 datasets: [
                     {
                         data: substeps.map((step) => [
-                            (step.time.startTs - this.time.startTs),
-                            (step.time.endTs - this.time.startTs),
+                            (step.time.startTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000),
+                            (step.time.endTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000),
                         ]),
                     },
                 ],
