@@ -11,6 +11,8 @@ export type StepMeta = {
     result: any;
 };
 
+export type RecordListener = (data: any) => void | Promise<void>;
+
 export class StepTracker {
     
     public key: string;
@@ -19,8 +21,11 @@ export class StepTracker {
     public time: TimeMeta;
     private subtrackers: { [key: string]: StepTracker } = {};
     private ctx: StepTracker;
-    
-    constructor(key: string) {
+    private eventListeners: { [key: string]: RecordListener } = {};
+
+    constructor(key: string, options?: {
+        listeners: Record<string, RecordListener>
+    } ) {
         this.key = key;
         this.records = {};
         this.time = {
@@ -28,6 +33,9 @@ export class StepTracker {
             endTs: Date.now(),
             timeUsageMs: 0
         };
+        if (options?.listeners) {
+            this.eventListeners = options.listeners;
+        }
         this.ctx = this;
     }
 
@@ -44,7 +52,7 @@ export class StepTracker {
     }
 
     public async step<T>(key: string, callable: (st: StepTracker) => Promise<T>): Promise<T> {
-        const subtracker = new StepTracker(`${this.key}.${key}`);
+        const subtracker = new StepTracker(`${this.key}.${key}`, { listeners: this.eventListeners });
         this.subtrackers[key] = subtracker;
         return await subtracker.run(callable);
     }
@@ -55,8 +63,12 @@ export class StepTracker {
         return this.record(key, data);
     }
 
-    public record(key: string, data: any) {
+    public async record(key: string, data: any) {
         this.records[key] = data;
+        if (this.eventListeners[key]) {
+            const listener  = this.eventListeners[key];
+            await listener(data);
+        }
         return this;
     }
 
