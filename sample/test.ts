@@ -10,14 +10,22 @@ const fetch = (url: string) => {
 
 async function main() {
         
-    const mainTracker = new StepTracker('main');
+    const mainTracker = new StepTracker('main', {
+      listeners: {
+        'foo': (data) => {
+          console.log(`tracker.on(foo) receiving ${data}`)
+        },
+        'someData': (data) => {
+          console.log(`tracker.on(someData) receiving ${data}`)
+        }
+      }
+    });
 
     await mainTracker.track(async (st: StepTracker) => {
        
         await st.step('demo', async (st: StepTracker) => {
-        
             // Your logic here
-            st.record('foo', 'bar');
+            await st.record('foo', 'bar');
             await new Promise(resolve => setTimeout(resolve, 200));
         });
         
@@ -26,7 +34,7 @@ async function main() {
             const urls = await st.step('preprocess', async (st: StepTracker) => {
                 
                 // Some preprocess logic
-                st.record('someData', 12345);
+                await st.record('someData', 12345);
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 return ['https://url1.com', 'https://url2.com', 'https://url3.com'];
             });
