@@ -128,7 +128,7 @@ export class StepTracker {
             },
         };
   
-        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=500&h=${substeps.length * 25}`;
+        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${100 + substeps.length * 25}&h=${30 + substeps.length * 25}`;
         return chartUrl;
     }
 }
