@@ -41,10 +41,15 @@ export class StepTracker {
 
     private async run(callable: (st: StepTracker) => Promise<any>) {
         this.time.startTs = Date.now();
-        this.result = await callable(this.ctx);
-        this.time.endTs = Date.now();
-        this.time.timeUsageMs = this.time.endTs - this.time.startTs;
-        return this.result;
+        try {
+            this.result = await callable(this.ctx);
+            return this.result;
+        } catch (err) {
+            throw err;
+        } finally {
+            this.time.endTs = Date.now();
+            this.time.timeUsageMs = this.time.endTs - this.time.startTs;
+        }
     }
 
     public async track<T>(callable: (st: StepTracker) => Promise<T>): Promise<T> {
@@ -128,7 +133,7 @@ export class StepTracker {
             },
         };
   
-        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${100 + substeps.length * 25}&h=${30 + substeps.length * 25}`;
+        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${Math.max(300, substeps.length * 25)}&h=${Math.max(300, substeps.length * 25)}`;
         return chartUrl;
     }
 }
