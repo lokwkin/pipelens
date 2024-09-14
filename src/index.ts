@@ -104,7 +104,10 @@ export class StepTracker {
      * Generate a Gantt chart via QuickChart.io, returning an quickchart URL.
      */
     public ganttUrl(args: {unit: 'ms' | 's', minWidth: number, minHeight: number }): string {
-        const { unit = 'ms', minWidth = 500, minHeight = 300 } = args;
+        const { unit, minWidth, minHeight } = {
+            ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
+            ...(args ?? {}),
+        };
         const substeps = this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
@@ -147,8 +150,11 @@ export class StepTracker {
     /**
      * Generate a Gantt chart locally via ChartJS, returning a Buffer.
      */
-    public async ganttLocal(args?: {unit: 'ms' | 's', minWidth: number, minHeight: number }): Promise<Buffer> {
-        const { unit = 'ms', minWidth = 500, minHeight = 300 } = args || {};
+    public async ganttLocal(args?: {unit?: 'ms' | 's', minWidth?: number, minHeight?: number }): Promise<Buffer> {
+        const { unit, minWidth, minHeight } = {
+            ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
+            ...(args ?? {}),
+        };
         const substeps = this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
@@ -169,7 +175,7 @@ export class StepTracker {
                 },
               ],
             data: {
-                labels: substeps.map((step) => `${step.key} - ${step.time.timeUsageMs}ms`),
+                labels: substeps.map((step) => `${step.key} - ${(step.time.endTs - step.time.startTs) / (unit === 'ms' ? 1 : 1000)}${unit}`),
                 datasets: [
                     {
                         label: 'offset',
