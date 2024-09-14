@@ -97,7 +97,8 @@ export class StepTracker {
         }].concat(substeps.flat());
     }
 
-    public ganttUrl(unit: 'ms' | 's' = 'ms'): string {
+    public ganttUrl(args: {unit: 'ms' | 's', minWidth: number, minHeight: number }): string {
+        const { unit = 'ms', minWidth = 500, minHeight = 300 } = args;
         const substeps = this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
@@ -133,7 +134,7 @@ export class StepTracker {
             },
         };
   
-        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${Math.max(300, substeps.length * 25)}&h=${Math.max(300, substeps.length * 25)}`;
+        const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${Math.max(minWidth, substeps.length * 25)}&h=${Math.max(minHeight, substeps.length * 25)}`;
         return chartUrl;
     }
 }
