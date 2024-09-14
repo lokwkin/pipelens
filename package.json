@@ -1,6 +1,6 @@
 {
   "name": "steps-track",
-  "version": "1.0.12",
+  "version": "1.1.0",
   "description": "A simple JS implementation for tracking the time-used and data of the intermediate steps in a long function. Useful for enhancing performance of a pipeline-like functions that consists of parallel async functions.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,5 +30,9 @@
   "bugs": {
     "url": "https://github.com/lokwkin/steps-track/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme"
+  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "dependencies": {
+    "chart.js": "3.9.1",
+    "chartjs-node-canvas": "^4.1.6"
+  }
 }

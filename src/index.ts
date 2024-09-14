@@ -1,3 +1,6 @@
+import { ChartConfiguration } from 'chart.js';
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+
 export type TimeMeta = {
     startTs: number;
     endTs: number;
@@ -97,6 +100,9 @@ export class StepTracker {
         }].concat(substeps.flat());
     }
 
+    /**
+     * Generate a Gantt chart via QuickChart.io, returning an quickchart URL.
+     */
     public ganttUrl(args: {unit: 'ms' | 's', minWidth: number, minHeight: number }): string {
         const { unit = 'ms', minWidth = 500, minHeight = 300 } = args;
         const substeps = this.outputFlattened();
@@ -136,5 +142,80 @@ export class StepTracker {
   
         const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${Math.max(minWidth, substeps.length * 25)}&h=${Math.max(minHeight, substeps.length * 25)}`;
         return chartUrl;
+    }
+
+    /**
+     * Generate a Gantt chart locally via ChartJS, returning a Buffer.
+     */
+    public async ganttLocal(args?: {unit: 'ms' | 's', minWidth: number, minHeight: number }): Promise<Buffer> {
+        const { unit = 'ms', minWidth = 500, minHeight = 300 } = args || {};
+        const substeps = this.outputFlattened();
+
+        const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
+
+        const chartData: ChartConfiguration = {
+            type: 'bar',  // ChartJS uses 'bar' for both vertical and horizontal bar charts
+            plugins: [
+                {
+                  id: 'customCanvasBackgroundColor',
+                  beforeDraw: (chart, args, options) => {
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                  },
+                },
+              ],
+            data: {
+                labels: substeps.map((step) => `${step.key} - ${step.time.timeUsageMs}ms`),
+                datasets: [
+                    {
+                        label: 'offset',
+                        data: substeps.map((step) => (step.time.startTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000)),
+                        backgroundColor: 'white',
+                    },
+                    {
+                        label: 'data',
+                        data: substeps.map((step) => (step.time.endTs - step.time.startTs) / (unit === 'ms' ? 1 : 1000)),
+                        backgroundColor: '#23395d',
+                    },
+                ],
+            },
+            options: {
+                indexAxis: 'y',  // This makes the bar chart horizontal
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                },
+                scales: {
+                    x: {
+                        position: 'top',
+                        min: 0,
+                        max: (maxEndTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000),
+                        stacked: true,
+                    },
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                    },
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10,
+                    },
+                },
+            }
+        }
+
+        // Create a canvas and render the chart
+        const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: Math.max(minWidth, substeps.length * 25), height: Math.max(minHeight, substeps.length * 25) });
+        const image = await chartJSNodeCanvas.renderToBuffer(chartData);
+        return image;
     }
 }
