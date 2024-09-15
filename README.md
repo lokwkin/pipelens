@@ -10,8 +10,9 @@ StepsTrack is a simple library for tracking the time and data of the intermediat
 ## Installation
 
 ```
-npm install steps-track
+npm install --save steps-track
 ```
+Note: If you encounter error installing chart.js / node-canvas, see https://github.com/Automattic/node-canvas/wiki#installation-guides
 
 ## Example
 
@@ -55,7 +56,19 @@ async function main() {
     
     console.log(JSON.stringify(mainTracker.output(), null, 2));
 
-    console.log(mainTracker.ganttUrl());
+    // output gantt chart
+
+    const ganttArgs = {
+        unit: 'ms',                 // 's' | 'ms'. Default 'ms'
+        minWidth: 100,              // Default 500
+        minHeight: 100,             // Default 300
+        includeSteps: /main.fetch/  // string[] | RegExp. if not provided, all steps will be included
+    }
+    // Gantt chart generated via quickchart.io
+    const ganttUrl = mainTracker.ganttUrl(ganttArgs);     
+
+    // Gantt chart buffer generated locally using chart.js, in png format
+    const ganttBuffer = mainTracker.ganttLocal(ganttArgs);
 }
 
 ```

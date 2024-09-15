@@ -103,19 +103,27 @@ export class StepTracker {
     /**
      * Generate a Gantt chart via QuickChart.io, returning an quickchart URL.
      */
-    public ganttUrl(args: {unit: 'ms' | 's', minWidth: number, minHeight: number }): string {
-        const { unit, minWidth, minHeight } = {
+    public ganttUrl(args?: {unit: 'ms' | 's', minWidth: number, minHeight: number, includeSteps?: RegExp | string[] }): string {
+
+        const { unit, minWidth, minHeight, includeSteps } = {
             ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
             ...(args ?? {}),
         };
-        const substeps = this.outputFlattened();
+        const substeps = includeSteps ? this.outputFlattened().filter((step) => {
+            if (includeSteps instanceof RegExp) {
+                return includeSteps.test(step.key);
+            } else if (Array.isArray(includeSteps)) {
+                return includeSteps.includes(step.key);
+            }
+            return true;
+        }) : this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
   
         const chartData = {
             type: 'horizontalBar',
             data: {
-                labels: substeps.map((step) => step.key),
+                labels: substeps.map((step) => `${step.key} - ${(step.time.endTs - step.time.startTs) / (unit === 'ms' ? 1 : 1000)}${unit}`),
                 datasets: [
                     {
                         data: substeps.map((step) => [
@@ -150,12 +158,19 @@ export class StepTracker {
     /**
      * Generate a Gantt chart locally via ChartJS, returning a Buffer.
      */
-    public async ganttLocal(args?: {unit?: 'ms' | 's', minWidth?: number, minHeight?: number }): Promise<Buffer> {
-        const { unit, minWidth, minHeight } = {
+    public async ganttLocal(args?: {unit?: 'ms' | 's', minWidth?: number, minHeight?: number, includeSteps?: RegExp | string[] }): Promise<Buffer> {
+        const { unit, minWidth, minHeight, includeSteps } = {
             ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
             ...(args ?? {}),
         };
-        const substeps = this.outputFlattened();
+        const substeps = includeSteps ? this.outputFlattened().filter((step) => {
+            if (includeSteps instanceof RegExp) {
+                return includeSteps.test(step.key);
+            } else if (Array.isArray(includeSteps)) {
+                return includeSteps.includes(step.key);
+            }
+            return true;
+        }) : this.outputFlattened();
 
         const maxEndTs = Math.max(...substeps.map((step) => step.time.endTs));
 
@@ -202,10 +217,16 @@ export class StepTracker {
                         min: 0,
                         max: (maxEndTs - this.time.startTs) / (unit === 'ms' ? 1 : 1000),
                         stacked: true,
+                        ticks: {
+                            color: '#333333',
+                        }
                     },
                     y: {
                         beginAtZero: true,
                         stacked: true,
+                        ticks: {
+                            color: '#333333',
+                        }
                     },
                 },
                 layout: {
