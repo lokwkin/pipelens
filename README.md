@@ -11,12 +11,8 @@ StepsTrack is a simple library for tracking the time and data of the intermediat
 
 ```
 npm install --save steps-track
-# If you encounter error installing chart.js / node-canvas
-# please see https://github.com/Automattic/node-canvas/wiki#installation-guides
 ```
-
-npm install chart.js
-```
+Note: If you encounter error installing chart.js / node-canvas, see https://github.com/Automattic/node-canvas/wiki#installation-guides
 
 ## Example
 
