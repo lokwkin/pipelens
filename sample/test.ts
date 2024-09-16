@@ -20,6 +20,9 @@ async function main() {
         }
       }
     });
+    mainTracker.on('record', (key, data) => {
+      console.log(`Global tracker.on(${key}) receiving ${data}`);
+    });
 
     await mainTracker.track(async (st: StepTracker) => {
        

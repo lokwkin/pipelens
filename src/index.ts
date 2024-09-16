@@ -1,5 +1,6 @@
 import { ChartConfiguration } from 'chart.js';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import { EventEmitter } from 'stream';
 
 export type TimeMeta = {
     startTs: number;
@@ -15,6 +16,7 @@ export type StepMeta = {
 };
 
 export type RecordListener = (data: any) => void | Promise<void>;
+export type DefaultListener = (key: string, data: any) => void | Promise<void>;
 
 export class StepTracker {
     
@@ -24,10 +26,11 @@ export class StepTracker {
     public time: TimeMeta;
     private subtrackers: { [key: string]: StepTracker } = {};
     private ctx: StepTracker;
-    private eventListeners: { [key: string]: RecordListener } = {};
+    private eventEmitter: EventEmitter;
 
     constructor(key: string, options?: {
-        listeners: Record<string, RecordListener>
+        listeners?: Record<string, RecordListener>;
+        eventEmitter?: EventEmitter;
     } ) {
         this.key = key;
         this.records = {};
@@ -36,8 +39,11 @@ export class StepTracker {
             endTs: Date.now(),
             timeUsageMs: 0
         };
+        this.eventEmitter = options?.eventEmitter ?? new EventEmitter(); 
         if (options?.listeners) {
-            this.eventListeners = options.listeners;
+            for (const [key, listener] of Object.entries(options.listeners)) {
+                this.eventEmitter.on(key, listener);
+            }
         }
         this.ctx = this;
     }
@@ -60,7 +66,7 @@ export class StepTracker {
     }
 
     public async step<T>(key: string, callable: (st: StepTracker) => Promise<T>): Promise<T> {
-        const subtracker = new StepTracker(`${this.key}.${key}`, { listeners: this.eventListeners });
+        const subtracker = new StepTracker(`${this.key}.${key}`, { eventEmitter: this.eventEmitter });
         this.subtrackers[key] = subtracker;
         return await subtracker.run(callable);
     }
@@ -73,10 +79,15 @@ export class StepTracker {
 
     public async record(key: string, data: any) {
         this.records[key] = data;
-        if (this.eventListeners[key]) {
-            const listener  = this.eventListeners[key];
-            await listener(data);
-        }
+        this.eventEmitter.emit(key, data);
+        this.eventEmitter.emit('record', key, data);
+        return this;
+    }
+
+    public on(key: 'record', listener: DefaultListener): this;
+    public on(key: string, listener: RecordListener): this;
+    public on(key: string, listener: RecordListener| DefaultListener): this {
+        this.eventEmitter.on(key, listener);
         return this;
     }
 
