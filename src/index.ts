@@ -39,7 +39,10 @@ export class StepTracker {
             endTs: Date.now(),
             timeUsageMs: 0
         };
-        this.eventEmitter = options?.eventEmitter ?? new EventEmitter(); 
+        this.eventEmitter = options?.eventEmitter ?? new EventEmitter({ captureRejections: true}); 
+        if (this.eventEmitter.listeners('error')?.length === 0){ 
+            this.eventEmitter.on('error', () => {});
+        }
         if (options?.listeners) {
             for (const [key, listener] of Object.entries(options.listeners)) {
                 this.eventEmitter.on(key, listener);
