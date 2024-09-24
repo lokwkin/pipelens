@@ -17,6 +17,7 @@ export type StepMeta = {
 
 export type RecordListener = (data: any) => void | Promise<void>;
 export type DefaultListener = (key: string, data: any) => void | Promise<void>;
+export type RunResultListener = (key: string, data: { result: any; error?: Error; time: TimeMeta} ) => void | Promise<void>;
 
 export class StepTracker {
     
@@ -53,14 +54,22 @@ export class StepTracker {
 
     private async run(callable: (st: StepTracker) => Promise<any>) {
         this.time.startTs = Date.now();
+        let error: Error|undefined;
         try {
             this.result = await callable(this.ctx);
             return this.result;
         } catch (err) {
+            error = err as Error;
             throw err;
         } finally {
             this.time.endTs = Date.now();
             this.time.timeUsageMs = this.time.endTs - this.time.startTs;
+
+            this.eventEmitter.emit('step-result', this.key, {
+                result: this.result,
+                error: error,
+                time: this.time,
+            });
         }
     }
 
@@ -87,9 +96,10 @@ export class StepTracker {
         return this;
     }
 
+    public on(key: 'step-result', listener: RunResultListener): this;
     public on(key: 'record', listener: DefaultListener): this;
     public on(key: string, listener: RecordListener): this;
-    public on(key: string, listener: RecordListener| DefaultListener): this {
+    public on(key: string, listener: RecordListener| DefaultListener| RunResultListener): this {
         this.eventEmitter.on(key, listener);
         return this;
     }

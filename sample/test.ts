@@ -23,12 +23,19 @@ async function main() {
     mainTracker.on('record', (key, data) => {
       console.log(`Global tracker.on(${key}) receiving ${data}`);
     });
+    mainTracker.on('step-result', (key, data) => {
+      console.log('Run result', key, data);
+    });
+    mainTracker.on('other', async (data) => {
+      console.log('Received other', data);
+      throw new Error('This is uncatch error');
+    });
 
     await mainTracker.track(async (st: StepTracker) => {
        
         await st.step('demo', async (st: StepTracker) => {
             // Your logic here
-            await st.record('foo', 'bar');
+            st.record('foo', 'bar');
             await new Promise(resolve => setTimeout(resolve, 200));
         });
         
@@ -37,12 +44,14 @@ async function main() {
             const urls = await st.step('preprocess', async (st: StepTracker) => {
                 
                 // Some preprocess logic
-                await st.record('someData', 12345);
+                st.record('someData', 12345);
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 return ['https://url1.com', 'https://url2.com', 'https://url3.com'];
             });
         
             await new Promise(resolve => setTimeout(resolve, 500));
+
+            st.record('other', undefined);
         
             // Concurrent sub steps
             await Promise.all(urls.map(async (url) => {
@@ -50,6 +59,12 @@ async function main() {
                     return await fetch(url);
                 });
             }));
+
+            await st.step('test-error', async (st) => {
+              throw new Error('This is catch error');
+            }).catch((err) => { 
+              console.log('Catch error');
+            });
         });
     });
     
