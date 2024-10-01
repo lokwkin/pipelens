@@ -25,6 +25,7 @@ export class StepTracker {
     public records: Record<string, any>;
     public result?: any;
     public time: TimeMeta;
+    private logResult: boolean;
     private subtrackers: { [key: string]: StepTracker } = {};
     private ctx: StepTracker;
     private eventEmitter: EventEmitter;
@@ -32,7 +33,9 @@ export class StepTracker {
     constructor(key: string, options?: {
         listeners?: Record<string, RecordListener>;
         eventEmitter?: EventEmitter;
+        logResult?: boolean;
     } ) {
+        this.logResult = options?.logResult ?? false;
         this.key = key;
         this.records = {};
         this.time = {
@@ -55,9 +58,13 @@ export class StepTracker {
     private async run(callable: (st: StepTracker) => Promise<any>) {
         this.time.startTs = Date.now();
         let error: Error|undefined;
+        let result: any;
         try {
-            this.result = await callable(this.ctx);
-            return this.result;
+            result = await callable(this.ctx);
+            if (this.logResult) {
+                this.result = result;
+            }
+            return result;
         } catch (err) {
             error = err as Error;
             throw err;
@@ -66,7 +73,7 @@ export class StepTracker {
             this.time.timeUsageMs = this.time.endTs - this.time.startTs;
 
             this.eventEmitter.emit('step-result', this.key, {
-                result: this.result,
+                result: result,
                 error: error,
                 time: this.time,
             });
@@ -78,7 +85,7 @@ export class StepTracker {
     }
 
     public async step<T>(key: string, callable: (st: StepTracker) => Promise<T>): Promise<T> {
-        const subtracker = new StepTracker(`${this.key}.${key}`, { eventEmitter: this.eventEmitter });
+        const subtracker = new StepTracker(`${this.key}.${key}`, { eventEmitter: this.eventEmitter, logResult: this.logResult });
         this.subtrackers[key] = subtracker;
         return await subtracker.run(callable);
     }

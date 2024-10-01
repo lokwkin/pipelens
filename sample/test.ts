@@ -11,6 +11,7 @@ const fetch = (url: string) => {
 async function main() {
         
     const mainTracker = new StepTracker('main', {
+      logResult: true,
       listeners: {
         'foo': (data) => {
           console.log(`tracker.on(foo) receiving ${data}`)
@@ -18,7 +19,7 @@ async function main() {
         'someData': (data) => {
           console.log(`tracker.on(someData) receiving ${data}`)
         }
-      }
+      },
     });
     mainTracker.on('record', (key, data) => {
       console.log(`Global tracker.on(${key}) receiving ${data}`);

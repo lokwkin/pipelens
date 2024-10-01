@@ -22,7 +22,18 @@ import { StepTracker } from 'steps-track';
 
 async function main() {
         
-    const mainTracker = new StepTracker('main');
+    const mainTracker = new StepTracker('main', {
+        logResult: true,    // Default false. If true, the result of each step will be logged.
+                            // Note: Setting to true may incur memory usage increase.
+        listeners: {
+            'foo': (data) => {
+                console.log(`tracker.on(foo) receiving ${data}`)
+            },
+            'someData': (data) => {
+                console.log(`tracker.on(someData) receiving ${data}`)
+            }
+        }
+    });
 
     await mainTracker.track(async (st: StepTracker) => {
        
