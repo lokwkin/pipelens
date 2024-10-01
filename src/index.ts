@@ -12,7 +12,7 @@ export type StepMeta = {
     key: string;
     time: TimeMeta;
     record: Record<string, any>;
-    result: any;
+    result?: any;
 };
 
 export type RecordListener = (data: any) => void | Promise<void>;
@@ -123,12 +123,13 @@ export class StepTracker {
 
     public outputFlattened(): StepMeta[] {
         const substeps = Object.values(this.subtrackers).map((subtracker) => subtracker.outputFlattened());
-        return [{
+        const currStep: StepMeta = {
             key: this.key,
             time: this.time,
             record: this.records,
             result: this.result,
-        }].concat(substeps.flat());
+        };
+        return [currStep].concat(substeps.flat());
     }
 
     /**
