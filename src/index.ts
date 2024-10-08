@@ -15,9 +15,16 @@ export type StepMeta = {
     result?: any;
 };
 
+export type RunResult = {
+    result: any;
+    error?: Error;
+    time: TimeMeta;
+    records: Record<string, any>
+};
+
 export type RecordListener = (data: any) => void | Promise<void>;
 export type DefaultListener = (key: string, data: any) => void | Promise<void>;
-export type RunResultListener = (key: string, data: { result: any; error?: Error; time: TimeMeta} ) => void | Promise<void>;
+export type RunResultListener = (key: string, data: RunResult ) => void | Promise<void>;
 
 export class StepTracker {
     
@@ -72,11 +79,13 @@ export class StepTracker {
             this.time.endTs = Date.now();
             this.time.timeUsageMs = this.time.endTs - this.time.startTs;
 
-            this.eventEmitter.emit('step-result', this.key, {
+            const data: RunResult = {
                 result: result,
                 error: error,
                 time: this.time,
-            });
+                records: this.records
+            }
+            this.eventEmitter.emit('step-result', this.key, data);
         }
     }
 
