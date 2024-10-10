@@ -13,6 +13,7 @@ export type StepMeta = {
     time: TimeMeta;
     record: Record<string, any>;
     result?: any;
+    error?: string;
 };
 
 export type RunResult = {
@@ -31,6 +32,7 @@ export class StepTracker {
     public key: string;
     public records: Record<string, any>;
     public result?: any;
+    public error?: Error;
     public time: TimeMeta;
     private logResult: boolean;
     private subtrackers: { [key: string]: StepTracker } = {};
@@ -73,6 +75,7 @@ export class StepTracker {
             }
             return result;
         } catch (err) {
+            this.error = err as Error;
             error = err as Error;
             throw err;
         } finally {
@@ -126,6 +129,7 @@ export class StepTracker {
             time: this.time,
             record: this.records,
             result: this.result,
+            error: this.error ? (this.error.message || this.error.toString() || this.error.name) : undefined,
             substeps: Object.values(this.subtrackers).map((subtracker) => subtracker.output())
         }
     }
@@ -137,6 +141,7 @@ export class StepTracker {
             time: this.time,
             record: this.records,
             result: this.result,
+            error: this.error ? (this.error.message || this.error.toString() || this.error.name) : undefined,
         };
         return [currStep].concat(substeps.flat());
     }
