@@ -1,5 +1,4 @@
 import { ChartConfiguration } from 'chart.js';
-import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { EventEmitter } from 'stream';
 
 export type TimeMeta = {
@@ -205,6 +204,19 @@ export class StepTracker {
      * Generate a Gantt chart locally via ChartJS, returning a Buffer.
      */
     public async ganttLocal(args?: {unit?: 'ms' | 's', minWidth?: number, minHeight?: number, includeSteps?: RegExp | string[] }): Promise<Buffer> {
+
+        let canvasConstructor : any;
+        try {
+            const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
+            if (!ChartJSNodeCanvas) {
+                throw new Error('Failed to load chartjs-node-canvas, please install it to use ganttLocal()');
+            }
+            canvasConstructor = ChartJSNodeCanvas;
+        } catch (err) {
+            console.error('Failed to load chartjs-node-canvas, please install it to use ganttLocal()');
+            throw err;
+        }
+
         const { unit, minWidth, minHeight, includeSteps } = {
             ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
             ...(args ?? {}),
@@ -287,7 +299,7 @@ export class StepTracker {
         }
 
         // Create a canvas and render the chart
-        const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: Math.max(minWidth, substeps.length * 25), height: Math.max(minHeight, substeps.length * 25) });
+        const chartJSNodeCanvas = new canvasConstructor({ width: Math.max(minWidth, substeps.length * 25), height: Math.max(minHeight, substeps.length * 25) });
         const image = await chartJSNodeCanvas.renderToBuffer(chartData);
         return image;
     }
