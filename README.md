@@ -79,6 +79,7 @@ async function main() {
     const ganttUrl = mainTracker.ganttUrl(ganttArgs);     
 
     // Gantt chart buffer generated locally using chart.js, in png format
+    // Note: This requires 'chartjs-node-canvas' and 'chart.js to be installed
     const ganttBuffer = mainTracker.ganttLocal(ganttArgs);
 }
 

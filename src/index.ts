@@ -1,5 +1,12 @@
-import { ChartConfiguration } from 'chart.js';
 import { EventEmitter } from 'stream';
+
+// ChartJS types
+type ChartConfiguration = {
+    type: string;
+    data: any;
+    options?: any;
+    plugins?: any[];
+};
 
 export type TimeMeta = {
     startTs: number;
@@ -207,7 +214,7 @@ export class StepTracker {
 
         let canvasConstructor : any;
         try {
-            const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
+            const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
             if (!ChartJSNodeCanvas) {
                 throw new Error('Failed to load chartjs-node-canvas, please install it to use ganttLocal()');
             }
@@ -237,7 +244,7 @@ export class StepTracker {
             plugins: [
                 {
                   id: 'customCanvasBackgroundColor',
-                  beforeDraw: (chart, args, options) => {
+                  beforeDraw: (chart: any, args: any, options: any) => {
                     const { ctx } = chart;
                     ctx.save();
                     ctx.globalCompositeOperation = 'destination-over';
