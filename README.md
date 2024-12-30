@@ -1,94 +1,152 @@
 # StepsTrack
 
-StepsTrack is a simple library for tracking the time and data of the intermediate steps in a function for further debugging / enchancements. Useful for enhancing performance of a pipeline-like function that consists of multiple steps and/or conccurent async functions.
+StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical intermediate steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs to help debuging and optimizing. It best works in pipeline functions that consists of complex logic execution flows and multiple concurrent async functions.
+
+### Background
+StepsTrack was initially developed to debug and optimize an agentic *Retrieval-Augmented Generation (RAG) pipeline* in production. Chain-ing multiple LLM agents with custom logic and dynamic data inputs often led to unstable results and long response times, especially in production environment where multiple requests are running concurrently. 
+
+To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happend underlying and identify bottlenecks upon each pipeline runs. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
 
 ## Features
 
-- Track intermediates data, results and execution time of all sub-steps.
-- Generate **Gantt chart** for visual representation of step durations.
+- 👣 **Tracking**: Tracks intermediates data, results, execution time and hierachy of the intermediate steps.
+- 📊 **Gantt chart**: Visualizes step execution times.
+- ⛓️ **Execution graph**: Visualizes step execution dependencies, time and ordering.
+- 🎯 **Event Emmitting**: Tracks step progress for further processing.
 
-## Installation
+## Get Started
 
+#### Installation
 ```
 npm install --save steps-track
 ```
-Note: If you encounter error installing chart.js / node-canvas, see https://github.com/Automattic/node-canvas/wiki#installation-guides
 
-## Example
-
-#### Sample Code
+#### Sample Usage
 ```js
-import { StepTracker } from 'steps-track';
+import { Pipeline, Step } from 'steps-track';
 
-async function main() {
-        
-    const mainTracker = new StepTracker('main', {
-        logResult: true,    // Default false. If true, the result of each step will be logged.
-                            // Note: Setting to true may incur memory usage increase.
-        listeners: {
-            'foo': (data) => {
-                console.log(`tracker.on(foo) receiving ${data}`)
-            },
-            'someData': (data) => {
-                console.log(`tracker.on(someData) receiving ${data}`)
-            }
-        }
-    });
+const pipeline = new Pipeline('pipeline');
 
-    await mainTracker.track(async (st: StepTracker) => {
-       
-        await st.step('demo', async (st: StepTracker) => {
-        
-            // Your logic here
-            st.record('foo', 'bar');
-            await new Promise(resolve => setTimeout(resolve, 200));
-        });
-        
-        await st.step('fetch', async (st: StepTracker) => {
-                
-            const urls = await st.step('preprocess', async (st: StepTracker) => {
-                
-                // Some preprocess logic
-                st.record('someData', 12345);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                return ['https://url1.com', 'https://url2.com', 'https://url3.com'];
-            });
-        
-            await new Promise(resolve => setTimeout(resolve, 500));
-        
-            // Concurrent sub steps
-            await Promise.all(urls.map(async (url) => {
-                return st.step(`${url}`, async (st: StepTracker) => {
-                    return await fetch(url);
-                });
-            }));
-        });
-    });
+pipeline.on('step-start', (key) => {
+    console.log(`Step started: ${key}`);
+});
+pipeline.on('step-result', (key, result) => {   
+    console.log(`Step result: ${key} - ${result}`);
+    // ... Your logic here ...
+});
+
+await pipeline.track(async (st: Step) => {
     
-    console.log(JSON.stringify(mainTracker.output(), null, 2));
+    // Defining step 1
+    await st.step('step_1', async (st: Step) => {
+        // ... Some Logic here ...
+    });
 
-    // output gantt chart
+    // Defining step 2
+    await st.step('step_2', async (st: Step) => {
+        // ... Some Logic here ...
 
-    const ganttArgs = {
-        unit: 'ms',                 // 's' | 'ms'. Default 'ms'
-        minWidth: 100,              // Default 500
-        minHeight: 100,             // Default 300
-        includeSteps: /main.fetch/  // string[] | RegExp. if not provided, all steps will be included
-    }
-    // Gantt chart generated via quickchart.io
-    const ganttUrl = mainTracker.ganttUrl(ganttArgs);     
+        // Creating sub-steps from step_2
+        await st.step('step_2a', async (st: Step) => {  
 
-    // Gantt chart buffer generated locally using chart.js, in png format
-    // Note: This requires 'chartjs-node-canvas' and 'chart.js to be installed
-    const ganttBuffer = mainTracker.ganttLocal(ganttArgs);
-}
+            st.record('foo', 'bar'); // Record intermediate data
 
+            // Step result will be recorded automatically.
+            return {
+                answer: 42
+            };
+        });
+
+        // Wraping implementation function
+        await st.step('step_2b', async (st: Step) => {
+            return myFunc();
+        });
+    });
 ```
-#### Gantt Chart Output
-<img src="./sample/sample-gantt.png" width="70%">
+
+#### Generate Charts
+```js
+// ... After the pipeline execution ...
+
+// Generate gantt chart URL by quickchart.io
+const ganttChartUrl = pipeline.ganttQuickchart(ganttArgs);  
+
+// Generate gantt chart locally using chart.js, in png format buffer
+// This feature requires chart.js and chartjs-node-canvas to be installed
+// Note: If you encounter error installing chart.js / node-canvas, see https://github.com/Automattic/node-canvas/wiki#installation-guides
+const ganttChartBuffer = pipeline.ganttLocal(ganttArgs);    
+
+// Generate Execution graph
+const executionGraphUrl = pipeline.executionGraphQuickchart();  
+```
+
+#### Sample Execution Graph
+<img src="./sample/execution-graph.png" width="70%">
+
+#### Sample Gantt Chart
+<img src="./sample/gantt-chart.png" width="70%">
+
+
+#### Output tracked data for further analysis
+```js
+// ... After the pipeline execution ...
+console.log(JSON.stringify(pipeline.outputHierarchy(), null, 2));
+
+// Or sometimes you may find it useful to flatten the output
+console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   
+```
+
+#### Sample Hierarchy Output
+```json
+{
+    "name": "pipeline",
+    "key": "pipeline",
+    "time": { "startTs": 1735561119986, "endTs": 1735561121392, "timeUsageMs": 1406 },
+    "record": {},
+    "substeps": [
+        {
+            "name": "step_1",
+            "key": "pipeline.step_1",
+            "time": { "startTs": 1735561119986, "endTs": 1735561119986, "timeUsageMs": 0 },
+            "record": {},
+            "substeps": []
+        },
+        {
+            "name": "step_2",
+            "key": "pipeline.step_2",
+            "time": { "startTs": 1735561119986, "endTs": 1735561121392, "timeUsageMs": 1406 },
+            "record": {},
+            "substeps": [
+                {
+                    "name": "step_2a",
+                    "key": "pipeline.step_2.step_2a",
+                    "time": { "startTs": 1735561119986, "endTs": 1735561120991, "timeUsageMs": 1005 },
+                    "record": { "foo": "bar" },
+                    "result": { "answer": 42 },
+                    "substeps": []
+                },
+                {
+                    "name": "step_2b",
+                    "key": "pipeline.step_2.step_2b",
+                    "time": { "startTs": 1735561120991, "endTs": 1735561121392, "timeUsageMs": 401 },
+                    "record": {},
+                    "result": "myFunc_result",
+                    "substeps": []
+                }
+            ]
+        }
+    ]
+}
+```
+
 
 ## To Do
-- Generate speed analysis based on multiple runs of the same function
+- Decorator support for easier integration.
+- Generate speed analysis stats from multiple runs.
+- Add Redis support for pub/sub events and data storage.
+- Implement real-time execution monitoring.
+- Integrate LLM prompt tracking and storage.
+- Interactive graph to show step results.
 
 ## License
 [MIT License](LICENSE)

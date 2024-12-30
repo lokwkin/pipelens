@@ -25,10 +25,19 @@
     "nodemon": "^2.0.20",
     "ts-node": "^10.9.1",
     "tsup": "^8.0.1",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "chart.js": "3.9.1",
+    "chartjs-node-canvas": "^4.1.6"
   },
   "bugs": {
     "url": "https://github.com/lokwkin/steps-track/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme"
+  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "dependencies": {
+    "uuid": "^11.0.3"
+  },
+  "peerDependencies": {
+    "chart.js": "3.9.1",
+    "chartjs-node-canvas": "^4.1.6"
+  }
 }
