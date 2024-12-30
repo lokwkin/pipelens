@@ -6,7 +6,6 @@ export class Pipeline extends Step {
     private runId: string;
 
     constructor(name: string, options?: {
-        logResult?: boolean,
         runId?: string
     } ) {
         super(name);

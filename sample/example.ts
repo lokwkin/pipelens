@@ -10,9 +10,7 @@ const parsePage = (url: string) => {
 
 async function main() {
 
-    const pipeline = new Pipeline('pipeline', {
-      logResult: true,
-    });
+    const pipeline = new Pipeline('pipeline');
     pipeline.on('step-record', (stepKey, key, data) => {
       console.log(`[${stepKey}] Record: ${key} = ${data}`);
     });
