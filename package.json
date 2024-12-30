@@ -30,5 +30,10 @@
   "bugs": {
     "url": "https://github.com/lokwkin/steps-track/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme"
+  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "dependencies": {
+    "chart.js": "3.9.1",
+    "chartjs-node-canvas": "^4.1.6",
+    "uuid": "^11.0.3"
+  }
 }
