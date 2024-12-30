@@ -67,7 +67,7 @@ await pipeline.track(async (st: Step) => {
 ```
 
 #### Generate Charts
-```json
+```js
 // ... After the pipeline execution ...
 
 // Generate gantt chart URL by quickchart.io
@@ -82,14 +82,14 @@ const executionGraphUrl = pipeline.executionGraphQuickchart();
 ```
 
 #### Sample Execution Graph
-<img src="./sample/sample-execution-graph.png" width="70%">
+<img src="./sample/execution-graph.png" width="70%">
 
 #### Sample Gantt Chart
-<img src="./sample/sample-gantt-chart.png" width="70%">
+<img src="./sample/gantt-chart.png" width="70%">
 
 
 #### Output tracked data for further analysis
-```json
+```js
 // ... After the pipeline execution ...
 console.log(JSON.stringify(pipeline.outputHierarchy(), null, 2));
 console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   // Sometimes you may find it useful to flatten the output
