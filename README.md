@@ -37,30 +37,28 @@ pipeline.on('step-result', (key, result) => {
 
 await pipeline.track(async (st: Step) => {
     
-    await st.step('step_1', async (st: Step) => {   // Result of the step will be automatically recorded
-        // Your logic here
+    // Defining step 1
+    await st.step('step_1', async (st: Step) => {
+        // ... Some Logic here ...
     });
 
+    // Defining step 2
     await st.step('step_2', async (st: Step) => {
-
         // ... Some Logic here ...
 
-        await st.step('step_2a', async (st: Step) => {  // Creating sub-step step_2a from from step_2
-
-            // ... Some Logic here ...
-
-            // Record some intermediate data
+        // Creating sub-steps from step_2
+        await st.step('step_2a', async (st: Step) => {  
+            // Record intermediate data
             st.record('foo', 'bar');
 
+            // Step result will be recorded automatically.
             return {
                 answer: 42
             };
         });
 
+        // Wraping implementation function
         await st.step('step_2b', async (st: Step) => {
-
-            // ... Some Logic here ...
-
             return myFunc();
         });
     });
