@@ -72,6 +72,7 @@ await pipeline.track(async (st: Step) => {
 const ganttChartUrl = pipeline.ganttQuickchart(ganttArgs);  
 
 // Generate gantt chart locally using chart.js, in png format buffer
+// This feature requires chart.js and chartjs-node-canvas to be installed
 // Note: If you encounter error installing chart.js / node-canvas, see https://github.com/Automattic/node-canvas/wiki#installation-guides
 const ganttChartBuffer = pipeline.ganttLocal(ganttArgs);    
 

@@ -1,12 +1,6 @@
-const QUICKCHART_URL = 'https://quickchart.io';
+import type { ChartConfiguration } from 'chart.js';
 
-// ChartJS types
-type ChartConfiguration = {
-    type: string;
-    data: any;
-    options?: any;
-    plugins?: any[];
-};
+const QUICKCHART_URL = 'https://quickchart.io';
 
 export type GanttChartArgs = {
     unit?: 'ms' | 's';
@@ -74,6 +68,16 @@ export function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: Gantt
     return chartUrl;
 }
 
+// Type guard to check if chartjs-node-canvas is available
+function isChartJSAvailable(): boolean {
+    try {
+        require.resolve('chartjs-node-canvas');
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: GanttChartArgs): Promise<Buffer> {
 
     const { unit, minWidth, minHeight } = {
@@ -81,17 +85,15 @@ export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: Gant
         ...(args ?? {}),
     };
 
-    let canvasConstructor : any;
-    try {
-        const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
-        if (!ChartJSNodeCanvas) {
-            throw new Error('Failed to load chartjs-node-canvas, please install it to use ganttLocal()');
-        }
-        canvasConstructor = ChartJSNodeCanvas;
-    } catch (err) {
-        console.error('Failed to load chartjs-node-canvas, please install it to use ganttLocal()');
-        throw err;
+   
+    if (!isChartJSAvailable()) {
+        throw new Error(
+            'chartjs-node-canvas is not installed. Please install it using:\n' +
+            'npm install chart.js chartjs-node-canvas'
+        );
     }
+
+    const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
 
     const maxEndTs = Math.max(...timeSpans.map((span) => span.endTs));
 
@@ -162,7 +164,7 @@ export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: Gant
     }
 
     // Create a canvas and render the chart
-    const chartJSNodeCanvas = new canvasConstructor({ width: Math.max(minWidth, timeSpans.length * 25), height: Math.max(minHeight, timeSpans.length * 25) });
+    const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: Math.max(minWidth, timeSpans.length * 25), height: Math.max(minHeight, timeSpans.length * 25) });
     const image = await chartJSNodeCanvas.renderToBuffer(chartData);
     return image;
 }
