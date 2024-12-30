@@ -1,17 +1,16 @@
 # StepsTrack
 
-StepsTrack is a lightweight Typescript library for tracking, profiling and visisualizing hierarchical steps in a pipeline-based application. It breaksdown complex function into smaller steps, records execution time and data of each intermdiate steps, and visualize the execution into human-readable graphs for easier monitoring and optimizations. 
+StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs. It is primarily desgined to help debugging, monitoring, and optimization.
 
-Perfect for optimizing pipeline-based applications (such as RAG pipeline) that need insights into their execution flow, especially when dealing with complex logic flows and multi-step operations that benefit from visual representation and detailed timing analysis.
+### Background
+StepsTrack was initially developed to debug and optimize an agentic *Retrieval-Augmented Generation (RAG) pipeline* in production. Chain-ing multiple LLM agents with custom logic and dynamic data inputs often led to unstable results and long response times. To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happend underlying and identify bottlenecks upon each pipeline runs. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
 
 ## Features
 
-- ⏱️ **Track** intermediates data, results, execution time and hierachy of all steps in a pipeline application.
-- 📊 **Gantt chart** for visual representation of step execution time.
-- 👀 **Execution graph** for visual representation of step execution dependencies, time and ordering.
-- 🎯 **Event Emmitting** for tracking step progress for further processing.
-
-## Use Cases
+- 👣 **Tracking**: Tracks intermediates data, results, execution time and hierachy of the intermediate steps.
+- 📊 **Gantt chart**: Visualizes step execution times.
+- ⛓️ **Execution graph**: Visualizes step execution dependencies, time and ordering.
+- 🎯 **Event Emmitting**: Tracks step progress for further processing.
 
 ## Get Started
 
@@ -26,7 +25,6 @@ import { Pipeline, Step } from 'steps-track';
 
 const pipeline = new Pipeline('pipeline');
 
-// If you want to as soon as a step is completed. e.g. notify subscriber
 pipeline.on('step-start', (key) => {
     console.log(`Step started: ${key}`);
 });
@@ -140,10 +138,11 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   // Sometimes
 
 
 ## To Do
-- Generate speed analysis stats based on multiple runs of the same function
-- Option to use Redis for sending events pub/sub and storing data
-- Real-time execution monitoring
-- LLM usage and prompt storing
+- Decorator support for easier integration.
+- Generate speed analysis stats from multiple runs.
+- Add Redis support for pub/sub events and data storage.
+- Implement real-time execution monitoring.
+- Integrate LLM prompt tracking and storage.
 
 ## License
 [MIT License](LICENSE)
