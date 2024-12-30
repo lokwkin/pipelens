@@ -3,7 +3,9 @@
 StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs. It is primarily desgined to help debugging, monitoring, and optimization.
 
 ### Background
-StepsTrack was initially developed to debug and optimize an agentic *Retrieval-Augmented Generation (RAG) pipeline* in production. Chain-ing multiple LLM agents with custom logic and dynamic data inputs often led to unstable results and long response times. To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happend underlying and identify bottlenecks upon each pipeline runs. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
+StepsTrack was initially developed to debug and optimize an agentic *Retrieval-Augmented Generation (RAG) pipeline* in production. Chain-ing multiple LLM agents with custom logic and dynamic data inputs often led to unstable results and long response times, especially in production environment where multiple requests are running concurrently. 
+
+To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happend underlying and identify bottlenecks upon each pipeline runs. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
 
 ## Features
 
