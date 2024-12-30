@@ -131,13 +131,6 @@ export class Step {
         return this;
     }
 
-    /**
-     * @deprecated
-     */
-    public output(): StepMeta {
-        console.warn('Step.output() is deprecated, use Step.outputHierarchy() instead');
-        return this.outputHierarchy();
-    }
     public outputHierarchy(): StepMeta & { substeps: StepMeta[] } {
         return {
             name: this.name,
@@ -160,6 +153,14 @@ export class Step {
             result: this.result,
             error: this.error ? (this.error.message || this.error.toString() || this.error.name) : undefined,
         }, ...substeps];
+    }
+
+    public getRecords(): Record<string, any> {
+        return this.records;
+    }
+
+    public getTime(): TimeMeta {
+        return this.time;
     }
 
     public executionGraphQuickchart(): string {
