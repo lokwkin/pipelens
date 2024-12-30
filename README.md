@@ -143,6 +143,7 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   // Sometimes
 - Add Redis support for pub/sub events and data storage.
 - Implement real-time execution monitoring.
 - Integrate LLM prompt tracking and storage.
+- Interactive graph to show step results.
 
 ## License
 [MIT License](LICENSE)
