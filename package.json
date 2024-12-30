@@ -1,6 +1,6 @@
 {
   "name": "steps-track",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A simple JS implementation for tracking the time-used and data of the intermediate steps in a long function. Useful for enhancing performance of a pipeline-like functions that consists of parallel async functions.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
