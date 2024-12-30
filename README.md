@@ -48,8 +48,8 @@ await pipeline.track(async (st: Step) => {
 
         // Creating sub-steps from step_2
         await st.step('step_2a', async (st: Step) => {  
-            // Record intermediate data
-            st.record('foo', 'bar');
+
+            st.record('foo', 'bar'); // Record intermediate data
 
             // Step result will be recorded automatically.
             return {
@@ -91,7 +91,9 @@ const executionGraphUrl = pipeline.executionGraphQuickchart();
 ```js
 // ... After the pipeline execution ...
 console.log(JSON.stringify(pipeline.outputHierarchy(), null, 2));
-console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   // Sometimes you may find it useful to flatten the output
+
+// Or sometimes you may find it useful to flatten the output
+console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));   
 ```
 
 #### Sample Hierarchy Output
