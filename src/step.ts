@@ -8,7 +8,7 @@ export type TimeMeta = {
 };
 
 export type StepMeta = {
-    name: string;
+    name?: string;
     key: string;
     time: TimeMeta;
     record: Record<string, any>;
