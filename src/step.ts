@@ -183,9 +183,11 @@ export class Step {
         return generateExecutionGraphQuickchart(nodes);
     }
 
-    private getGanttSpans(filter?: RegExp | string[]): TimeSpan[] {
+    private static getGanttSpans(steps: StepMeta[], filter?: RegExp | string[]): TimeSpan[] {
 
-        const flattned = this.outputFlattened().filter((step: StepMeta) => {
+        const minStartTs = Math.min(...steps.map((step) => step.time.startTs));
+
+        const flattned = steps.filter((step: StepMeta) => {
             if (!filter) {
                 return true;
             }
@@ -199,21 +201,35 @@ export class Step {
 
         return flattned.map((step) => ({
             key: step.key,
-            startTs: step.time.startTs - this.time.startTs, 
-            endTs: step.time.endTs - this.time.startTs,
+            startTs: step.time.startTs - minStartTs,
+            endTs: step.time.endTs - minStartTs,
         }));
     }
     /**
      * Generate a Gantt chart via QuickChart.io, returning an quickchart URL.
      */
-    public ganttQuickchart(args?: StepGanttArg ): string {
-        return generateGanttChartQuickchart(this.getGanttSpans(args?.filter), args);        
+    public ganttQuickchart(args?: StepGanttArg): string {
+        return generateGanttChartQuickchart(Step.getGanttSpans(this.outputFlattened(), args?.filter), args);        
     }
 
     /**
      * Generate a Gantt chart locally via ChartJS, returning a Buffer.
      */
-    public async ganttLocal(args?: StepGanttArg ): Promise<Buffer> {
-        return generateGanttChartLocal(this.getGanttSpans(args?.filter), args);     
+    public async ganttLocal(args?: StepGanttArg): Promise<Buffer> {
+        return generateGanttChartLocal(Step.getGanttSpans(this.outputFlattened(), args?.filter), args);     
+    }
+
+    /**
+     * Generate a Gantt chart via QuickChart.io, returning an quickchart URL.
+     */
+    public static ganttQuickChart(steps: StepMeta[], args?: StepGanttArg ): string {
+        return generateGanttChartQuickchart(Step.getGanttSpans(steps, args?.filter), args);
+    }
+
+    /**
+     * Generate a Gantt chart locally via ChartJS, returning a Buffer.
+     */
+    public static ganttLocal(steps: StepMeta[], args?: StepGanttArg ): Promise<Buffer> {
+        return generateGanttChartLocal(Step.getGanttSpans(steps, args?.filter), args);
     }
 }
