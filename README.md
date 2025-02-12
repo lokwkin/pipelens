@@ -13,6 +13,7 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 - 📊 **Gantt chart**: Visualizes step execution times.
 - ⛓️ **Execution graph**: Visualizes step execution dependencies, time and ordering.
 - 🎯 **Event Emmitting**: Tracks step progress for further processing.
+- 🎨 **Decorators**: Easy integration with ES6 decorators.
 
 ## Get Started
 
@@ -70,6 +71,59 @@ await pipeline.track(async (st: Step) => {
             console.log('Catch error', err.message);
         });
     });
+});
+```
+
+#### Usage with Decorators
+StepsTrack also provides a decorator to make it easier to integrate with ES6 classes.
+* The decorator wraps the callee method as a substep.
+* When using the decorator, the last argument MUST be a Step instance of the parent step
+* Note: The `Step` instance that the callee method received is a Substep.
+
+```js
+
+class MyClass {
+
+  @WithStep('parsing')
+  async parsing(st: Step) {
+    // Proprocessing
+    const pages = await this.preprocess(st);
+
+    // wait a while
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Concurrently parse pages
+    await Promise.all(
+      pages.map(async (page) => {
+        return await this.parsePage(page, st);
+      }),
+    );
+  }
+
+  @WithStep('preprocess')
+  async preprocess(st: Step) {
+    st.record('pageCount', 3);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
+  }
+
+  @WithStep('parsePage')
+  async parsePage(page: string, st: Step) {
+    return new Promise((resolve) => {
+      setTimeout(
+        () => {
+          resolve(page);
+        },
+        Math.floor(Math.random() * 3000) + 500,
+      );
+    });
+  }
+}
+
+const pipeline = new Pipeline('sample-pipeline');
+await pipeline.track(async (st) => {
+  const myClass = new MyClass();
+  await myClass.parsing(st);
 });
 ```
 
