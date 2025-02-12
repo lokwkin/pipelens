@@ -1,8 +1,7 @@
-import { Pipeline, Step } from "../src";
-import { WithStep } from "../src/decorator";
+import { Pipeline, Step } from '../src';
+import { WithStep } from '../src/decorator';
 
 class SamplePipeline {
-
   pipelineTracker: Pipeline;
 
   constructor() {
@@ -11,8 +10,8 @@ class SamplePipeline {
 
   async run() {
     await this.pipelineTracker.track(async (st) => {
-        await this.loadConfig(st);
-        await this.parsing(st);
+      await this.loadConfig(st);
+      await this.parsing(st);
     });
     console.log(JSON.stringify(this.pipelineTracker.outputFlattened(), null, 4));
     console.log(await this.pipelineTracker.ganttQuickchart());
@@ -22,7 +21,7 @@ class SamplePipeline {
   async loadConfig(st: Step, str?: string) {
     console.log('str', str);
     st.record('foo', 'bar');
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
   @WithStep('parsing')
@@ -31,28 +30,32 @@ class SamplePipeline {
     const pages = await this.preprocess(st);
 
     // wait a while
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Concurrently parse pages
-    await Promise.all(pages.map(async (page) => {
+    await Promise.all(
+      pages.map(async (page) => {
         return await this.parsePage(page, st);
-    }));
+      }),
+    );
   }
 
   @WithStep('preprocess')
   async preprocess(st: Step) {
     st.record('pageCount', 3);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
   }
-  
 
   @WithStep('parsePage')
-  async parsePage(page: string, st: Step) {
+  async parsePage(page: string, _st: Step) {
     return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(page);
-        }, Math.floor(Math.random() * 3000) + 500);
+      setTimeout(
+        () => {
+          resolve(page);
+        },
+        Math.floor(Math.random() * 3000) + 500,
+      );
     });
   }
 }
