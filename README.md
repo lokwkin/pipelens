@@ -38,32 +38,41 @@ pipeline.on('step-error', (stepKey, error) => {
 });
 
 await pipeline.track(async (st: Step) => {
+       
+    await st.step('load_config', async (st: Step) => {
+        // ...
+        // Your logic here
+        // ...
+        st.record('foo', 'bar');
+        await new Promise(resolve => setTimeout(resolve, 200));
+    });
     
-    // Defining step 1
-    await st.step('step_1', async (st: Step) => {
-        // ... Some Logic here ...
-    });
-
-    // Defining step 2
-    await st.step('step_2', async (st: Step) => {
-        // ... Some Logic here ...
-
-        // Creating sub-steps from step_2
-        await st.step('step_2a', async (st: Step) => {  
-
-            st.record('foo', 'bar'); // Record intermediate data
-
-            // Step result will be recorded automatically.
-            return {
-                answer: 42
-            };
+    await st.step('parsing', async (st: Step) => {
+            
+        const pages = await st.step('preprocess', async (st: Step) => {
+            
+            // Some preprocess logic
+            st.record('pageCount', 3);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
         });
+    
+        await new Promise(resolve => setTimeout(resolve, 500));
+    
+        // Concurrent substeps
+        await Promise.all(pages.map(async (page) => {
+            return st.step(`${page}`, async (st: Step) => {
+                return await parsePage(page);
+            });
+        }));
 
-        // Wraping implementation function
-        await st.step('step_2b', async (st: Step) => {
-            return myFunc();
+        await st.step('sample-error', async (st) => {
+            throw new Error('Sample Error');
+        }).catch((err) => { 
+            console.log('Catch error', err.message);
         });
     });
+});
 ```
 
 #### Generate Charts
@@ -101,43 +110,69 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 #### Sample Hierarchy Output
 ```json
 {
-    "name": "pipeline",
-    "key": "pipeline",
-    "time": { "startTs": 1735561119986, "endTs": 1735561121392, "timeUsageMs": 1406 },
-    "record": {},
-    "substeps": [
+  "name": "pipeline",
+  "key": "pipeline",
+  "time": { "startTs": 1739357985509, "endTs": 1739357990192, "timeUsageMs": 4683 },
+  "record": {},
+  "substeps": [
+    {
+      "name": "load_config",
+      "key": "pipeline.load_config",
+      "time": { "startTs": 1739357985509, "endTs": 1739357985711, "timeUsageMs": 202 },
+      "record": { "foo": "bar" },
+      "substeps": []
+    },
+    {
+      "name": "parsing",
+      "key": "pipeline.parsing",
+      "time": {"startTs": 1739357985711, "endTs": 1739357990192, "timeUsageMs": 4481},
+      "record": {},
+      "substeps": [
         {
-            "name": "step_1",
-            "key": "pipeline.step_1",
-            "time": { "startTs": 1735561119986, "endTs": 1735561119986, "timeUsageMs": 0 },
-            "record": {},
-            "substeps": []
+          "name": "preprocess",
+          "key": "pipeline.parsing.preprocess",
+          "time": { "startTs": 1739357985711, "endTs": 1739357986713, "timeUsageMs": 1002 },
+          "record": {
+            "pageCount": 3
+          },
+          "result": ["page_1", "page_2", "page_3"],
+          "substeps": []
         },
         {
-            "name": "step_2",
-            "key": "pipeline.step_2",
-            "time": { "startTs": 1735561119986, "endTs": 1735561121392, "timeUsageMs": 1406 },
-            "record": {},
-            "substeps": [
-                {
-                    "name": "step_2a",
-                    "key": "pipeline.step_2.step_2a",
-                    "time": { "startTs": 1735561119986, "endTs": 1735561120991, "timeUsageMs": 1005 },
-                    "record": { "foo": "bar" },
-                    "result": { "answer": 42 },
-                    "substeps": []
-                },
-                {
-                    "name": "step_2b",
-                    "key": "pipeline.step_2.step_2b",
-                    "time": { "startTs": 1735561120991, "endTs": 1735561121392, "timeUsageMs": 401 },
-                    "record": {},
-                    "result": "myFunc_result",
-                    "substeps": []
-                }
-            ]
+          "name": "page_1",
+          "key": "pipeline.parsing.page_1",
+          "time": { "startTs": 1739357987214, "endTs": 1739357990192, "timeUsageMs": 2978 },
+          "record": {},
+          "result": "page_1",
+          "substeps": []
+        },
+        {
+          "name": "page_2",
+          "key": "pipeline.parsing.page_2",
+          "time": { "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
+          "record": {},
+          "result": "page_2",
+          "substeps": []
+        },
+        {
+          "name": "page_3",
+          "key": "pipeline.parsing.page_3",
+          "time": { "startTs": 1739357987214, "endTs": 1739357989774, "timeUsageMs": 2560 },
+          "record": {},
+          "result": "page_3",
+          "substeps": []
+        },
+        {
+          "name": "sample-error",
+          "key": "pipeline.parsing.sample-error",
+          "time": { "startTs": 1739357990192, "endTs": 1739357990192, "timeUsageMs": 0},
+          "record": {},
+          "error": "Sample Error",
+          "substeps": []
         }
-    ]
+      ]
+    }
+  ]
 }
 ```
 

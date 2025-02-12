@@ -76,7 +76,6 @@ async function main() {
     console.log('Gantt Chart: ', ganttChartUrl);
     console.log('Execution Graph: ', executionGraphUrl);
     console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
-    console.log('ganttChartBuffer', ganttChartBuffer.length);
 }
 
 main();
