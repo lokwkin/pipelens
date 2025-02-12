@@ -72,6 +72,7 @@ export function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: Gantt
 function isChartJSAvailable(): boolean {
     try {
         require.resolve('chartjs-node-canvas');
+        require.resolve('chart.js');
         return true;
     } catch (e) {
         return false;
@@ -88,8 +89,8 @@ export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: Gant
    
     if (!isChartJSAvailable()) {
         throw new Error(
-            'chartjs-node-canvas is not installed. Please install it using:\n' +
-            'npm install chart.js chartjs-node-canvas'
+            'chartjs-node-canvas and chart.js are required but not installed properly. Please install it using:\n' +
+            'npm install chart.js@3 chartjs-node-canvas@4'
         );
     }
 
