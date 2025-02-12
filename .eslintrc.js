@@ -4,6 +4,7 @@ module.exports = {
     project: 'tsconfig.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
+    ecmaVersion: 2020,
   },
   plugins: ['@typescript-eslint/eslint-plugin'],
   extends: [
@@ -33,6 +34,7 @@ module.exports = {
       "error",
       {
         printWidth: 120,
+        singleQuote: true,
       }
     ],
   },
