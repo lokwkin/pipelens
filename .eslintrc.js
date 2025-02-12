@@ -16,7 +16,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js', 'tsconfig.json'],
+  ignorePatterns: ['.eslintrc.js'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
@@ -34,6 +34,7 @@ module.exports = {
       "error",
       {
         printWidth: 120,
+        singleQuote: true,
       }
     ],
   },
