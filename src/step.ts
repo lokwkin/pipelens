@@ -72,7 +72,6 @@ export class Step {
     protected async run(callable: (st: Step) => Promise<any>) {
         this.time.startTs = Date.now();
         let error: Error|undefined;
-        let result: any;
         try {
             this.eventEmitter.emit('step-start', this.key);
             this.result = await callable(this.ctx);
@@ -80,7 +79,6 @@ export class Step {
             return this.result;
         } catch (err) {
             this.error = err as Error;
-            error = err as Error;
             this.eventEmitter.emit('step-error', this.key, error);
             throw err;
         } finally {
@@ -88,8 +86,8 @@ export class Step {
             this.time.timeUsageMs = this.time.endTs - this.time.startTs;
 
             const runData: RunData = {
-                result: result,
-                error: error,
+                result: this.result,
+                error: this.error,
                 time: this.time,
                 records: this.records
             }
