@@ -1,5 +1,9 @@
 # StepsTrack
 
+[![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
+[![Publish](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)
+[![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
+
 StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical intermediate steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs to help debuging and optimizing. It best works in pipeline functions that consists of complex logic execution flows and multiple concurrent async functions.
 
 ### Background
