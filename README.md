@@ -27,12 +27,14 @@ import { Pipeline, Step } from 'steps-track';
 
 const pipeline = new Pipeline('pipeline');
 
-pipeline.on('step-start', (key) => {
-    console.log(`Step started: ${key}`);
+pipeline.on('step-record', (stepKey, key, data) => {
+    console.log(`[${stepKey}] Record: ${key} = ${data}`);
 });
-pipeline.on('step-result', (key, result) => {   
-    console.log(`Step result: ${key} - ${result}`);
-    // ... Your logic here ...
+pipeline.on('step-success', (stepKey, result) => {
+    console.log(`[${stepKey}] Success. Result: ${result ? JSON.stringify(result) : 'N/A'}`);
+});
+pipeline.on('step-error', (stepKey, error) => {
+    console.log(`[${stepKey}] Error: ${error.message}`);
 });
 
 await pipeline.track(async (st: Step) => {
