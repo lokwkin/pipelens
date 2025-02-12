@@ -27,16 +27,6 @@ import { Pipeline, Step } from 'steps-track';
 
 const pipeline = new Pipeline('pipeline');
 
-pipeline.on('step-record', (stepKey, key, data) => {
-    console.log(`[${stepKey}] Record: ${key} = ${data}`);
-});
-pipeline.on('step-success', (stepKey, result) => {
-    console.log(`[${stepKey}] Success. Result: ${result ? JSON.stringify(result) : 'N/A'}`);
-});
-pipeline.on('step-error', (stepKey, error) => {
-    console.log(`[${stepKey}] Error: ${error.message}`);
-});
-
 const parsePage = (page: string) => {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -80,6 +70,40 @@ await pipeline.track(async (st: Step) => {
             console.log('Catch error', err.message);
         });
     });
+});
+```
+
+#### Event emitting
+```js
+// Emitted when a step starts
+pipeline.on('step-start', (stepKey) => {
+    console.log(`[${stepKey}] Start`);
+});
+// Emitted when a step records data
+pipeline.on('step-record', (stepKey, key, data) => {
+});
+// Emitted when a step completes successfully
+pipeline.on('step-success', (stepKey, result) => {
+});
+// Emitted when a step throws an error
+pipeline.on('step-error', (stepKey, error) => {
+    console.log(`[${stepKey}] Error: ${error.message}`);
+});
+// Emitted when a step completes, regardless of success or error
+pipeline.on('step-complete', (stepKey, runData: RunData) => {
+  console.log(`[${stepKey}] Complete. RunData: ${JSON.stringify(runData)}`);
+  /**
+   * RunData: {
+   *    result: any;
+   *    error?: Error;
+   *    time: {
+   *      startTs: number;
+   *      endTs: number;
+   *      timeUsageMs: number;
+   *    };
+   *    records: Record<string, any>;
+   * }
+   */
 });
 ```
 
