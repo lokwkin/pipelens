@@ -1,7 +1,7 @@
 # StepsTrack
 
 [![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
-[![npm downloads](https://img.shields.io/npm/dm/steps-track.svg)](https://www.npmjs.com/package/steps-track)
+[![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
 [![Publish](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)
 [![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
 
