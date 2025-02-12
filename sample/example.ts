@@ -1,9 +1,9 @@
 import { Step, Pipeline, StepGanttArg } from '../src';
 
-const parsePage = (url: string) => {
+const parsePage = (page: string) => {
     return new Promise((resolve) => {
         setTimeout(() => {
-            resolve(url);
+            resolve(page);
         }, Math.floor(Math.random() * 3000) + 500);
     });
 }

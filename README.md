@@ -37,6 +37,14 @@ pipeline.on('step-error', (stepKey, error) => {
     console.log(`[${stepKey}] Error: ${error.message}`);
 });
 
+const parsePage = (page: string) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(page);
+        }, Math.floor(Math.random() * 3000) + 500);
+    });
+}
+
 await pipeline.track(async (st: Step) => {
        
     await st.step('load_config', async (st: Step) => {
