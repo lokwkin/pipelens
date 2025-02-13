@@ -2,7 +2,6 @@
 
 [![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
-[![Publish](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/publish.yml/badge.svg)
 [![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
 
 StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical intermediate steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs to help debuging and optimizing. It best works in pipeline functions that consists of complex logic execution flows and multiple concurrent async functions.
@@ -20,33 +19,23 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 - 🎯 **Event Emmitting**: Tracks step progress for further processing.
 - 🎨 **Decorators**: Easy integration with ES6 decorators.
 
-## Get Started
-
-#### Installation
+## Installation
 ```
 npm install --save steps-track
 ```
 
-#### Sample Usage
+## Usage
+
+### Basic nested steps
 ```js
 import { Pipeline, Step } from 'steps-track';
 
 const pipeline = new Pipeline('pipeline');
 
-const parsePage = (page: string) => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(page);
-        }, Math.floor(Math.random() * 3000) + 500);
-    });
-}
-
 await pipeline.track(async (st: Step) => {
        
     await st.step('load_config', async (st: Step) => {
-        // ...
-        // Your logic here
-        // ...
+        // ... some logics ...
         st.record('foo', 'bar');
         await new Promise(resolve => setTimeout(resolve, 200));
     });
@@ -54,32 +43,24 @@ await pipeline.track(async (st: Step) => {
     await st.step('parsing', async (st: Step) => {
             
         const pages = await st.step('preprocess', async (st: Step) => {
-            
-            // Some preprocess logic
+            // ... some logics ...
             st.record('pageCount', 3);
             await new Promise(resolve => setTimeout(resolve, 1000));
             return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
         });
     
-        await new Promise(resolve => setTimeout(resolve, 500));
-    
         // Concurrent substeps
         await Promise.all(pages.map(async (page) => {
-            return st.step(`${page}`, async (st: Step) => {
-                return await parsePage(page);
+            return st.step(`page_${page}`, async (st: Step) => {
+                // ... some logics ...
+                return `page_${page}`;
             });
         }));
-
-        await st.step('sample-error', async (st) => {
-            throw new Error('Sample Error');
-        }).catch((err) => { 
-            console.log('Catch error', err.message);
-        });
     });
 });
 ```
 
-#### Usage with Decorators
+### Using Decorators
 StepsTrack also provides a decorator to make it easier to integrate with ES6 classes.
 * The decorator wraps the callee method as a substep.
 * When using the decorator, the last argument MUST be a Step instance of the parent step
@@ -132,41 +113,37 @@ await pipeline.track(async (st) => {
 });
 ```
 
-#### Event emitting
+### Event emitting
 ```js
 // Emitted when a step starts
-pipeline.on('step-start', (stepKey) => {
-    console.log(`[${stepKey}] Start`);
-});
+pipeline.on('step-start', (stepKey) => {});
+
 // Emitted when a step records data
-pipeline.on('step-record', (stepKey, key, data) => {
-});
+pipeline.on('step-record', (stepKey, key, data) => {});
+
 // Emitted when a step completes successfully
-pipeline.on('step-success', (stepKey, result) => {
-});
+pipeline.on('step-success', (stepKey, result) => {});
+
 // Emitted when a step throws an error
-pipeline.on('step-error', (stepKey, error) => {
-    console.log(`[${stepKey}] Error: ${error.message}`);
-});
+pipeline.on('step-error', (stepKey, error) => {});
+
 // Emitted when a step completes, regardless of success or error
-pipeline.on('step-complete', (stepKey, runData: RunData) => {
-  console.log(`[${stepKey}] Complete. RunData: ${JSON.stringify(runData)}`);
-  /**
-   * RunData: {
-   *    result: any;
-   *    error?: Error;
-   *    time: {
-   *      startTs: number;
-   *      endTs: number;
-   *      timeUsageMs: number;
-   *    };
-   *    records: Record<string, any>;
-   * }
-   */
-});
+pipeline.on('step-complete', (stepKey, runData: RunData) => {});
+/**
+* RunData: {
+*    result: any;
+*    error?: Error;
+*    time: {
+*      startTs: number;
+*      endTs: number;
+*      timeUsageMs: number;
+*    };
+*    records: Record<string, any>;
+* }
+*/
 ```
 
-#### Generate Charts
+### Generate Charts
 ```js
 // ... After the pipeline execution ...
 
@@ -189,7 +166,7 @@ const executionGraphUrl = pipeline.executionGraphQuickchart();
 <img src="./sample/gantt-chart.png" width="70%">
 
 
-#### Output tracked data for further analysis
+### Export tracked data
 ```js
 // ... After the pipeline execution ...
 console.log(JSON.stringify(pipeline.outputHierarchy(), null, 2));
@@ -269,12 +246,12 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 
 
 ## To Do
-- Decorator support for easier integration.
-- Generate speed analysis stats from multiple runs.
-- Add Redis support for pub/sub events and data storage.
-- Implement real-time execution monitoring.
-- Integrate LLM prompt tracking and storage.
-- Interactive graph to show step results.
+- [X] Decorator support for easier integration.
+- [] Generate speed analysis stats from multiple runs.
+- [] Add Redis support for pub/sub events and data storage.
+- [] Implement real-time execution monitoring.
+- [] Integrate LLM prompt tracking and storage.
+- [] Interactive graph to show step results.
 
 ## License
 [MIT License](LICENSE)
