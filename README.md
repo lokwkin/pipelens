@@ -247,11 +247,11 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 
 ## To Do
 - [X] Decorator support for easier integration.
-- [] Generate speed analysis stats from multiple runs.
-- [] Add Redis support for pub/sub events and data storage.
-- [] Implement real-time execution monitoring.
-- [] Integrate LLM prompt tracking and storage.
-- [] Interactive graph to show step results.
+- [ ] Generate speed analysis stats from multiple runs.
+- [ ] Add Redis support for pub/sub events and data storage.
+- [ ] Implement real-time execution monitoring.
+- [ ] Integrate LLM prompt tracking and storage.
+- [ ] Interactive graph to show step results.
 
 ## License
 [MIT License](LICENSE)
