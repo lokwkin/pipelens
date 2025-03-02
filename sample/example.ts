@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Step, Pipeline, StepGanttArg } from '../src';
+import { FileStorageAdapter } from '../src/storage/file-storage-adapter';
 
 const parsePage = (page: string) => {
   return new Promise((resolve) => {
@@ -13,7 +14,10 @@ const parsePage = (page: string) => {
 };
 
 async function main() {
-  const pipeline = new Pipeline('pipeline');
+  const pipeline = new Pipeline('pipeline', {
+    autoSave: true,
+    storageAdapter: new FileStorageAdapter('runs'),
+  });
   pipeline.on('step-record', (stepKey, key, data) => {
     console.log(`[${stepKey}] Record: ${key} = ${data}`);
   });
