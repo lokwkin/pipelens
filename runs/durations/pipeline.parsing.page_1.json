@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": 1740876871379,
+    "value": 2742,
+    "stepKey": "pipeline.parsing.page_1"
+  },
+  {
+    "timestamp": 1740876900004,
+    "value": 1091,
+    "stepKey": "pipeline.parsing.page_1"
+  },
+  {
+    "timestamp": 1740876906749,
+    "value": 2630,
+    "stepKey": "pipeline.parsing.page_1"
+  },
+  {
+    "timestamp": 1740877071629,
+    "value": 1506,
+    "stepKey": "pipeline.parsing.page_1",
+    "runId": "059879d5-75d6-4f2d-9d25-6d60ba34f22e"
+  }
+]

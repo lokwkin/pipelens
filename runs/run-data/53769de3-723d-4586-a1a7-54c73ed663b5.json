@@ -1,0 +1,95 @@
+[
+  {
+    "name": "pipeline",
+    "key": "pipeline",
+    "time": {
+      "startTs": 1740877463090,
+      "endTs": 1740877465968,
+      "timeUsageMs": 2878
+    },
+    "record": {}
+  },
+  {
+    "name": "load_config",
+    "key": "pipeline.load_config",
+    "time": {
+      "startTs": 1740877463090,
+      "endTs": 1740877463292,
+      "timeUsageMs": 202
+    },
+    "record": {
+      "foo": "bar"
+    }
+  },
+  {
+    "name": "parsing",
+    "key": "pipeline.parsing",
+    "time": {
+      "startTs": 1740877463292,
+      "endTs": 1740877465968,
+      "timeUsageMs": 2676
+    },
+    "record": {}
+  },
+  {
+    "name": "preprocess",
+    "key": "pipeline.parsing.preprocess",
+    "time": {
+      "startTs": 1740877463292,
+      "endTs": 1740877464294,
+      "timeUsageMs": 1002
+    },
+    "record": {
+      "pageCount": 3
+    },
+    "result": [
+      "page_1",
+      "page_2",
+      "page_3"
+    ]
+  },
+  {
+    "name": "page_1",
+    "key": "pipeline.parsing.page_1",
+    "time": {
+      "startTs": 1740877464796,
+      "endTs": 1740877465934,
+      "timeUsageMs": 1138
+    },
+    "record": {},
+    "result": "page_1"
+  },
+  {
+    "name": "page_2",
+    "key": "pipeline.parsing.page_2",
+    "time": {
+      "startTs": 1740877464796,
+      "endTs": 1740877465967,
+      "timeUsageMs": 1171
+    },
+    "record": {},
+    "result": "page_2"
+  },
+  {
+    "name": "page_3",
+    "key": "pipeline.parsing.page_3",
+    "time": {
+      "startTs": 1740877464796,
+      "endTs": 1740877465496,
+      "timeUsageMs": 700
+    },
+    "record": {},
+    "result": "page_3"
+  },
+  {
+    "name": "sample-error",
+    "key": "pipeline.parsing.sample-error",
+    "time": {
+      "startTs": 1740877465967,
+      "endTs": 1740877465968,
+      "timeUsageMs": 1
+    },
+    "record": {},
+    "error": "Sample Error"
+  }
+]

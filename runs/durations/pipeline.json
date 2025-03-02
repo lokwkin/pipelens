@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": 1740876871379,
+    "value": 4450,
+    "stepKey": "pipeline"
+  },
+  {
+    "timestamp": 1740876900004,
+    "value": 4966,
+    "stepKey": "pipeline"
+  },
+  {
+    "timestamp": 1740876906749,
+    "value": 4339,
+    "stepKey": "pipeline"
+  },
+  {
+    "timestamp": 1740877071629,
+    "value": 3215,
+    "stepKey": "pipeline",
+    "runId": "059879d5-75d6-4f2d-9d25-6d60ba34f22e"
+  }
+]
