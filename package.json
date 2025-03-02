@@ -57,6 +57,10 @@
   "dependencies": {
     "@redis/json": "^1.0.7",
     "@redis/time-series": "^1.1.0",
+    "@types/express": "^5.0.0",
+    "@types/opener": "^1.4.3",
+    "express": "^4.21.2",
+    "opener": "^1.5.2",
     "redis": "^4.7.0",
     "uuid": "^11.0.3"
   }
