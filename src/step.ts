@@ -11,11 +11,11 @@ import {
 export type TimeMeta = {
   startTs: number;
   endTs: number;
-  timeUsageMs?: number;
+  timeUsageMs: number;
 };
 
 export type StepMeta = {
-  name?: string;
+  name: string;
   key: string;
   time: TimeMeta;
   record: Record<string, any>;
@@ -76,6 +76,14 @@ export class Step {
     if (this.eventEmitter.listeners('error')?.length === 0) {
       this.eventEmitter.on('error', () => {});
     }
+  }
+
+  public getName(): string {
+    return this.name;
+  }
+
+  public getKey(): string {
+    return this.key;
   }
 
   protected async run(callable: (st: Step) => Promise<any>) {
@@ -169,11 +177,15 @@ export class Step {
     ];
   }
 
+  public outputSteps(): StepMeta[] {
+    return this.outputFlattened();
+  }
+
   public getRecords(): Record<string, any> {
     return this.records;
   }
 
-  public getTime(): TimeMeta {
+  public getTimeMeta(): TimeMeta {
     return this.time;
   }
 
