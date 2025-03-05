@@ -41,14 +41,15 @@
       position: fixed;
       height: 100vh;
       z-index: 1000;
-      padding-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
       box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      overflow-y: auto;
     }
     
     .sidebar-header {
-      padding: 0 1.5rem 1.5rem;
+      padding: 1.5rem 1.5rem 1.5rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 1.5rem;
     }
     
     .sidebar-header h1 {
@@ -56,6 +57,42 @@
       font-weight: 600;
       color: #f8fafc;
       letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+    }
+    
+    /* Pipeline selector in sidebar */
+    .pipeline-selector {
+      margin-top: 1rem;
+    }
+    
+    .pipeline-selector select {
+      background-color: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      font-size: 0.9rem;
+      width: 100%;
+      padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px 12px;
+      appearance: none;
+    }
+    
+    .pipeline-selector select:focus {
+      box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.3);
+    }
+    
+    .pipeline-selector select option {
+      background-color: var(--sidebar-bg);
+      color: white;
+    }
+    
+    /* Sidebar navigation */
+    nav {
+      flex: 1;
+      padding: 1.5rem 0;
     }
     
     .nav-link {
@@ -82,6 +119,80 @@
       width: 20px;
       text-align: center;
       margin-right: 8px;
+    }
+    
+    /* Sidebar footer with auto-refresh controls */
+    .sidebar-footer {
+      padding: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin-top: auto; /* Push to bottom */
+      background-color: var(--sidebar-bg); /* Ensure it has background */
+    }
+    
+    .auto-refresh-controls {
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+    }
+    
+    .auto-refresh-controls .form-check-input {
+      background-color: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.3);
+    }
+    
+    .auto-refresh-controls .form-check-input:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .auto-refresh-controls select {
+      background-color: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      font-size: 0.85rem;
+      width: 100%;
+      padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px 12px;
+      appearance: none;
+      transition: all 0.2s ease;
+    }
+    
+    .auto-refresh-controls select:focus {
+      box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.3);
+    }
+    
+    .auto-refresh-controls select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23aaaaaa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .auto-refresh-controls select option {
+      background-color: var(--sidebar-bg);
+      color: white;
+    }
+    
+    .refresh-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+      margin-right: 5px;
+    }
+    
+    .refresh-indicator.active {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
     }
     
     /* Content area */
@@ -262,26 +373,6 @@
       color: var(--text-primary);
     }
     
-    /* Auto Refresh */
-    .refresh-indicator {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--success);
-      margin-right: 5px;
-    }
-    
-    .refresh-indicator.active {
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 0.5; }
-      50% { opacity: 1; }
-      100% { opacity: 0.5; }
-    }
-    
     /* Section Headers */
     .section-header {
       margin: 1.5rem 0 1rem 0;
@@ -366,6 +457,13 @@
     <div class="sidebar">
       <div class="sidebar-header">
         <h1>StepsTrack Portal</h1>
+        
+        <!-- Pipeline Selector in Sidebar -->
+        <div class="pipeline-selector mt-3">
+          <select id="global-pipeline-select" class="form-select form-select-sm">
+            <option value="">Select a pipeline</option>
+          </select>
+        </div>
       </div>
       <nav>
         <a href="#" class="nav-link active" data-view="runs-view">
@@ -375,6 +473,25 @@
           <i class="fas fa-list-ul"></i> Step Instances
         </a>
       </nav>
+      
+      <!-- Global Auto-refresh Controls -->
+      <div class="sidebar-footer">
+        <div class="auto-refresh-controls">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="global-auto-refresh">
+            <label class="form-check-label" for="global-auto-refresh">
+              <span class="refresh-indicator me-1"></span>
+              Auto-refresh
+            </label>
+          </div>
+          <select id="global-refresh-interval" class="form-select form-select-sm mt-2" disabled>
+            <option value="3000">3 sec</option>
+            <option value="10000">10 sec</option>
+            <option value="30000">30 sec</option>
+            <option value="60000">1 min</option>
+          </select>
+        </div>
+      </div>
     </div>
     
     <div class="content-area">
@@ -387,36 +504,8 @@
         <div class="card">
           <div class="card-body">
             <div class="mb-4 pb-3 border-bottom">
-              <div class="row mb-3 align-items-center">
-                <div class="col-md-8">
-                  <div class="d-flex flex-wrap align-items-center">
-                    <label for="pipeline-select" class="me-2">Pipeline:</label>
-                    <select id="pipeline-select" class="form-select me-3" style="width: auto;">
-                      <option value="">Select a pipeline</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
-                      <label class="form-check-label" for="auto-refresh">
-                        <span class="refresh-indicator active me-1"></span>
-                        Auto-refresh
-                      </label>
-                    </div>
-                    <select id="refresh-interval" class="form-select form-select-sm ms-2" style="width: auto;">
-                      <option value="3000">3 sec</option>
-                      <option value="10000">10 sec</option>
-                      <option value="30000">30 sec</option>
-                      <option value="60000">1 min</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
               <div class="row align-items-center">
-                <div class="col-md-8">
+                <div class="col-12">
                   <div class="d-flex flex-wrap align-items-center">
                     <label for="start-date" class="me-2">From:</label>
                     <input type="datetime-local" id="start-date" class="form-control form-control-sm me-3" style="width: auto;">
@@ -506,42 +595,14 @@
         <div class="card">
           <div class="card-body">
             <div class="mb-4 pb-3 border-bottom">
-              <div class="row mb-3 align-items-center">
-                <div class="col-md-8">
+              <div class="row align-items-center">
+                <div class="col-12">
                   <div class="d-flex flex-wrap align-items-center">
-                    <label for="step-pipeline-select" class="me-2">Pipeline:</label>
-                    <select id="step-pipeline-select" class="form-select me-3" style="width: auto;">
-                      <option value="">Select a pipeline</option>
-                    </select>
-                    
                     <label for="step-name-select" class="me-2">Step:</label>
-                    <select id="step-name-select" class="form-select" style="width: auto;">
+                    <select id="step-name-select" class="form-select me-3" style="width: auto;">
                       <option value="">Select a step</option>
                     </select>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="step-auto-refresh" checked>
-                      <label class="form-check-label" for="step-auto-refresh">
-                        <span class="refresh-indicator active me-1"></span>
-                        Auto-refresh
-                      </label>
-                    </div>
-                    <select id="step-refresh-interval" class="form-select form-select-sm ms-2" style="width: auto;">
-                      <option value="3000">3 sec</option>
-                      <option value="10000">10 sec</option>
-                      <option value="30000">30 sec</option>
-                      <option value="60000">1 min</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row align-items-center">
-                <div class="col-md-8">
-                  <div class="d-flex flex-wrap align-items-center">
+                    
                     <label for="step-start-date" class="me-2">From:</label>
                     <input type="datetime-local" id="step-start-date" class="form-control form-control-sm me-3" style="width: auto;">
                     <label for="step-end-date" class="me-2">To:</label>
@@ -611,26 +672,16 @@
       selectedRun: null,
       selectedStep: null,
       selectedStepName: null,
-      autoRefresh: {
-        runs: true,
-        steps: true
-      },
-      refreshIntervals: {
-        runs: null,
-        steps: null
-      },
-      refreshFrequency: {
-        runs: 3000,
-        steps: 3000
-      },
+      autoRefresh: false,
+      refreshInterval: null,
+      refreshFrequency: 3000,
       expandedRows: new Set() // Track expanded rows
     };
 
     // DOM Elements
     const navLinks = document.querySelectorAll('.nav-link');
     const views = document.querySelectorAll('.view');
-    const pipelineSelect = document.getElementById('pipeline-select');
-    const stepPipelineSelect = document.getElementById('step-pipeline-select');
+    const globalPipelineSelect = document.getElementById('global-pipeline-select');
     const stepNameSelect = document.getElementById('step-name-select');
     const runsTable = document.getElementById('runs-table').querySelector('tbody');
     const stepsTable = document.getElementById('steps-table').querySelector('tbody');
@@ -640,11 +691,9 @@
     const runDetailTitle = document.getElementById('run-detail-title');
     const stepAnalysisTitle = document.getElementById('step-analysis-title');
     const stepAnalysisDetails = document.getElementById('step-analysis-details');
-    const autoRefreshCheckbox = document.getElementById('auto-refresh');
-    const stepAutoRefreshCheckbox = document.getElementById('step-auto-refresh');
-    const refreshIntervalSelect = document.getElementById('refresh-interval');
-    const stepRefreshIntervalSelect = document.getElementById('step-refresh-interval');
-    const refreshIndicators = document.querySelectorAll('.refresh-indicator');
+    const globalAutoRefreshCheckbox = document.getElementById('global-auto-refresh');
+    const globalRefreshIntervalSelect = document.getElementById('global-refresh-interval');
+    const refreshIndicator = document.querySelector('.refresh-indicator');
 
     // Helper functions
     function formatDateTime(timestamp) {
@@ -671,6 +720,21 @@
     }
 
     // Navigation functions
+    function showView(viewId) {
+      // Update active link
+      navLinks.forEach(l => l.classList.remove('active'));
+      document.querySelector(`.nav-link[data-view="${viewId}"]`)?.classList.add('active');
+      
+      // Show selected view
+      views.forEach(view => {
+        view.classList.remove('active');
+        if (view.id === viewId) {
+          view.classList.add('active');
+          state.currentView = viewId;
+        }
+      });
+    }
+
     function showRunDetails(runId) {
       // Reset expanded rows when navigating to a different run
       if (state.selectedRun !== runId) {
@@ -680,8 +744,13 @@
       state.selectedRun = runId;
       
       // Switch to run detail view
-      document.getElementById('runs-view').classList.remove('active');
-      document.getElementById('run-detail-view').classList.add('active');
+      showView('run-detail-view');
+      
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('view', 'run-detail');
+      url.searchParams.set('runId', runId);
+      window.history.pushState({view: 'run-detail', runId}, '', url);
       
       // Load run details (not an auto-refresh)
       loadRunDetails(runId, false);
@@ -691,8 +760,14 @@
       state.selectedStep = step;
       
       // Switch to step analysis view
-      document.getElementById('run-detail-view').classList.remove('active');
-      document.getElementById('step-analysis-view').classList.add('active');
+      showView('step-analysis-view');
+      
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('view', 'step-analysis');
+      url.searchParams.set('runId', state.selectedRun);
+      url.searchParams.set('stepKey', step.key);
+      window.history.pushState({view: 'step-analysis', runId: state.selectedRun, stepKey: step.key}, '', url);
       
       // Update title and details
       stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
@@ -710,110 +785,137 @@
         e.preventDefault();
         const viewId = link.getAttribute('data-view');
         
-        // Update active link
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
+        showView(viewId);
         
-        // Show selected view
-        views.forEach(view => {
-          view.classList.remove('active');
-          if (view.id === viewId) {
-            view.classList.add('active');
-            state.currentView = viewId;
-          }
-        });
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('view', viewId);
+        
+        // Clear other parameters if going to main views
+        if (viewId === 'runs-view' || viewId === 'step-listing-view') {
+          url.searchParams.delete('runId');
+          url.searchParams.delete('stepKey');
+        }
+        
+        window.history.pushState({view: viewId}, '', url);
       });
     });
 
     // Back buttons
-    backToRunsBtn.addEventListener('click', () => {
-      document.getElementById('runs-view').classList.add('active');
-      document.getElementById('run-detail-view').classList.remove('active');
+    backToRunsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('runs-view');
+      
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('view', 'runs-view');
+      url.searchParams.delete('runId');
+      url.searchParams.delete('stepKey');
+      window.history.pushState({view: 'runs-view'}, '', url);
       
       // Reset expanded rows state when exiting run detail view
       state.expandedRows = new Set();
       state.selectedRun = null;
     });
 
-    backToRunDetailBtn.addEventListener('click', () => {
-      document.getElementById('run-detail-view').classList.add('active');
-      document.getElementById('step-analysis-view').classList.remove('active');
+    backToRunDetailBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('run-detail-view');
+      
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('view', 'run-detail');
+      url.searchParams.set('runId', state.selectedRun);
+      url.searchParams.delete('stepKey');
+      window.history.pushState({view: 'run-detail', runId: state.selectedRun}, '', url);
+      
       state.selectedStep = null;
     });
 
-    // Auto-refresh toggles
-    autoRefreshCheckbox.addEventListener('change', function() {
-      state.autoRefresh.runs = this.checked;
-      refreshIndicators[0].classList.toggle('active', this.checked);
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', (event) => {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view');
+      const runId = params.get('runId');
+      const stepKey = params.get('stepKey');
       
-      if (this.checked) {
-        startAutoRefresh('runs');
+      if (view === 'run-detail' && runId) {
+        state.selectedRun = runId;
+        showView('run-detail-view');
+        loadRunDetails(runId, false);
+      } else if (view === 'step-analysis' && runId && stepKey) {
+        state.selectedRun = runId;
+        // We need to find the step data
+        fetch(`/api/run/${runId}/step/${stepKey}`)
+          .then(response => response.json())
+          .then(step => {
+            state.selectedStep = step;
+            showView('step-analysis-view');
+            stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
+            stepAnalysisDetails.innerHTML = `
+              <p><strong>Step Key:</strong> ${step.key}</p>
+              <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
+              <p><strong>End Time:</strong> ${formatDateTime(step.time.endTs)}</p>
+              <p><strong>Duration:</strong> ${formatDuration(step.time.timeUsageMs)}</p>
+            `;
+          });
       } else {
-        stopAutoRefresh('runs');
+        showView(view);
       }
     });
 
-    stepAutoRefreshCheckbox.addEventListener('change', function() {
-      state.autoRefresh.steps = this.checked;
-      refreshIndicators[1].classList.toggle('active', this.checked);
+    // Auto-refresh toggles
+    globalAutoRefreshCheckbox.addEventListener('change', function() {
+      state.autoRefresh = this.checked;
+      refreshIndicator.classList.toggle('active', this.checked);
+      
+      // Enable/disable the refresh interval dropdown based on checkbox state
+      globalRefreshIntervalSelect.disabled = !this.checked;
       
       if (this.checked) {
-        startAutoRefresh('steps');
+        startAutoRefresh();
       } else {
-        stopAutoRefresh('steps');
+        stopAutoRefresh();
       }
     });
 
     // Refresh interval change handlers
-    refreshIntervalSelect.addEventListener('change', function() {
-      state.refreshFrequency.runs = parseInt(this.value);
-      if (state.autoRefresh.runs) {
-        startAutoRefresh('runs');
-      }
-    });
-
-    stepRefreshIntervalSelect.addEventListener('change', function() {
-      state.refreshFrequency.steps = parseInt(this.value);
-      if (state.autoRefresh.steps) {
-        startAutoRefresh('steps');
+    globalRefreshIntervalSelect.addEventListener('change', function() {
+      state.refreshFrequency = parseInt(this.value);
+      if (state.autoRefresh) {
+        startAutoRefresh();
       }
     });
 
     // Auto-refresh functions
-    function startAutoRefresh(type) {
-      stopAutoRefresh(type); // Clear any existing interval
+    function startAutoRefresh() {
+      stopAutoRefresh(); // Clear any existing interval
       
-      if (type === 'runs') {
-        state.refreshIntervals.runs = setInterval(() => {
-          if (state.selectedRun) {
-            // Save expanded state before auto-refresh
-            const expandedRows = new Set();
-            document.querySelectorAll('.details-row').forEach(row => {
-              if (row.style.display !== 'none') {
-                expandedRows.add(row.id);
-              }
-            });
-            state.expandedRows = expandedRows;
-            
-            // Pass true to indicate this is an auto-refresh
-            loadRunDetails(state.selectedRun, true);
-          } else if (state.selectedPipeline) {
-            loadRuns(state.selectedPipeline);
-          }
-        }, state.refreshFrequency.runs);
-      } else if (type === 'steps') {
-        state.refreshIntervals.steps = setInterval(() => {
-          if (state.selectedPipeline && state.selectedStepName) {
-            loadStepInstances(state.selectedPipeline, state.selectedStepName);
-          }
-        }, state.refreshFrequency.steps);
-      }
+      state.refreshInterval = setInterval(() => {
+        if (state.selectedRun && state.currentView === 'run-detail-view') {
+          // Save expanded state before auto-refresh
+          const expandedRows = new Set();
+          document.querySelectorAll('.details-row').forEach(row => {
+            if (row.style.display !== 'none') {
+              expandedRows.add(row.id);
+            }
+          });
+          state.expandedRows = expandedRows;
+          
+          // Pass true to indicate this is an auto-refresh
+          loadRunDetails(state.selectedRun, true);
+        } else if (state.selectedPipeline && state.currentView === 'runs-view') {
+          loadRuns(state.selectedPipeline);
+        } else if (state.selectedPipeline && state.selectedStepName && state.currentView === 'step-listing-view') {
+          loadStepInstances(state.selectedPipeline, state.selectedStepName);
+        }
+      }, state.refreshFrequency);
     }
 
-    function stopAutoRefresh(type) {
-      if (state.refreshIntervals[type]) {
-        clearInterval(state.refreshIntervals[type]);
-        state.refreshIntervals[type] = null;
+    function stopAutoRefresh() {
+      if (state.refreshInterval) {
+        clearInterval(state.refreshInterval);
+        state.refreshInterval = null;
       }
     }
 
@@ -825,18 +927,15 @@
         const pipelines = await response.json();
         console.log('Pipelines fetched:', pipelines);
         
-        // Populate pipeline dropdowns
-        pipelineSelect.innerHTML = '<option value="">Select a pipeline</option>';
-        stepPipelineSelect.innerHTML = '<option value="">Select a pipeline</option>';
+        // Populate global pipeline dropdown
+        globalPipelineSelect.innerHTML = '<option value="">Select a pipeline</option>';
         
         pipelines.forEach(pipeline => {
-          pipelineSelect.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
-          stepPipelineSelect.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
+          globalPipelineSelect.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
         });
       } catch (error) {
         console.error('Error fetching pipelines:', error);
-        pipelineSelect.innerHTML = '<option value="">Error loading pipelines</option>';
-        stepPipelineSelect.innerHTML = '<option value="">Error loading pipelines</option>';
+        globalPipelineSelect.innerHTML = '<option value="">Error loading pipelines</option>';
       }
     }
 
@@ -863,15 +962,15 @@
         }
         
         const response = await fetch(url);
-        const result = await response.json();
+        const runs = await response.json();
         
-        if (!result?.runs?.length) {
+        if (!runs?.length) {
           runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">No runs found</td></tr>';
           return;
         }
 
         runsTable.innerHTML = '';
-        result.runs.forEach(run => {
+        runs.forEach(run => {
           const startTime = formatDateTime(run.startTime);
           const endTime = run.endTime ? formatDateTime(run.endTime) : 'In progress';
           const duration = formatDuration(run.duration);
@@ -1209,39 +1308,82 @@
 
     // Initialize the dashboard
     function initDashboard() {
-      // Fetch pipelines
-      fetchPipelines();
+      // Check URL parameters on load
+      const params = new URLSearchParams(window.location.search);
+      const pipeline = params.get('pipeline');
+      const view = params.get('view');
+      const runId = params.get('runId');
+      const stepKey = params.get('stepKey');
       
-      // Set up event listeners
-      pipelineSelect.addEventListener('change', function() {
-        const pipeline = this.value;
+      // Fetch pipelines
+      fetchPipelines().then(() => {
+        // Set the pipeline from URL if available
         if (pipeline) {
+          globalPipelineSelect.value = pipeline;
           state.selectedPipeline = pipeline;
-          loadRuns(pipeline);
           
-          // Start auto-refresh if enabled
-          if (state.autoRefresh.runs) {
-            startAutoRefresh('runs');
+          // Load data based on the selected pipeline
+          if (state.currentView === 'runs-view') {
+            loadRuns(pipeline);
+          } else if (state.currentView === 'step-listing-view') {
+            loadStepNames(pipeline);
           }
         }
       });
       
-      stepPipelineSelect.addEventListener('change', function() {
+      // Handle view navigation from URL
+      if (view) {
+        if (view === 'run-detail' && runId) {
+          state.selectedRun = runId;
+          showView('run-detail-view');
+          loadRunDetails(runId, false);
+        } else if (view === 'step-analysis' && runId && stepKey) {
+          state.selectedRun = runId;
+          // We need to find the step data
+          fetch(`/api/run/${runId}/step/${stepKey}`)
+            .then(response => response.json())
+            .then(step => {
+              state.selectedStep = step;
+              showView('step-analysis-view');
+              stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
+              stepAnalysisDetails.innerHTML = `
+                <p><strong>Step Key:</strong> ${step.key}</p>
+                <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
+                <p><strong>End Time:</strong> ${formatDateTime(step.time.endTs)}</p>
+                <p><strong>Duration:</strong> ${formatDuration(step.time.timeUsageMs)}</p>
+              `;
+            });
+        } else {
+          showView(view);
+        }
+      }
+      
+      // Set up global pipeline selector
+      globalPipelineSelect.addEventListener('change', function() {
         const pipeline = this.value;
         if (pipeline) {
-          loadStepNames(pipeline);
-        }
-      });
-      
-      stepNameSelect.addEventListener('change', function() {
-        const stepName = this.value;
-        if (stepName && stepPipelineSelect.value) {
-          state.selectedStepName = stepName;
-          loadStepInstances(stepPipelineSelect.value, stepName);
+          state.selectedPipeline = pipeline;
+          
+          // Update URL with selected pipeline
+          const url = new URL(window.location);
+          url.searchParams.set('pipeline', pipeline);
+          window.history.replaceState({view: state.currentView, pipeline}, '', url);
+          
+          // Load data based on current view
+          if (state.currentView === 'runs-view') {
+            loadRuns(pipeline);
+          } else if (state.currentView === 'step-listing-view') {
+            loadStepNames(pipeline);
+            // Clear step name selection
+            stepNameSelect.innerHTML = '<option value="">Select a step</option>';
+            state.selectedStepName = null;
+          } else if (state.currentView === 'run-detail-view') {
+            // Stay on current run detail, no need to reload
+          }
           
           // Start auto-refresh if enabled
-          if (state.autoRefresh.steps) {
-            startAutoRefresh('steps');
+          if (state.autoRefresh && state.currentView === 'runs-view') {
+            startAutoRefresh();
           }
         }
       });
@@ -1258,6 +1400,12 @@
           loadStepInstances(state.selectedPipeline, state.selectedStepName);
         }
       });
+      
+      // Set initial state of refresh interval dropdown based on auto-refresh checkbox
+      globalRefreshIntervalSelect.disabled = !globalAutoRefreshCheckbox.checked;
+      
+      // Set initial state of refresh indicator based on auto-refresh state
+      refreshIndicator.classList.toggle('active', state.autoRefresh);
     }
     
     // Call initialization function when the DOM is fully loaded
