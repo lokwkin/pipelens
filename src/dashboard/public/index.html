@@ -3,463 +3,469 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <title>StepsTrack Dashboard</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom CSS -->
   <style>
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --sidebar-bg: #2c3e50;
+      --sidebar-width: 250px;
+    }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      margin: 0;
-      padding: 0;
-      color: #333;
-      background-color: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      width: 100%;
-    }
-    header {
-      background-color: #2c3e50;
-      color: white;
-      padding: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .main-content {
-      display: flex;
-      flex: 1;
-    }
+    
+    /* Sidebar */
     .sidebar {
-      width: 220px;
-      background-color: #2c3e50;
+      width: var(--sidebar-width);
+      background-color: var(--sidebar-bg);
       color: white;
-      padding: 20px 0;
-      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-      flex-shrink: 0;
+      position: fixed;
+      height: 100vh;
+      z-index: 1000;
+      padding-top: 1.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+    
     .sidebar-header {
-      padding: 0 20px 20px 20px;
+      padding: 0 1.5rem 1.5rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
     }
+    
     .sidebar-header h1 {
       font-size: 1.5rem;
-      margin: 0;
+      font-weight: 600;
+      color: #ecf0f1;
     }
-    nav {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    
+    .nav-link {
+      color: rgba(255,255,255,0.7);
+      border-left: 3px solid transparent;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.2s ease;
     }
-    nav a {
+    
+    .nav-link:hover {
       color: white;
-      text-decoration: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      display: block;
-    }
-    nav a:hover {
       background-color: rgba(255,255,255,0.1);
     }
-    nav a.active {
-      background-color: rgba(255,255,255,0.2);
-    }
-    .content-area {
-      flex: 1;
-      padding: 20px;
-    }
-    .content-header {
-      background-color: white;
-      padding: 15px 20px;
-      margin-bottom: 20px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .content-header h1 {
-      font-size: 1.8rem;
-      margin: 0;
-      color: #2c3e50;
-    }
-    h1, h2, h3 {
-      margin: 0;
-    }
-    .view {
-      display: none;
-    }
-    .view.active {
-      display: block;
-    }
-    .card {
-      background: white;
-      border-radius: 5px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .filter-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .filter-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .time-filter {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    select, input {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    button {
-      padding: 8px 16px;
-      background-color: #3498db;
+    
+    .nav-link.active {
       color: white;
+      background-color: rgba(255,255,255,0.1);
+      border-left: 3px solid var(--primary);
+    }
+    
+    /* Content area */
+    .content-area {
+      margin-left: var(--sidebar-width);
+      padding: 2rem;
+      width: calc(100% - var(--sidebar-width));
+      max-width: 100%;
+    }
+    
+    /* Cards */
+    .card {
       border: none;
-      border-radius: 4px;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+      margin-bottom: 1.5rem;
+      width: 100%;
+    }
+    
+    .card-header {
+      background-color: white;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 1.25rem 1.5rem;
+    }
+    
+    .card-body {
+      padding: 1.5rem;
+    }
+    
+    /* Tables */
+    .table {
+      margin-bottom: 0;
+    }
+    
+    .table th {
+      font-weight: 600;
+      color: #495057;
+      border-top: none;
+      background-color: #f8f9fa;
+    }
+    
+    .table td {
+      vertical-align: middle;
+    }
+    
+    .table-hover tbody tr {
       cursor: pointer;
     }
-    button:hover {
-      background-color: #2980b9;
+    
+    /* Status indicators */
+    .status-success {
+      color: #28a745;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    
+    .status-error {
+      color: #dc3545;
     }
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+    
+    .status-running {
+      color: #ffc107;
     }
-    th {
+    
+    /* Step details */
+    .step-details {
       background-color: #f8f9fa;
+      border-radius: 0.375rem;
+      padding: 1.25rem;
+      margin: 0.75rem 0;
+      border-left: 4px solid var(--primary);
+    }
+    
+    .detail-section {
+      margin-bottom: 1.25rem;
+    }
+    
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+    
+    .detail-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .detail-header h5 {
+      margin: 0;
+      margin-right: 0.5rem;
+      font-size: 1rem;
       font-weight: 600;
     }
-    tr:hover {
-      background-color: #f5f5f5;
-      cursor: pointer;
+    
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      padding: 0.25rem;
+      font-size: 0.875rem;
     }
-    .status-success {
-      color: #27ae60;
-    }
-    .status-error {
-      color: #e74c3c;
-    }
-    .status-running {
-      color: #f39c12;
-    }
-    .gantt-placeholder {
-      background-color: #f8f9fa;
-      border: 1px dashed #ddd;
-      border-radius: 4px;
-      padding: 40px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .step-details {
-      padding: 20px;
-      background-color: #f8f9fa;
-      border-radius: 4px;
-      display: block;
+    
+    .detail-content textarea {
       width: 100%;
-      box-sizing: border-box;
-      margin: 10px 0;
-      border-left: 4px solid #3498db;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      resize: vertical;
     }
-    .step-details pre {
-      margin: 0;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .expand-icon {
-      color: #3498db;
-      font-size: 16px;
-    }
-    .auto-refresh {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-left: auto;
-    }
+    
+    /* Refresh indicator */
     .refresh-indicator {
       display: inline-block;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #27ae60;
-      margin-right: 5px;
+      background-color: #28a745;
+      margin-right: 0.375rem;
     }
+    
     .refresh-indicator.active {
       animation: pulse 2s infinite;
     }
+    
     @keyframes pulse {
       0% { opacity: 0.5; }
       50% { opacity: 1; }
       100% { opacity: 0.5; }
     }
-    tr.details-row td {
-      padding: 0 20px 20px 20px;
-      background-color: #f5f5f5;
+    
+    /* Views */
+    .view {
+      display: none;
     }
-    .detail-section {
-      margin-bottom: 15px;
+    
+    .view.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
     }
-    .detail-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
-    .detail-header h4 {
-      margin: 0;
-      margin-right: 10px;
-    }
-    .copy-btn {
-      background: none;
-      border: none;
-      color: #3498db;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 2px 5px;
-    }
-    .copy-btn:hover {
-      color: #3498db;
-    }
-    .detail-content {
-      position: relative;
-    }
-    .detail-content textarea {
-      width: 100%;
-      min-height: 100px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #fff;
-      font-family: monospace;
-      resize: vertical;
-      white-space: pre;
-      overflow-x: auto;
-    }
-    .section-header {
-      margin: 30px 0 20px 0;
-    }
-    .section-header h3 {
-      font-size: 1.3rem;
-      color: #2c3e50;
-      margin: 0;
-    }
-    .gantt-placeholder {
-      margin-top: 20px;
-    }
-    #steps-table {
-      margin-top: 15px;
-    }
-    #run-detail-title {
-      font-size: 1.4rem;
-      font-weight: normal;
-      color: #34495e;
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      
+      .content-area {
+        margin-left: 0;
+        width: 100%;
+        padding: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="main-content">
+  <div class="d-flex">
+    <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
-        <h1>StepsTrack Dashboard</h1>
+        <h1>StepsTrack</h1>
       </div>
-      <nav>
+      <nav class="nav flex-column">
         <a href="#" class="nav-link active" data-view="runs-view">Runs</a>
         <a href="#" class="nav-link" data-view="step-listing-view">Steps</a>
       </nav>
     </div>
     
+    <!-- Content Area -->
     <div class="content-area">
       <!-- Run Listing View -->
       <div id="runs-view" class="view active">
-        <div class="content-header">
-          <h1>Pipeline Runs</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="h3 mb-0">Pipeline Runs</h1>
         </div>
+        
         <div class="card">
-          <div class="filter-bar">
-            <div class="filter-row">
-              <div class="pipeline-selector">
-                <label for="pipeline-select">Pipeline:</label>
-                <select id="pipeline-select">
-                  <option value="">Select a pipeline</option>
-                </select>
+          <div class="card-body">
+            <div class="mb-4 pb-3 border-bottom">
+              <div class="row mb-3 align-items-center">
+                <div class="col-md-6">
+                  <div class="d-flex align-items-center">
+                    <label for="pipeline-select" class="me-2">Pipeline:</label>
+                    <select id="pipeline-select" class="form-select">
+                      <option value="">Select a pipeline</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
+                      <label class="form-check-label" for="auto-refresh">
+                        <span class="refresh-indicator active me-1"></span>
+                        Auto-refresh
+                      </label>
+                    </div>
+                    <select id="refresh-interval" class="form-select form-select-sm ms-2" style="width: auto;">
+                      <option value="3000">3 sec</option>
+                      <option value="10000">10 sec</option>
+                      <option value="30000">30 sec</option>
+                      <option value="60000">1 min</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div class="auto-refresh">
-                <span class="refresh-indicator active"></span>
-                <label for="auto-refresh">Auto-refresh:</label>
-                <input type="checkbox" id="auto-refresh" checked>
-                <select id="refresh-interval">
-                  <option value="3000">3 sec</option>
-                  <option value="10000">10 sec</option>
-                  <option value="30000">30 sec</option>
-                  <option value="60000">1 min</option>
-                </select>
+              
+              <div class="row align-items-center">
+                <div class="col-md-8">
+                  <div class="d-flex flex-wrap align-items-center">
+                    <label for="start-date" class="me-2">From:</label>
+                    <input type="datetime-local" id="start-date" class="form-control form-control-sm me-3" style="width: auto;">
+                    <label for="end-date" class="me-2">To:</label>
+                    <input type="datetime-local" id="end-date" class="form-control form-control-sm me-3" style="width: auto;">
+                    <button id="apply-filter" class="btn btn-primary btn-sm">Apply</button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="filter-row">
-              <div class="time-filter">
-                <label for="start-date">From:</label>
-                <input type="datetime-local" id="start-date">
-                <label for="end-date">To:</label>
-                <input type="datetime-local" id="end-date">
-                <button id="apply-filter">Apply</button>
-              </div>
+            
+            <div class="table-responsive">
+              <table id="runs-table" class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Run ID</th>
+                    <th>Pipeline</th>
+                    <th>Start Time (UTC)</th>
+                    <th>End Time (UTC)</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6" class="text-center py-4">Select a pipeline to view runs</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-          <table id="runs-table">
-            <thead>
-              <tr>
-                <th>Run ID</th>
-                <th>Pipeline</th>
-                <th>Start Time (UTC)</th>
-                <th>End Time (UTC)</th>
-                <th>Duration</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="6">Select a pipeline to view runs</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
       <!-- Run Detail View -->
       <div id="run-detail-view" class="view">
-        <div class="content-header">
-          <h1 id="run-detail-title">Run Details</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 id="run-detail-title" class="h4 mb-0">Run Details</h1>
         </div>
+        
         <div class="card">
-          <button id="back-to-runs" class="back-btn">← Back to Runs</button>
-          
-          <!-- Gantt Chart -->
-          <div class="gantt-placeholder">
-            <h3>Loading Gantt Chart...</h3>
+          <div class="card-body">
+            <button id="back-to-runs" class="btn btn-outline-secondary mb-4">
+              <i class="fas fa-arrow-left me-1"></i> Back to Runs
+            </button>
+            
+            <!-- Gantt Chart -->
+            <div class="gantt-placeholder p-4 text-center bg-light rounded mb-4">
+              <h5 class="text-muted">Loading Gantt Chart...</h5>
+            </div>
+            
+            <!-- Steps Table -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 id="steps-count" class="h5 mb-0">Steps: 0</h3>
+            </div>
+            
+            <div class="table-responsive">
+              <table id="steps-table" class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Step Key</th>
+                    <th>Step Name</th>
+                    <th>Start Time (UTC)</th>
+                    <th>End Time (UTC)</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="7" class="text-center py-4">Loading steps...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          
-          <!-- Steps Table -->
-          <div class="section-header">
-            <h3 id="steps-count">Steps:</h3>
-          </div>
-          <table id="steps-table">
-            <thead>
-              <tr>
-                <th>Step Key</th>
-                <th>Step Name</th>
-                <th>Start Time (UTC)</th>
-                <th>End Time (UTC)</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="7">Loading steps...</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
       <!-- Step Listing View -->
       <div id="step-listing-view" class="view">
-        <div class="content-header">
-          <h1>Step Instances</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="h3 mb-0">Step Instances</h1>
         </div>
+        
         <div class="card">
-          <div class="filter-bar">
-            <div class="filter-row">
-              <div>
-                <label for="step-pipeline-select">Pipeline:</label>
-                <select id="step-pipeline-select">
-                  <option value="">Select a pipeline</option>
-                </select>
-                
-                <label for="step-name-select">Step:</label>
-                <select id="step-name-select">
-                  <option value="">Select a step</option>
-                </select>
+          <div class="card-body">
+            <div class="mb-4 pb-3 border-bottom">
+              <div class="row mb-3 align-items-center">
+                <div class="col-md-8">
+                  <div class="d-flex flex-wrap align-items-center">
+                    <label for="step-pipeline-select" class="me-2">Pipeline:</label>
+                    <select id="step-pipeline-select" class="form-select me-3" style="width: auto;">
+                      <option value="">Select a pipeline</option>
+                    </select>
+                    
+                    <label for="step-name-select" class="me-2">Step:</label>
+                    <select id="step-name-select" class="form-select" style="width: auto;">
+                      <option value="">Select a step</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="step-auto-refresh" checked>
+                      <label class="form-check-label" for="step-auto-refresh">
+                        <span class="refresh-indicator active me-1"></span>
+                        Auto-refresh
+                      </label>
+                    </div>
+                    <select id="step-refresh-interval" class="form-select form-select-sm ms-2" style="width: auto;">
+                      <option value="3000">3 sec</option>
+                      <option value="10000">10 sec</option>
+                      <option value="30000">30 sec</option>
+                      <option value="60000">1 min</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div class="auto-refresh">
-                <span class="refresh-indicator active"></span>
-                <label for="step-auto-refresh">Auto-refresh:</label>
-                <input type="checkbox" id="step-auto-refresh" checked>
-                <select id="step-refresh-interval">
-                  <option value="3000">3 sec</option>
-                  <option value="10000">10 sec</option>
-                  <option value="30000">30 sec</option>
-                  <option value="60000">1 min</option>
-                </select>
+              
+              <div class="row align-items-center">
+                <div class="col-md-8">
+                  <div class="d-flex flex-wrap align-items-center">
+                    <label for="step-start-date" class="me-2">From:</label>
+                    <input type="datetime-local" id="step-start-date" class="form-control form-control-sm me-3" style="width: auto;">
+                    <label for="step-end-date" class="me-2">To:</label>
+                    <input type="datetime-local" id="step-end-date" class="form-control form-control-sm me-3" style="width: auto;">
+                    <button id="apply-step-filter" class="btn btn-primary btn-sm">Apply</button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="filter-row">
-              <div class="time-filter">
-                <label for="step-start-date">From:</label>
-                <input type="datetime-local" id="step-start-date">
-                <label for="step-end-date">To:</label>
-                <input type="datetime-local" id="step-end-date">
-                <button id="apply-step-filter">Apply</button>
-              </div>
+            
+            <div class="table-responsive">
+              <table id="step-instances-table" class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Run ID</th>
+                    <th>Duration</th>
+                    <th>Step Key</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4" class="text-center py-4">Select a pipeline and step to view instances</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-          <table id="step-instances-table">
-            <thead>
-              <tr>
-                <th>Timestamp (UTC)</th>
-                <th>Run ID</th>
-                <th>Duration</th>
-                <th>Step Key</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="4">Select a pipeline and step to view instances</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
       <!-- Step Analysis View -->
       <div id="step-analysis-view" class="view">
-        <div class="content-header">
-          <h1 id="step-analysis-title">Step Analysis</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 id="step-analysis-title" class="h4 mb-0">Step Analysis</h1>
         </div>
+        
         <div class="card">
-          <button id="back-to-run-detail" class="back-btn">← Back to Run Detail</button>
-          <h2 id="step-analysis-title">Step Analysis</h2>
-          
-          <div class="step-analysis-content">
-            <h3>Performance Over Time</h3>
-            <div class="chart-placeholder">
-              <p>Performance chart will be implemented here</p>
-            </div>
+          <div class="card-body">
+            <button id="back-to-run-detail" class="btn btn-outline-secondary mb-4">
+              <i class="fas fa-arrow-left me-1"></i> Back to Run Detail
+            </button>
             
-            <h3>Step Details</h3>
-            <pre id="step-analysis-details"></pre>
+            <div class="step-analysis-content">
+              <h4 class="mb-3">Performance Over Time</h4>
+              <div class="chart-placeholder p-4 text-center bg-light rounded mb-4">
+                <p class="text-muted mb-0">Performance chart will be implemented here</p>
+              </div>
+              
+              <h4 class="mb-3">Step Details</h4>
+              <pre id="step-analysis-details" class="bg-light p-3 rounded"></pre>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
   <script>
     // State management
     const state = {
@@ -503,6 +509,64 @@
     const stepRefreshIntervalSelect = document.getElementById('step-refresh-interval');
     const refreshIndicators = document.querySelectorAll('.refresh-indicator');
 
+    // Helper functions
+    function formatDateTime(timestamp) {
+      if (!timestamp) return 'N/A';
+      
+      const date = new Date(timestamp);
+      return date.toISOString().replace('T', ' ').substring(0, 19);
+    }
+    
+    function formatDuration(ms) {
+      if (!ms) return 'N/A';
+      
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${seconds % 60}s`;
+      } else {
+        return `${seconds}s`;
+      }
+    }
+
+    // Navigation functions
+    function showRunDetails(runId) {
+      // Reset expanded rows when navigating to a different run
+      if (state.selectedRun !== runId) {
+        state.expandedRows = new Set();
+      }
+      
+      state.selectedRun = runId;
+      
+      // Switch to run detail view
+      document.getElementById('runs-view').classList.remove('active');
+      document.getElementById('run-detail-view').classList.add('active');
+      
+      // Load run details (not an auto-refresh)
+      loadRunDetails(runId, false);
+    }
+    
+    function showStepAnalysis(step) {
+      state.selectedStep = step;
+      
+      // Switch to step analysis view
+      document.getElementById('run-detail-view').classList.remove('active');
+      document.getElementById('step-analysis-view').classList.add('active');
+      
+      // Update title and details
+      stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
+      stepAnalysisDetails.innerHTML = `
+        <p><strong>Step Key:</strong> ${step.key}</p>
+        <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
+        <p><strong>End Time:</strong> ${formatDateTime(step.time.endTs)}</p>
+        <p><strong>Duration:</strong> ${formatDuration(step.time.timeUsageMs)}</p>
+      `;
+    }
+
     // Navigation
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
@@ -528,6 +592,9 @@
     backToRunsBtn.addEventListener('click', () => {
       document.getElementById('runs-view').classList.add('active');
       document.getElementById('run-detail-view').classList.remove('active');
+      
+      // Reset expanded rows state when exiting run detail view
+      state.expandedRows = new Set();
       state.selectedRun = null;
     });
 
@@ -582,7 +649,17 @@
       if (type === 'runs') {
         state.refreshIntervals.runs = setInterval(() => {
           if (state.selectedRun) {
-            loadRunDetails(state.selectedRun);
+            // Save expanded state before auto-refresh
+            const expandedRows = new Set();
+            document.querySelectorAll('.details-row').forEach(row => {
+              if (row.style.display !== 'none') {
+                expandedRows.add(row.id);
+              }
+            });
+            state.expandedRows = expandedRows;
+            
+            // Pass true to indicate this is an auto-refresh
+            loadRunDetails(state.selectedRun, true);
           } else if (state.selectedPipeline) {
             loadRuns(state.selectedPipeline);
           }
@@ -652,7 +729,7 @@
         const result = await response.json();
         
         if (!result?.runs?.length) {
-          runsTable.innerHTML = '<tr><td colspan="6">No runs found</td></tr>';
+          runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">No runs found</td></tr>';
           return;
         }
 
@@ -689,20 +766,22 @@
         });
       } catch (error) {
         console.error('Error loading runs:', error);
-        runsTable.innerHTML = '<tr><td colspan="6">Error loading runs</td></tr>';
+        runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">Error loading runs</td></tr>';
       }
     }
 
-    async function loadRunDetails(runId) {
+    async function loadRunDetails(runId, isAutoRefresh = false) {
       try {
-        // Save expanded state before refreshing
-        const expandedRows = new Set();
-        document.querySelectorAll('.details-row').forEach(row => {
-          if (row.style.display !== 'none') {
-            expandedRows.add(row.id);
-          }
-        });
-        state.expandedRows = expandedRows;
+        // Only save expanded state if this is an auto-refresh
+        if (isAutoRefresh) {
+          const expandedRows = new Set();
+          document.querySelectorAll('.details-row').forEach(row => {
+            if (row.style.display !== 'none') {
+              expandedRows.add(row.id);
+            }
+          });
+          state.expandedRows = expandedRows;
+        }
         
         const response = await fetch(`/api/run/${runId}`);
         const data = await response.json();
@@ -715,8 +794,7 @@
         
         // Update steps count
         const stepsCount = data.steps ? data.steps.length : 0;
-        document.getElementById('steps-count').textContent = `Steps: (${stepsCount})`;
-        console.log("Updated steps count to:", stepsCount);
+        document.getElementById('steps-count').textContent = `Steps: ${stepsCount}`;
         
         // Load steps
         if (data.steps && Array.isArray(data.steps)) {
@@ -772,6 +850,7 @@
               row.querySelector('.expand-icon').classList.add('fa-chevron-up');
             }
             
+            // Create the details cell
             const detailsCell = document.createElement('td');
             detailsCell.colSpan = 7;
             
@@ -888,11 +967,11 @@
             });
           });
         } else {
-          stepsTable.innerHTML = '<tr><td colspan="7">No steps found</td></tr>';
+          stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">No steps found</td></tr>';
         }
       } catch (error) {
         console.error('Error loading run details:', error);
-        stepsTable.innerHTML = '<tr><td colspan="7">Error loading run details</td></tr>';
+        stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">Error loading run details</td></tr>';
       }
     }
 
@@ -901,7 +980,7 @@
         const ganttPlaceholder = document.querySelector('.gantt-placeholder');
         
         // Show loading state
-        ganttPlaceholder.innerHTML = '<h3>Loading Gantt Chart...</h3>';
+        ganttPlaceholder.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
         
         // Fetch the Gantt chart URL
         const response = await fetch(`/api/charts/gantt/${runId}`);
@@ -910,26 +989,25 @@
         if (data.url) {
           // Replace placeholder with the actual chart
           ganttPlaceholder.innerHTML = `
-            <h3>Run Execution Timeline</h3>
-            <img src="${data.url}" alt="Gantt Chart" style="max-width: 100%;">
+            <img src="${data.url}" alt="Gantt Chart" class="img-fluid">
           `;
         } else {
-          ganttPlaceholder.innerHTML = '<h3>Gantt Chart Unavailable</h3>';
+          ganttPlaceholder.innerHTML = '<div class="alert alert-warning">Gantt Chart Unavailable</div>';
         }
       } catch (error) {
         console.error('Error loading Gantt chart:', error);
-        document.querySelector('.gantt-placeholder').innerHTML = '<h3>Error Loading Gantt Chart</h3>';
+        document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Loading Gantt Chart</div>';
       }
     }
 
     async function loadStepNames(pipeline) {
       try {
-        const response = await fetch(`/api/step-names/${pipeline}`);
-        const stepNames = await response.json();
+        const response = await fetch(`/api/steps/${pipeline}`);
+        const steps = await response.json();
         
         stepNameSelect.innerHTML = '<option value="">Select a step</option>';
         
-        stepNames.forEach(step => {
+        steps.forEach(step => {
           stepNameSelect.innerHTML += `<option value="${step}">${step}</option>`;
         });
       } catch (error) {
@@ -945,7 +1023,7 @@
         const endDate = document.getElementById('step-end-date').value;
         
         // Build query parameters
-        let url = `/api/step-stats/${pipeline}/${stepName}`;
+        let url = `/api/step-instances/${pipeline}/${stepName}`;
         const params = new URLSearchParams();
         
         if (startDate) {
@@ -963,15 +1041,16 @@
         const response = await fetch(url);
         const instances = await response.json();
         
-        if (instances.length === 0) {
-          stepInstancesTable.innerHTML = '<tr><td colspan="4">No step instances found</td></tr>';
+        if (!instances || !instances.length) {
+          stepInstancesTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
           return;
         }
         
         stepInstancesTable.innerHTML = '';
+        
         instances.forEach(instance => {
           const timestamp = formatDateTime(instance.timestamp);
-          const duration = formatDuration(instance.value);
+          const duration = formatDuration(instance.duration);
           
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -979,11 +1058,13 @@
             <td>${instance.runId}</td>
             <td>${duration}</td>
             <td>${instance.stepKey}</td>
-          `
+          `;
+          
+          stepInstancesTable.appendChild(row);
         });
       } catch (error) {
         console.error('Error loading step instances:', error);
-        stepInstancesTable.innerHTML = '<tr><td colspan="4">Error loading step instances</td></tr>';
+        stepInstancesTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading instances</td></tr>';
       }
     }
 
@@ -1042,59 +1123,6 @@
     
     // Call initialization function when the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', initDashboard);
-
-    // Helper functions
-    function formatDateTime(timestamp) {
-      if (!timestamp) return 'N/A';
-      
-      const date = new Date(timestamp);
-      return date.toISOString().replace('T', ' ').substring(0, 19);
-    }
-    
-    function formatDuration(ms) {
-      if (!ms) return 'N/A';
-      
-      const seconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      
-      if (hours > 0) {
-        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
-      } else if (minutes > 0) {
-        return `${minutes}m ${seconds % 60}s`;
-      } else {
-        return `${seconds}s`;
-      }
-    }
-
-    // Navigation functions
-    function showRunDetails(runId) {
-      state.selectedRun = runId;
-      
-      // Switch to run detail view
-      document.getElementById('runs-view').classList.remove('active');
-      document.getElementById('run-detail-view').classList.add('active');
-      
-      // Load run details
-      loadRunDetails(runId);
-    }
-    
-    function showStepAnalysis(step) {
-      state.selectedStep = step;
-      
-      // Switch to step analysis view
-      document.getElementById('run-detail-view').classList.remove('active');
-      document.getElementById('step-analysis-view').classList.add('active');
-      
-      // Update title and details
-      stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
-      stepAnalysisDetails.innerHTML = `
-        <p><strong>Step Key:</strong> ${step.key}</p>
-        <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
-        <p><strong>End Time:</strong> ${formatDateTime(step.time.endTs)}</p>
-        <p><strong>Duration:</strong> ${formatDuration(step.time.timeUsageMs)}</p>
-      `;
-    }
   </script>
 </body>
 </html>
