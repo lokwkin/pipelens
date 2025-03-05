@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs --dts --minify --clean",
     "eslint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "start:dashboard": "nodemon src/dashboard/dashboard-server.ts"
   },
   "repository": {
     "type": "git",

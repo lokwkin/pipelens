@@ -62,14 +62,8 @@ export class DashboardServer {
         }
 
         const runs = await this.storageAdapter.listRuns(pipelineName, options);
-
-        // Return total count for pagination
-        const totalRuns = await this.getTotalRunCount(pipelineName, options);
-
-        res.json({
-          runs,
-          total: totalRuns,
-        });
+        console.log('runs', runs);
+        res.json(runs);
       } catch (error) {
         console.error('Error listing runs:', error);
         res.status(500).json({ error: 'Failed to list runs' });
@@ -187,44 +181,47 @@ export class DashboardServer {
       }
     });
 
+    // Get step names for a pipeline (new endpoint)
+    this.app.get('/api/step-names/:pipelineName', async (req, res) => {
+      try {
+        const { pipelineName } = req.params;
+
+        // This is a placeholder implementation
+        // In a real implementation, you would query the storage adapter
+        // to get all unique step names for a given pipeline
+
+        // For now, we'll return a static list of step names
+        const stepNames = ['load_config', 'parsing', 'preprocess', 'page_1', 'page_2', 'page_3', 'sample-error'];
+
+        res.json(stepNames);
+      } catch (error) {
+        console.error('Error getting step names:', error);
+        res.status(500).json({ error: 'Failed to get step names' });
+      }
+    });
+
     // Default route
     this.app.get('/', (req, res) => {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
   }
 
-  // Helper method to get total run count for pagination
-  private async getTotalRunCount(pipelineName: string, filterOptions: any): Promise<number> {
-    try {
-      // Create a copy of filter options without pagination
-      const options = { ...filterOptions };
-      delete options.limit;
-      delete options.offset;
-
-      const allRuns = await this.storageAdapter.listRuns(pipelineName, options);
-      return allRuns.length;
-    } catch (error) {
-      console.error('Error getting total run count:', error);
-      return 0;
-    }
-  }
-
-  // Placeholder method to generate timeseries chart URL
-  private generateTimeseriesChartUrl(timeseriesData: any): string {
+  // Helper method to generate a timeseries chart URL
+  private generateTimeseriesChartUrl(timeseriesData: any[]): string {
     // This is a placeholder implementation
     // In a real implementation, you would use a charting library or service
 
-    // Example using QuickChart.io
-    const labels = timeseriesData.map((point: any) => new Date(point.timestamp).toLocaleDateString());
-    const values = timeseriesData.map((point: any) => point.duration);
+    // For now, we'll return a static chart URL
+    const labels = timeseriesData.map((point) => new Date(point.timestamp).toLocaleDateString());
+    const values = timeseriesData.map((point) => point.value);
 
-    const chartData = {
+    const chartConfig = {
       type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: 'Duration (ms)',
+            label: 'Step Duration (ms)',
             data: values,
             fill: false,
             borderColor: 'rgb(75, 192, 192)',
@@ -241,7 +238,9 @@ export class DashboardServer {
       },
     };
 
-    return `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartData))}`;
+    // Encode the chart configuration for QuickChart
+    const encodedConfig = encodeURIComponent(JSON.stringify(chartConfig));
+    return `https://quickchart.io/chart?c=${encodedConfig}`;
   }
 
   public start(): void {
@@ -250,13 +249,3 @@ export class DashboardServer {
     });
   }
 }
-
-// Export a function to create and start the dashboard server
-export function startDashboard(options: { port?: number; storageAdapter?: StorageAdapter } = {}): DashboardServer {
-  const server = new DashboardServer(options);
-  server.start();
-  return server;
-}
-
-
-startDashboard();
