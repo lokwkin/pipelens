@@ -249,3 +249,5 @@ export class DashboardServer {
     });
   }
 }
+
+new DashboardServer({}).start();

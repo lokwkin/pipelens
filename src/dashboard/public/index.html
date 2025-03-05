@@ -1019,24 +1019,25 @@
           state.expandedRows = expandedRows;
         }
         
-        const response = await fetch(`/api/run/${runId}`);
-        const data = await response.json();
-        
         // Update title
         runDetailTitle.textContent = `Run Details: ${runId}`;
         
         // Load Gantt chart
         loadGanttChart(runId);
         
+        // Fetch steps data using the dedicated endpoint
+        const stepsResponse = await fetch(`/api/steps/${runId}`);
+        const steps = await stepsResponse.json();
+        
         // Update steps count
-        const stepsCount = data.steps ? data.steps.length : 0;
+        const stepsCount = steps ? steps.length : 0;
         document.getElementById('steps-count').textContent = `Steps: ${stepsCount}`;
         
         // Load steps
-        if (data.steps && Array.isArray(data.steps)) {
+        if (steps && Array.isArray(steps)) {
           stepsTable.innerHTML = '';
           
-          data.steps.forEach((step, index) => {
+          steps.forEach((step, index) => {
             const startTime = formatDateTime(step.time.startTs);
             const endTime = formatDateTime(step.time.endTs);
             const duration = formatDuration(step.time.timeUsageMs);

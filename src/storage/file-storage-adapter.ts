@@ -23,7 +23,7 @@ const stat = promisify(fs.stat);
  *   - runs/
  *     - {runId}/
  *       - meta.json - Contains RunMeta object for the run
- *       - steps.json - Contains array of StepMeta objects for all steps in the run
+ *       - steps.json - Contains array of StepMeta objects for all steps in the run. (Note: This file is only written when the run is finished)
  *       - steps/
  *         - {stepKey}.json - Individual step data
  *   - timeseries/
@@ -169,7 +169,7 @@ export class FileStorageAdapter implements StorageAdapter {
     // Write updated metadata
     await this.writeJsonFile(metaPath, updatedMeta);
 
-    // Write steps data
+    // Write steps data in a whole
     await this.writeJsonFile(path.join(runDir, 'steps.json'), stepsDump);
 
     // Update pipeline runs index
@@ -212,13 +212,43 @@ export class FileStorageAdapter implements StorageAdapter {
    * Lists all steps for a specific run
    */
   public async listSteps(runId: string): Promise<StepMeta[]> {
-    const stepsPath = path.join(this.basePath, 'runs', runId, 'steps.json');
+    const runDir = path.join(this.basePath, 'runs', runId);
+    const stepsPath = path.join(runDir, 'steps.json');
+    const stepsDir = path.join(runDir, 'steps');
 
     try {
+      // First try to read from the consolidated steps.json file
       return (await this.readJsonFile(stepsPath)) as StepMeta[];
     } catch (error) {
+      // If steps.json doesn't exist, try to read individual step files
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return [];
+        try {
+          // Check if steps directory exists
+          await stat(stepsDir);
+
+          // Read all files in the steps directory
+          const stepFiles = await readdir(stepsDir);
+
+          // Read each step file and collect the step data
+          const stepPromises = stepFiles
+            .filter((file) => file.endsWith('.json'))
+            .map(async (file) => {
+              const stepData = await this.readJsonFile(path.join(stepsDir, file));
+              return stepData as StepMeta;
+            });
+
+          // Wait for all step files to be read
+          const steps = (await Promise.all(stepPromises)).filter((step) => step !== null);
+
+          // Sort steps by start time
+          return steps.sort((a, b) => a.time.startTs - b.time.startTs);
+        } catch (dirError) {
+          // If steps directory doesn't exist either, return empty array
+          if ((dirError as NodeJS.ErrnoException).code === 'ENOENT') {
+            return [];
+          }
+          throw dirError;
+        }
       }
       throw error;
     }
