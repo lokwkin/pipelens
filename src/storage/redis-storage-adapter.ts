@@ -1,161 +1,366 @@
-import { createClient, RedisClientType, TimeSeriesDuplicatePolicies } from 'redis';
-import { StorageAdapter, FilterOptions, RunMeta } from './storage-adapter';
 import { StepMeta } from '../step';
+import { FilterOptions, RunMeta, StorageAdapter } from './storage-adapter';
 import { Pipeline } from '../pipeline';
+import { createClient, RedisClientType, TimeSeriesDuplicatePolicies } from 'redis';
+import '@redis/json';
+import '@redis/time-series';
 
+/**
+ * Redis-based implementation of the StorageAdapter interface.
+ * Stores pipeline runs and step data in Redis data structures.
+ *
+ * Redis Key Structure:
+ * - pipeline:{pipelineName} - JSON array of RunMeta objects for each pipeline
+ * - run:{runId}:meta - JSON object containing RunMeta for the run
+ * - run:{runId}:steps - JSON array of StepMeta objects for all steps in the run
+ * - run:{runId}:step:{stepKey} - JSON object containing StepMeta for a specific step
+ * - ts:{pipelineName}:{stepName} - Time series data for each step across runs
+ */
 export class RedisStorageAdapter implements StorageAdapter {
   private client: RedisClientType;
   private connected: boolean = false;
+  private lockMap: Map<string, Promise<any>> = new Map();
 
-  constructor(redisUrl: string = 'redis://localhost:6379') {
+  /**
+   * Creates a new RedisStorageAdapter
+   * @param options Redis connection options
+   */
+  constructor(options: {
+    url?: string;
+    host?: string;
+    port?: number;
+    username?: string;
+    password?: string;
+    db?: number;
+  }) {
+    const url =
+      options.url ||
+      `redis://${options.username ? `${options.username}:${options.password}@` : ''}${options.host || 'localhost'}:${options.port || 6379}/${options.db || 0}`;
+
     this.client = createClient({
-      url: redisUrl,
+      url,
     });
 
-    this.client.on('error', (err) => console.error('Redis Client Error', err));
+    this.client.on('error', (err) => {
+      console.error('Redis client error:', err);
+    });
   }
 
-  async connect(): Promise<void> {
+  /**
+   * Connects to Redis
+   */
+  public async connect(): Promise<void> {
     if (!this.connected) {
       await this.client.connect();
       this.connected = true;
     }
   }
 
-  async disconnect(): Promise<void> {
-    if (this.connected) {
-      await this.client.disconnect();
-      this.connected = false;
-    }
+  /**
+   * Lists all pipelines that exist in storage
+   */
+  public async listPipelines(): Promise<string[]> {
+    const keys = await this.client.keys('pipeline:*');
+    return keys.map((key) => key.replace('pipeline:', ''));
   }
 
-  async saveRun(pipeline: Pipeline): Promise<void> {
-    await this.connect();
+  /**
+   * Lists all runs for a specific pipeline with optional filtering
+   */
+  public async listRuns(pipelineName: string, options?: FilterOptions): Promise<RunMeta[]> {
+    const pipelineKey = `pipeline:${pipelineName}`;
 
-    // Store the full run data as JSON
-    await this.client.json.set(`run:${pipeline.getRunId()}:data`, '$', pipeline.outputSteps());
+    try {
+      // Check if pipeline exists
+      const exists = await this.client.exists(pipelineKey);
+      if (!exists) {
+        return [];
+      }
 
-    // Create a meta for quick listing
-    const runMeta: RunMeta = {
-      runId: pipeline.getRunId(),
-      pipeline: pipeline.getName(),
-      startTime: pipeline.getTimeMeta().startTs,
-      endTime: pipeline.getTimeMeta().endTs,
-      duration: pipeline.getTimeMeta().endTs - pipeline.getTimeMeta().startTs,
-    };
+      // Read pipeline runs index
+      const data = (await this.client.json.get(pipelineKey)) as RunMeta[];
+      let runs: RunMeta[] = Array.isArray(data) ? data : [];
 
-    // Store the runMeta
-    await this.client.json.set(`run:${pipeline.getRunId()}:meta`, '$', runMeta);
+      // Apply filters
+      if (options) {
+        if (options.status) {
+          runs = runs.filter((run) => run.status === options.status);
+        }
 
-    // Add to the pipeline's run list
-    await this.client.zAdd(`pipeline:${pipeline.getName()}:runs`, {
-      score: pipeline.getTimeMeta().startTs, // Use current timestamp as score, for sorting runs by time
-      value: pipeline.getRunId(),
-    });
+        if (options.startDate) {
+          const startTime = options.startDate.getTime();
+          runs = runs.filter((run) => run.startTime >= startTime);
+        }
 
-    // Store time-series data for each step
-    await this.storeTimeSeriesData(pipeline.getRunId(), pipeline.outputSteps());
-  }
+        if (options.endDate) {
+          const endTime = options.endDate.getTime();
+          runs = runs.filter((run) => run.startTime <= endTime);
+        }
 
-  async getRunData(runId: string): Promise<any> {
-    await this.connect();
-    return await this.client.json.get(`run:${runId}:data`);
-  }
+        // Sort by start time (newest first)
+        runs.sort((a, b) => b.startTime - a.startTime);
 
-  async listPipelines(): Promise<string[]> {
-    await this.connect();
-    const keys = await this.client.keys('pipeline:*:runs');
-    return keys.map((key) => key.split(':')[1]);
-  }
+        // Apply pagination
+        if (options.offset !== undefined) {
+          runs = runs.slice(options.offset);
+        }
 
-  async listRuns(pipelineName: string, options: FilterOptions = {}): Promise<RunMeta[]> {
-    await this.connect();
-
-    const { limit = 100, offset = 0, startDate, endDate } = options;
-
-    // Get run IDs from sorted set with pagination
-    const start = offset;
-    const end = offset + limit - 1;
-
-    // If date range is specified, convert to scores for ZRANGEBYSCORE
-    if (startDate || endDate) {
-      const minScore = startDate ? new Date(startDate).getTime() : '-inf';
-      const maxScore = endDate ? new Date(endDate).getTime() : '+inf';
-
-      const runIds = await this.client.zRangeByScore(
-        `pipeline:${pipelineName}:runs`,
-        minScore.toString(),
-        maxScore.toString(),
-        {
-          LIMIT: {
-            offset,
-            count: limit,
-          },
-        },
-      );
-
-      // Get runMetas for each run ID
-      const runMetas = await Promise.all(runIds.map((id) => this.client.json.get(`run:${id}:meta`)));
-
-      return runMetas as unknown as RunMeta[];
-    } else {
-      // Get the most recent runs
-      const runIds = await this.client.zRange(`pipeline:${pipelineName}:runs`, start, end, { REV: true });
-
-      // Get runMetas for each run ID
-      const runMetas = await Promise.all(runIds.map((id) => this.client.json.get(`run:${id}:meta`)));
-
-      return runMetas as unknown as RunMeta[];
-    }
-  }
-
-  async getStepStats(stepKey: string, timeRange: { start: number; end: number }): Promise<any> {
-    await this.connect();
-
-    // Query time-series data for the specific step
-    const data = await this.client.ts.range(`ts:${stepKey}:duration`, timeRange.start, timeRange.end);
-
-    return data;
-  }
-
-  private async storeTimeSeriesData(runId: string, steps: StepMeta[]): Promise<void> {
-    // Track step keys counts to handle duplicates
-    const usedStepKeys = new Set<string>();
-    const stepKeysCount = new Map<string, number>();
-    steps.forEach((step) => {
-      stepKeysCount.set(step.key, (stepKeysCount.get(step.key) || 0) + 1);
-    });
-
-    for (const step of steps) {
-      let uniqStepKey = step.key;
-
-      const count = stepKeysCount.get(step.key);
-      if (count && count > 1) {
-        let index = 0;
-        uniqStepKey = `${uniqStepKey}___${index}`;
-        while (usedStepKeys.has(uniqStepKey)) {
-          index++;
-          uniqStepKey = `${step.key}___${index}`;
+        if (options.limit !== undefined) {
+          runs = runs.slice(0, options.limit);
         }
       }
-      usedStepKeys.add(uniqStepKey);
 
+      return runs;
+    } catch (error) {
+      console.error('Error listing runs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Initiates a new run for a pipeline
+   */
+  public async initiateRun(pipeline: Pipeline): Promise<void> {
+    const runId = pipeline.getRunId();
+    const pipelineName = pipeline.getName();
+
+    // Create run metadata
+    const runMeta: RunMeta = {
+      runId,
+      pipeline: pipelineName,
+      startTime: Date.now(),
+      endTime: 0,
+      duration: 0,
+      status: 'running',
+    };
+
+    // Write run metadata
+    await this.client.json.set(`run:${runId}:meta`, '$', runMeta);
+
+    // Update pipeline runs index
+    await this.updatePipelineIndex(pipelineName, runMeta);
+  }
+
+  /**
+   * Finishes a run and stores all step data
+   */
+  public async finishRun(pipeline: Pipeline, status: 'completed' | 'failed' | 'running'): Promise<void> {
+    const runId = pipeline.getRunId();
+    const pipelineName = pipeline.getName();
+    const stepsDump = pipeline.outputFlattened();
+
+    // Read current run metadata
+    const runMeta = (await this.client.json.get(`run:${runId}:meta`)) as RunMeta;
+
+    // Update run metadata
+    const endTime = Date.now();
+    const updatedMeta: RunMeta = {
+      ...runMeta,
+      endTime,
+      duration: endTime - runMeta.startTime,
+      status,
+    };
+
+    // Write updated metadata
+    await this.client.json.set(`run:${runId}:meta`, '$', updatedMeta);
+
+    // Write steps data
+    await this.client.json.set(`run:${runId}:steps`, '$', stepsDump);
+
+    // Update pipeline runs index
+    await this.updatePipelineIndex(pipelineName, updatedMeta);
+  }
+
+  /**
+   * Gets all data for a specific run
+   */
+  public async getRunData(runId: string): Promise<any> {
+    try {
+      // Read run metadata
+      const meta = await this.client.json.get(`run:${runId}:meta`);
+
+      // Read steps data
+      let steps: StepMeta[] = [];
       try {
-        await this.client.ts.create(`ts:${uniqStepKey}:duration`, {
-          DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.LAST,
-          LABELS: {
-            stepKey: step.key,
-            stepName: step.name,
-            runId: runId,
-          },
+        steps = (await this.client.json.get(`run:${runId}:steps`)) as StepMeta[];
+      } catch (error) {
+        // Steps data might not exist yet if run is still in progress
+      }
+
+      return { meta, steps };
+    } catch (error) {
+      throw new Error(`Run with ID ${runId} not found`);
+    }
+  }
+
+  /**
+   * Lists all steps for a specific run
+   */
+  public async listSteps(runId: string): Promise<StepMeta[]> {
+    try {
+      return (await this.client.json.get(`run:${runId}:steps`)) as StepMeta[];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Initiates a step within a run
+   */
+  public async initiateStep(runId: string, step: StepMeta): Promise<void> {
+    // Write step data to individual key
+    await this.client.json.set(`run:${runId}:step:${step.key}`, '$', step);
+  }
+
+  /**
+   * Finishes a step and updates its metadata
+   */
+  public async finishStep(runId: string, step: StepMeta): Promise<void> {
+    // Write updated step data
+    await this.client.json.set(`run:${runId}:step:${step.key}`, '$', step);
+
+    // Update timeseries data for this step
+    await this.updateStepTimeseries(step.key.split('.')[0], runId, step);
+  }
+
+  /**
+   * Gets timeseries data for a specific step within a time range
+   */
+  public async getStepTimeseries(
+    pipelineName: string,
+    stepName: string,
+    timeRange: { start: number; end: number },
+  ): Promise<any> {
+    const timeseriesKey = `ts:${pipelineName}.${stepName}`;
+
+    try {
+      // Query the time series data
+      const result = await this.client.ts.range(timeseriesKey, timeRange.start, timeRange.end);
+
+      // Fetch all metadata in parallel
+      const enrichedPoints = await Promise.all(
+        result.map(async (point) => {
+          const metaKey = `${timeseriesKey}:meta:${point.timestamp}`;
+          const [runId, stepKey] = await Promise.all([
+            this.client.hGet(metaKey, 'runId'),
+            this.client.hGet(metaKey, 'stepKey'),
+          ]);
+
+          return {
+            timestamp: point.timestamp,
+            value: point.value,
+            runId,
+            stepKey,
+          };
+        }),
+      );
+
+      return enrichedPoints;
+    } catch (error) {
+      console.error('Error getting timeseries data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Updates the timeseries data for a step
+   */
+  private async updateStepTimeseries(pipelineName: string, runId: string, step: StepMeta): Promise<void> {
+    // Use pipeline name + step name for the timeseries key
+    const timeseriesKey = `ts:${pipelineName}.${step.name}`;
+    const timestamp = step.time.startTs;
+
+    // Use Redis transaction to ensure atomicity
+    await this.withRedisLock(timeseriesKey, async () => {
+      // Create the time series if it doesn't exist
+      try {
+        await this.client.ts.create(timeseriesKey, {
+          RETENTION: 60 * 60 * 24 * 30 * 1000, // 30 days in milliseconds
+          DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.LAST, // If duplicate timestamp, use the last value
         });
-      } catch (e) {
-        console.warn('Error creating time series', e);
-        // Key might already exist, which is fine
+      } catch (error) {
+        // Ignore if time series already exists
       }
 
       // Add the data point
-      await this.client.ts.add(`ts:${uniqStepKey}:duration`, step.time.startTs, step.time.timeUsageMs);
+      await this.client.ts.add(timeseriesKey, timestamp, step.time.timeUsageMs);
+
+      // Store additional metadata in a hash
+      await this.client.hSet(`${timeseriesKey}:meta:${timestamp}`, {
+        runId,
+        stepKey: step.key,
+      });
+    });
+  }
+
+  /**
+   * Updates the pipeline index with a run
+   */
+  private async updatePipelineIndex(pipelineName: string, runMeta: RunMeta): Promise<void> {
+    const pipelineKey = `pipeline:${pipelineName}`;
+
+    // Use Redis lock to prevent race conditions
+    await this.withRedisLock(pipelineKey, async () => {
+      let pipelineRuns: RunMeta[] = [];
+
+      try {
+        pipelineRuns = (await this.client.json.get(pipelineKey)) as RunMeta[];
+        if (!Array.isArray(pipelineRuns)) {
+          pipelineRuns = [];
+        }
+      } catch (error) {
+        // Key doesn't exist yet, start with empty array
+      }
+
+      // Find and update existing run or add new run
+      const existingIndex = pipelineRuns.findIndex((run) => run.runId === runMeta.runId);
+      if (existingIndex >= 0) {
+        pipelineRuns[existingIndex] = runMeta;
+      } else {
+        pipelineRuns.push(runMeta);
+      }
+
+      // Sort by start time (newest first)
+      pipelineRuns.sort((a, b) => b.startTime - a.startTime);
+
+      // Write updated data
+      await this.client.json.set(pipelineKey, '$', pipelineRuns);
+    });
+  }
+
+  /**
+   * Executes a function with a Redis lock to prevent race conditions
+   */
+  private async withRedisLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const lockKey = `lock:${key}`;
+    const lock = this.lockMap.get(lockKey);
+
+    // Create a new promise chain
+    const newLock = (lock || Promise.resolve()).then(async () => {
+      try {
+        return await fn();
+      } finally {
+        // If this is the current lock, remove it
+        if (this.lockMap.get(lockKey) === newLock) {
+          this.lockMap.delete(lockKey);
+        }
+      }
+    });
+
+    // Set the new lock
+    this.lockMap.set(lockKey, newLock);
+
+    // Return the result of the function
+    return newLock;
+  }
+
+  /**
+   * Closes the Redis connection
+   */
+  public async disconnect(): Promise<void> {
+    if (this.connected) {
+      await this.client.disconnect();
+      this.connected = false;
     }
   }
 }

@@ -1,202 +1,417 @@
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
-import { StorageAdapter, FilterOptions, RunMeta } from './storage-adapter';
+import { promisify } from 'util';
 import { StepMeta } from '../step';
+import { FilterOptions, RunMeta, StorageAdapter } from './storage-adapter';
 import { Pipeline } from '../pipeline';
 
+// Promisify file system operations
+const mkdir = promisify(fs.mkdir);
+const writeFile = promisify(fs.writeFile);
+const readFile = promisify(fs.readFile);
+const readdir = promisify(fs.readdir);
+const stat = promisify(fs.stat);
+
+/**
+ * File-based implementation of the StorageAdapter interface.
+ * Stores pipeline runs and step data in a directory structure.
+ *
+ * File Structure:
+ * - basePath/
+ *   - pipelines/
+ *     - {pipelineName}.json - Contains array of RunMeta objects for each pipeline
+ *   - runs/
+ *     - {runId}/
+ *       - meta.json - Contains RunMeta object for the run
+ *       - steps.json - Contains array of StepMeta objects for all steps in the run
+ *       - steps/
+ *         - {stepKey}.json - Individual step data
+ *   - timeseries/
+ *     - {pipelineName}.{stepName}.json - Contains timeseries data for each step across runs
+ */
 export class FileStorageAdapter implements StorageAdapter {
   private basePath: string;
-  private connected: boolean = false;
+  private lockMap: Map<string, Promise<any>> = new Map();
 
-  constructor(basePath: string = path.join(process.cwd(), '.steps-track')) {
+  /**
+   * Creates a new FileStorageAdapter
+   * @param basePath Base directory to store all data
+   */
+  constructor(basePath: string) {
     this.basePath = basePath;
   }
 
-  async connect(): Promise<void> {
-    if (!this.connected) {
-      // Ensure the base directory exists
-      await fs.mkdir(this.basePath, { recursive: true });
-
-      // Create subdirectories for different data types
-      await fs.mkdir(path.join(this.basePath, 'run-data'), { recursive: true });
-      await fs.mkdir(path.join(this.basePath, 'run-meta'), { recursive: true });
-      await fs.mkdir(path.join(this.basePath, 'runs'), { recursive: true });
-      await fs.mkdir(path.join(this.basePath, 'durations'), { recursive: true });
-
-      this.connected = true;
-    }
+  /**
+   * Ensures the storage directory exists
+   */
+  public async connect(): Promise<void> {
+    await this.ensureDir(this.basePath);
+    await this.ensureDir(path.join(this.basePath, 'pipelines'));
+    await this.ensureDir(path.join(this.basePath, 'runs'));
+    await this.ensureDir(path.join(this.basePath, 'timeseries'));
   }
 
-  async disconnect(): Promise<void> {
-    // Nothing to do for file-based storage
-    this.connected = false;
+  /**
+   * Lists all pipelines that exist in storage
+   */
+  public async listPipelines(): Promise<string[]> {
+    const pipelinesDir = path.join(this.basePath, 'pipelines');
+    await this.ensureDir(pipelinesDir);
+
+    const files = await readdir(pipelinesDir);
+    return files.map((file) => path.basename(file, '.json'));
   }
 
-  async saveRun(pipeline: Pipeline): Promise<void> {
-    await this.connect();
-
-    const runId = pipeline.getRunId();
-    const pipelineName = pipeline.getName();
-    const steps = pipeline.outputSteps();
-
-    // Store the full run data as JSON
-    await fs.writeFile(path.join(this.basePath, 'run-data', `${runId}.json`), JSON.stringify(steps, null, 2));
-
-    // Create a summary for quick listing
-    const runMeta: RunMeta = {
-      runId: runId,
-      pipeline: pipelineName,
-      startTime: pipeline.getTimeMeta().startTs,
-      endTime: pipeline.getTimeMeta().endTs,
-      duration: pipeline.getTimeMeta().endTs - pipeline.getTimeMeta().startTs,
-    };
-
-    // Store the runMeta
-    await fs.writeFile(path.join(this.basePath, 'run-meta', `${runId}.json`), JSON.stringify(runMeta, null, 2));
-
-    // Add to the pipeline's run list - using JSON Lines to avoid race conditions
-    const pipelineRunsPath = path.join(this.basePath, 'runs', `${pipelineName}.jl`);
-
-    // Append the new run as a single line - atomic operation that avoids race conditions
-    const runEntry = {
-      runId: runId,
-      timestamp: pipeline.getTimeMeta().startTs,
-    };
-    await fs.appendFile(pipelineRunsPath, JSON.stringify(runEntry) + '\n');
-
-    // Store time-series data for each step
-    await this.storeTimeSeriesData(pipeline.getRunId(), steps);
-  }
-
-  async getRunData(runId: string): Promise<any> {
-    await this.connect();
+  /**
+   * Lists all runs for a specific pipeline with optional filtering
+   */
+  public async listRuns(pipelineName: string, options?: FilterOptions): Promise<RunMeta[]> {
+    const pipelineDir = path.join(this.basePath, 'pipelines', `${pipelineName}.json`);
 
     try {
-      const runData = await fs.readFile(path.join(this.basePath, 'run-data', `${runId}.json`), 'utf-8');
-      return JSON.parse(runData);
-    } catch (error) {
-      throw new Error(`Run with ID ${runId} not found`);
-    }
-  }
+      // Check if pipeline exists
+      await stat(pipelineDir);
 
-  async listPipelines(): Promise<string[]> {
-    await this.connect();
+      // Read pipeline runs index
+      const data = await this.readJsonFile(pipelineDir);
+      let runs: RunMeta[] = Array.isArray(data) ? data : [];
 
-    const files = await fs.readdir(path.join(this.basePath, 'runs'));
-    return files.filter((file) => file.endsWith('.jl')).map((file) => file.split('.')[0]);
-  }
+      // Apply filters
+      if (options) {
+        if (options.status) {
+          runs = runs.filter((run) => run.status === options.status);
+        }
 
-  async listRuns(pipelineId: string, options: FilterOptions = {}): Promise<RunMeta[]> {
-    await this.connect();
+        if (options.startDate) {
+          const startTime = options.startDate.getTime();
+          runs = runs.filter((run) => run.startTime >= startTime);
+        }
 
-    const { limit = 100, offset = 0, startDate, endDate } = options;
+        if (options.endDate) {
+          const endTime = options.endDate.getTime();
+          runs = runs.filter((run) => run.startTime <= endTime);
+        }
 
-    try {
-      // Get the list of runs for this pipeline from JL file
-      const pipelineRunsPath = path.join(this.basePath, 'runs', `${pipelineId}.jl`);
-      const pipelineRunsData = await fs.readFile(pipelineRunsPath, 'utf-8');
+        // Sort by start time (newest first)
+        runs.sort((a, b) => b.startTime - a.startTime);
 
-      // Parse JSON Lines format - each line is a separate JSON object
-      const pipelineRuns: Array<{ runId: string; timestamp: number }> = pipelineRunsData
-        .split('\n')
-        .filter((line) => line.trim() !== '') // Skip empty lines
-        .map((line) => JSON.parse(line));
+        // Apply pagination
+        if (options.offset !== undefined) {
+          runs = runs.slice(options.offset);
+        }
 
-      // Sort by timestamp (newest first) - since we're now appending, we need to sort
-      pipelineRuns.sort((a, b) => b.timestamp - a.timestamp);
-
-      console.log('pipelineRuns', pipelineRuns);
-
-      // Filter by date range if specified
-      let filteredRuns = pipelineRuns;
-      if (startDate || endDate) {
-        const minTime = startDate ? new Date(startDate).getTime() : 0;
-        const maxTime = endDate ? new Date(endDate).getTime() : Infinity;
-
-        filteredRuns = pipelineRuns.filter((run) => run.timestamp >= minTime && run.timestamp <= maxTime);
-      }
-      console.log('filteredRuns', pipelineRuns);
-
-      // Apply pagination
-      const paginatedRuns = filteredRuns.slice(offset, offset + limit);
-
-      // Get summaries for each run
-      const runMetas = await Promise.all(
-        paginatedRuns.map(async (run) => {
-          const summaryPath = path.join(this.basePath, 'run-meta', `${run.runId}.json`);
-          const summaryData = await fs.readFile(summaryPath, 'utf-8');
-          return JSON.parse(summaryData) as RunMeta;
-        }),
-      );
-
-      return runMetas;
-    } catch (error) {
-      console.error('Error listing runs', error);
-      // If the pipeline file doesn't exist, return an empty array
-      return [];
-    }
-  }
-
-  async getStepStats(stepKey: string, timeRange: { start: number; end: number }): Promise<any> {
-    await this.connect();
-
-    const timeSeriesPath = path.join(this.basePath, 'durations', `${stepKey}.jl`);
-
-    try {
-      const timeSeriesData = await fs.readFile(timeSeriesPath, 'utf-8');
-
-      // Parse JSON Lines format
-      const allDataPoints = timeSeriesData
-        .split('\n')
-        .filter((line) => line.trim() !== '') // Skip empty lines
-        .map((line) => JSON.parse(line));
-
-      // Filter data points by time range
-      return allDataPoints.filter(
-        (point: { timestamp: number; value: number }) =>
-          point.timestamp >= timeRange.start && point.timestamp <= timeRange.end,
-      );
-    } catch (error) {
-      // If the file doesn't exist, return an empty array
-      return [];
-    }
-  }
-
-  private async storeTimeSeriesData(runId: string, steps: StepMeta[]): Promise<void> {
-    // Track step keys counts to handle duplicates
-    const usedStepKeys = new Set<string>();
-    const stepKeysCount = new Map<string, number>();
-    steps.forEach((step) => {
-      stepKeysCount.set(step.key, (stepKeysCount.get(step.key) || 0) + 1);
-    });
-
-    for (const step of steps) {
-      let uniqStepKey = step.key;
-
-      const count = stepKeysCount.get(step.key);
-      if (count && count > 1) {
-        let index = 0;
-        uniqStepKey = `${uniqStepKey}___${index}`;
-        while (usedStepKeys.has(uniqStepKey)) {
-          index++;
-          uniqStepKey = `${step.key}___${index}`;
+        if (options.limit !== undefined) {
+          runs = runs.slice(0, options.limit);
         }
       }
-      usedStepKeys.add(uniqStepKey);
 
-      // Use JSON Lines format for time series data too
-      const timeSeriesPath = path.join(this.basePath, 'durations', `${step.key}.jl`);
-
-      // Create a data point and append it to the file - atomic operation
-      const dataPoint: { timestamp: number; value: number; runId: string; stepKey: string; stepName: string } = {
-        timestamp: step.time.startTs,
-        value: step.time.timeUsageMs,
-        stepKey: uniqStepKey,
-        stepName: step.name,
-        runId: runId,
-      };
-
-      await fs.appendFile(timeSeriesPath, JSON.stringify(dataPoint) + '\n');
+      return runs;
+    } catch (error) {
+      // If pipeline file doesn't exist, return empty array
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return [];
+      }
+      throw error;
     }
+  }
+
+  /**
+   * Initiates a new run for a pipeline
+   */
+  public async initiateRun(pipeline: Pipeline): Promise<void> {
+    const runId = pipeline.getRunId();
+    const pipelineName = pipeline.getName();
+
+    // Create run metadata
+    const runMeta: RunMeta = {
+      runId,
+      pipeline: pipelineName,
+      startTime: Date.now(),
+      endTime: 0,
+      duration: 0,
+      status: 'running',
+    };
+
+    // Create run directory
+    const runDir = path.join(this.basePath, 'runs', runId);
+    await this.ensureDir(runDir);
+
+    // Write run metadata
+    await this.writeJsonFile(path.join(runDir, 'meta.json'), runMeta);
+
+    // Update pipeline runs index
+    await this.updatePipelineIndex(pipelineName, runMeta);
+  }
+
+  /**
+   * Finishes a run and stores all step data
+   */
+  public async finishRun(pipeline: Pipeline, status: 'completed' | 'failed' | 'running'): Promise<void> {
+    const runId = pipeline.getRunId();
+    const pipelineName = pipeline.getName();
+    const stepsDump = pipeline.outputFlattened();
+
+    const runDir = path.join(this.basePath, 'runs', runId);
+
+    // Read current run metadata
+    const metaPath = path.join(runDir, 'meta.json');
+    const runMeta = (await this.readJsonFile(metaPath)) as RunMeta;
+
+    // Update run metadata
+    const endTime = Date.now();
+    const updatedMeta: RunMeta = {
+      ...runMeta,
+      endTime,
+      duration: endTime - runMeta.startTime,
+      status,
+    };
+
+    // Write updated metadata
+    await this.writeJsonFile(metaPath, updatedMeta);
+
+    // Write steps data
+    await this.writeJsonFile(path.join(runDir, 'steps.json'), stepsDump);
+
+    // Update pipeline runs index
+    await this.updatePipelineIndex(pipelineName, updatedMeta);
+  }
+
+  /**
+   * Gets all data for a specific run
+   */
+  public async getRunData(runId: string): Promise<any> {
+    const runDir = path.join(this.basePath, 'runs', runId);
+
+    try {
+      // Read run metadata
+      const metaPath = path.join(runDir, 'meta.json');
+      const meta = await this.readJsonFile(metaPath);
+
+      // Read steps data
+      const stepsPath = path.join(runDir, 'steps.json');
+      let steps = [];
+      try {
+        steps = await this.readJsonFile(stepsPath);
+      } catch (error) {
+        // Steps data might not exist yet if run is still in progress
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
+      }
+
+      return { meta, steps };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error(`Run with ID ${runId} not found`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Lists all steps for a specific run
+   */
+  public async listSteps(runId: string): Promise<StepMeta[]> {
+    const stepsPath = path.join(this.basePath, 'runs', runId, 'steps.json');
+
+    try {
+      return (await this.readJsonFile(stepsPath)) as StepMeta[];
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Initiates a step within a run
+   */
+  public async initiateStep(runId: string, step: StepMeta): Promise<void> {
+    const runDir = path.join(this.basePath, 'runs', runId);
+    const stepsDir = path.join(runDir, 'steps');
+    await this.ensureDir(stepsDir);
+
+    // Write step data to individual file
+    await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
+  }
+
+  /**
+   * Finishes a step and updates its metadata
+   */
+  public async finishStep(runId: string, step: StepMeta): Promise<void> {
+    const runDir = path.join(this.basePath, 'runs', runId);
+    const stepsDir = path.join(runDir, 'steps');
+    await this.ensureDir(stepsDir);
+
+    // Write updated step data
+    await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
+
+    // Update timeseries data for this step
+    await this.updateStepTimeseries(step.key.split('.')[0], runId, step);
+  }
+
+  /**
+   * Gets timeseries data for a specific step within a time range
+   */
+  public async getStepTimeseries(
+    pipelineName: string,
+    stepName: string,
+    timeRange: { start: number; end: number },
+  ): Promise<any> {
+    const timeseriesPath = path.join(this.basePath, 'timeseries', `${pipelineName}.${stepName}.json`);
+
+    try {
+      const data = (await this.readJsonFile(timeseriesPath)) as Array<{
+        timestamp: number;
+        runId: string;
+        value: number;
+      }>;
+
+      // Filter by time range
+      return data.filter((entry) => entry.timestamp >= timeRange.start && entry.timestamp <= timeRange.end);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Updates the timeseries data for a step
+   */
+  private async updateStepTimeseries(pipelineName: string, runId: string, step: StepMeta): Promise<void> {
+    const timeseriesDir = path.join(this.basePath, 'timeseries');
+    await this.ensureDir(timeseriesDir);
+
+    // Use pipeline name + step name for the timeseries file
+    // This groups data by logical step rather than by specific step instance
+    const timeseriesKey = `${pipelineName}.${step.name}`;
+    const timeseriesPath = path.join(timeseriesDir, `${timeseriesKey}.json`);
+
+    // Create a timeseries entry
+    const entry = {
+      timestamp: step.time.startTs,
+      runId,
+      value: step.time.timeUsageMs,
+      stepKey: step.key, // Keep the original step key for reference
+    };
+
+    // Use file lock to prevent race conditions
+    await this.withFileLock(timeseriesPath, async () => {
+      let timeseriesData = [];
+
+      try {
+        timeseriesData = (await this.readJsonFile(timeseriesPath)) as any[];
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
+        // File doesn't exist yet, start with empty array
+      }
+
+      // Add new entry
+      timeseriesData.push(entry);
+
+      // Sort by timestamp (newest first)
+      timeseriesData.sort((a, b) => b.timestamp - a.timestamp);
+
+      // Write updated data
+      await this.writeJsonFile(timeseriesPath, timeseriesData);
+    });
+  }
+
+  /**
+   * Updates the pipeline index with a run
+   */
+  private async updatePipelineIndex(pipelineName: string, runMeta: RunMeta): Promise<void> {
+    const pipelinesDir = path.join(this.basePath, 'pipelines');
+    await this.ensureDir(pipelinesDir);
+
+    const pipelinePath = path.join(pipelinesDir, `${pipelineName}.json`);
+
+    // Use file lock to prevent race conditions
+    await this.withFileLock(pipelinePath, async () => {
+      let pipelineRuns: RunMeta[] = [];
+
+      try {
+        pipelineRuns = (await this.readJsonFile(pipelinePath)) as RunMeta[];
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
+        // File doesn't exist yet, start with empty array
+      }
+
+      // Find and update existing run or add new run
+      const existingIndex = pipelineRuns.findIndex((run) => run.runId === runMeta.runId);
+      if (existingIndex >= 0) {
+        pipelineRuns[existingIndex] = runMeta;
+      } else {
+        pipelineRuns.push(runMeta);
+      }
+
+      // Sort by start time (newest first)
+      pipelineRuns.sort((a, b) => b.startTime - a.startTime);
+
+      // Write updated data
+      await this.writeJsonFile(pipelinePath, pipelineRuns);
+    });
+  }
+
+  /**
+   * Ensures a directory exists
+   */
+  private async ensureDir(dirPath: string): Promise<void> {
+    try {
+      await mkdir(dirPath, { recursive: true });
+    } catch (error) {
+      // Ignore error if directory already exists
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Reads and parses a JSON file
+   */
+  private async readJsonFile(filePath: string): Promise<any> {
+    const data = await readFile(filePath, 'utf8');
+    return JSON.parse(data);
+  }
+
+  /**
+   * Writes data to a JSON file
+   */
+  private async writeJsonFile(filePath: string, data: any): Promise<void> {
+    await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  }
+
+  /**
+   * Executes a function with a file lock to prevent race conditions
+   */
+  private async withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+    // Check if there's an existing lock
+    const lock = this.lockMap.get(filePath);
+
+    // Create a new promise chain
+    const newLock = (lock || Promise.resolve()).then(async () => {
+      try {
+        return await fn();
+      } finally {
+        // If this is the current lock, remove it
+        if (this.lockMap.get(filePath) === newLock) {
+          this.lockMap.delete(filePath);
+        }
+      }
+    });
+
+    // Set the new lock
+    this.lockMap.set(filePath, newLock);
+
+    // Return the result of the function
+    return newLock;
   }
 }

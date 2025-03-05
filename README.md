@@ -116,23 +116,22 @@ await pipeline.track(async (st) => {
 ### Event emitting
 ```js
 // Emitted when a step starts
-pipeline.on('step-start', (stepKey) => {});
+pipeline.on('step-start', (stepKey, stepMeta) => {});
 
 // Emitted when a step records data
-pipeline.on('step-record', (stepKey, key, data) => {});
+pipeline.on('step-record', (stepKey, key, data, stepMeta) => {});
 
 // Emitted when a step completes successfully
-pipeline.on('step-success', (stepKey, result) => {});
+pipeline.on('step-success', (stepKey, result, stepMeta) => {});
 
 // Emitted when a step throws an error
-pipeline.on('step-error', (stepKey, error) => {});
+pipeline.on('step-error', (stepKey, error, stepMeta) => {});
 
 // Emitted when a step completes, regardless of success or error
-pipeline.on('step-complete', (stepKey, runData: RunData) => {});
+pipeline.on('step-complete', (stepKey, stepMeta) => {});
 /**
-* RunData: {
-*    result: any;
-*    error?: Error;
+*    result?: any;
+*    error?: string;
 *    time: {
 *      startTs: number;
 *      endTs: number;
@@ -247,9 +246,9 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 
 ## To Do
 - [X] Decorator support for easier integration.
-- [ ] Generate speed analysis stats from multiple runs.
+- [X] Generate speed analysis stats from multiple runs.
 - [ ] Add Redis support for pub/sub events and data storage.
-- [ ] Implement real-time execution monitoring.
+- [X] Implement real-time execution monitoring.
 - [ ] Integrate LLM prompt tracking and storage.
 - [ ] Interactive graph to show step results.
 
