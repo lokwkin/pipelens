@@ -3,23 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StepsTrack Dashboard</title>
+  <title>Pipeline Execution Dashboard</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts - Roboto Mono for code and technical data -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
   <style>
     :root {
-      --primary: #3498db;
-      --primary-dark: #2980b9;
-      --sidebar-bg: #2c3e50;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --sidebar-bg: #1e293b;
       --sidebar-width: 250px;
+      --border-color: #e2e8f0;
+      --code-bg: #f8fafc;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --text-primary: #334155;
+      --text-secondary: #64748b;
     }
     
     body {
-      background-color: #f8f9fa;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f1f5f9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
       overflow-x: hidden;
     }
     
@@ -32,7 +42,7 @@
       height: 100vh;
       z-index: 1000;
       padding-top: 1.5rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
     
     .sidebar-header {
@@ -42,9 +52,10 @@
     }
     
     .sidebar-header h1 {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
-      color: #ecf0f1;
+      color: #f8fafc;
+      letter-spacing: 0.5px;
     }
     
     .nav-link {
@@ -52,17 +63,25 @@
       border-left: 3px solid transparent;
       padding: 0.75rem 1.5rem;
       transition: all 0.2s ease;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
     }
     
     .nav-link:hover {
       color: white;
-      background-color: rgba(255,255,255,0.1);
+      background-color: rgba(255,255,255,0.08);
     }
     
     .nav-link.active {
       color: white;
-      background-color: rgba(255,255,255,0.1);
+      background-color: rgba(255,255,255,0.08);
       border-left: 3px solid var(--primary);
+    }
+    
+    .nav-link i {
+      width: 20px;
+      text-align: center;
+      margin-right: 8px;
     }
     
     /* Content area */
@@ -76,16 +95,17 @@
     /* Cards */
     .card {
       border: none;
-      border-radius: 0.5rem;
-      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       margin-bottom: 1.5rem;
-      width: 100%;
+      background-color: white;
     }
     
     .card-header {
       background-color: white;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      border-bottom: 1px solid var(--border-color);
       padding: 1.25rem 1.5rem;
+      font-weight: 600;
     }
     
     .card-body {
@@ -95,47 +115,61 @@
     /* Tables */
     .table {
       margin-bottom: 0;
+      font-size: 0.95rem;
     }
     
     .table th {
       font-weight: 600;
-      color: #495057;
+      color: var(--text-primary);
       border-top: none;
-      background-color: #f8f9fa;
+      background-color: #f8fafc;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .table td {
       vertical-align: middle;
+      padding: 0.75rem 1rem;
+      border-color: var(--border-color);
     }
     
     .table-hover tbody tr {
       cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    
+    .table-hover tbody tr:hover {
+      background-color: rgba(37, 99, 235, 0.04);
     }
     
     /* Status indicators */
     .status-success {
-      color: #28a745;
+      color: var(--success);
+      font-weight: 500;
     }
     
     .status-error {
-      color: #dc3545;
+      color: var(--error);
+      font-weight: 500;
     }
     
     .status-running {
-      color: #ffc107;
+      color: var(--warning);
+      font-weight: 500;
     }
     
     /* Step details */
     .step-details {
-      background-color: #f8f9fa;
-      border-radius: 0.375rem;
-      padding: 1.25rem;
-      margin: 0.75rem 0;
-      border-left: 4px solid var(--primary);
+      background-color: #f8fafc;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-top: 0.5rem;
     }
     
     .detail-section {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
     }
     
     .detail-section:last-child {
@@ -144,45 +178,87 @@
     
     .detail-header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
     }
     
-    .detail-header h5 {
-      margin: 0;
-      margin-right: 0.5rem;
-      font-size: 1rem;
+    .detail-header h4 {
+      font-size: 0.95rem;
       font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
     }
     
     .copy-btn {
       background: none;
       border: none;
       color: var(--primary);
+      cursor: pointer;
       padding: 0.25rem;
-      font-size: 0.875rem;
+      border-radius: 4px;
+      transition: background-color 0.15s ease;
+    }
+    
+    .copy-btn:hover {
+      background-color: rgba(37, 99, 235, 0.08);
     }
     
     .detail-content textarea {
       width: 100%;
-      min-height: 100px;
+      min-height: 120px;
       padding: 0.75rem;
-      border: 1px solid #dee2e6;
-      border-radius: 0.375rem;
-      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.875rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: white;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.85rem;
       line-height: 1.5;
       resize: vertical;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text-primary);
     }
     
-    /* Refresh indicator */
+    /* Form elements */
+    .form-select, .form-control {
+      border-color: var(--border-color);
+      font-size: 0.95rem;
+    }
+    
+    .form-select:focus, .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15);
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+    
+    .btn-outline-secondary {
+      color: var(--text-secondary);
+      border-color: var(--border-color);
+    }
+    
+    .btn-outline-secondary:hover {
+      background-color: #f1f5f9;
+      color: var(--text-primary);
+    }
+    
+    /* Auto Refresh */
     .refresh-indicator {
       display: inline-block;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #28a745;
-      margin-right: 0.375rem;
+      background-color: var(--success);
+      margin-right: 5px;
     }
     
     .refresh-indicator.active {
@@ -195,6 +271,33 @@
       100% { opacity: 0.5; }
     }
     
+    /* Section Headers */
+    .section-header {
+      margin: 1.5rem 0 1rem 0;
+    }
+    
+    .section-header h3 {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    /* Run detail title */
+    #run-detail-title {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    /* Gantt chart */
+    .gantt-placeholder {
+      background-color: white;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
     /* Views */
     .view {
       display: none;
@@ -202,7 +305,7 @@
     
     .view.active {
       display: block;
-      animation: fadeIn 0.3s ease;
+      animation: fadeIn 0.2s ease;
     }
     
     @keyframes fadeIn {
@@ -210,7 +313,7 @@
       to { opacity: 1; }
     }
     
-    /* Responsive */
+    /* Responsive Design */
     @media (max-width: 768px) {
       .sidebar {
         width: 100%;
@@ -224,42 +327,65 @@
         padding: 1.5rem;
       }
     }
+    
+    /* Step name link */
+    .step-name-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .step-name-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Expand icon */
+    .expand-icon {
+      color: var(--text-secondary);
+      transition: transform 0.2s ease;
+    }
+    
+    tr[data-target] .expand-icon.fa-chevron-up {
+      transform: rotate(180deg);
+    }
   </style>
 </head>
 <body>
-  <div class="d-flex">
-    <!-- Sidebar -->
+  <div class="main-content">
     <div class="sidebar">
       <div class="sidebar-header">
-        <h1>StepsTrack</h1>
+        <h1>Pipeline Dashboard</h1>
       </div>
-      <nav class="nav flex-column">
-        <a href="#" class="nav-link active" data-view="runs-view">Runs</a>
-        <a href="#" class="nav-link" data-view="step-listing-view">Steps</a>
+      <nav>
+        <a href="#" class="nav-link active" data-view="runs-view">
+          <i class="fas fa-stream"></i> Pipeline Runs
+        </a>
+        <a href="#" class="nav-link" data-view="step-listing-view">
+          <i class="fas fa-list-ul"></i> Step Instances
+        </a>
       </nav>
     </div>
     
-    <!-- Content Area -->
     <div class="content-area">
-      <!-- Run Listing View -->
+      <!-- Runs View -->
       <div id="runs-view" class="view active">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h3 mb-0">Pipeline Runs</h1>
+          <h1 class="h4 mb-0">Pipeline Runs</h1>
         </div>
         
         <div class="card">
           <div class="card-body">
             <div class="mb-4 pb-3 border-bottom">
               <div class="row mb-3 align-items-center">
-                <div class="col-md-6">
-                  <div class="d-flex align-items-center">
+                <div class="col-md-8">
+                  <div class="d-flex flex-wrap align-items-center">
                     <label for="pipeline-select" class="me-2">Pipeline:</label>
-                    <select id="pipeline-select" class="form-select">
+                    <select id="pipeline-select" class="form-select me-3" style="width: auto;">
                       <option value="">Select a pipeline</option>
                     </select>
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <div class="d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
                     <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
@@ -317,7 +443,7 @@
       <!-- Run Detail View -->
       <div id="run-detail-view" class="view">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 id="run-detail-title" class="h4 mb-0">Run Details</h1>
+          <h1 id="run-detail-title" class="mb-0">Run Details</h1>
         </div>
         
         <div class="card">
@@ -332,8 +458,8 @@
             </div>
             
             <!-- Steps Table -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 id="steps-count" class="h5 mb-0">Steps: 0</h3>
+            <div class="section-header">
+              <h3 id="steps-count">Steps: 0</h3>
             </div>
             
             <div class="table-responsive">
@@ -363,7 +489,7 @@
       <!-- Step Listing View -->
       <div id="step-listing-view" class="view">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h3 mb-0">Step Instances</h1>
+          <h1 class="h4 mb-0">Step Instances</h1>
         </div>
         
         <div class="card">
