@@ -23,7 +23,7 @@
       padding: 1rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    h1 {
+    h1, h2, h3 {
       margin: 0;
     }
     .dashboard {
@@ -132,6 +132,103 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .tab-container {
+      margin-top: 20px;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      border-bottom: 2px solid #3498db;
+      color: #3498db;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .step-list {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .step-list th, .step-list td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .step-list th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .step-list tr:hover {
+      background-color: #f5f5f5;
+    }
+    .step-stats {
+      margin-top: 20px;
+    }
+    .chart-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .chart-container img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .real-time-indicator {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 12px;
+      color: #3498db;
+    }
+    .real-time-indicator.active {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+    .step-details {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    .step-details pre {
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .back-button {
+      margin-bottom: 15px;
+      padding: 8px 16px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #e9ecef;
+    }
+    .auto-refresh {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+    .auto-refresh label {
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -152,44 +249,126 @@
       </div>
       
       <div class="content">
-        <h2 id="selected-pipeline">Select a Pipeline</h2>
-        
-        <div class="filters">
-          <input type="date" id="start-date" placeholder="Start Date">
-          <input type="date" id="end-date" placeholder="End Date">
-          <select id="status-filter">
-            <option value="">All Statuses</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="running">Running</option>
-          </select>
-          <button id="apply-filters">Apply Filters</button>
+        <div id="main-view">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="selected-pipeline">Select a Pipeline</h2>
+            <div class="auto-refresh">
+              <label for="auto-refresh">Auto-refresh:</label>
+              <input type="checkbox" id="auto-refresh" checked>
+              <span id="refresh-indicator" class="real-time-indicator active">Live</span>
+            </div>
+          </div>
+          
+          <div class="filters">
+            <input type="date" id="start-date" placeholder="Start Date">
+            <input type="date" id="end-date" placeholder="End Date">
+            <select id="status-filter">
+              <option value="">All Statuses</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="running">Running</option>
+            </select>
+            <button id="apply-filters">Apply Filters</button>
+          </div>
+          
+          <table class="run-list">
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Start Time</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="runs-table-body">
+              <tr>
+                <td colspan="4">Select a pipeline to view runs</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="pagination">
+            <button id="prev-page" disabled>Previous</button>
+            <span id="page-info">Page 1</span>
+            <button id="next-page" disabled>Next</button>
+          </div>
         </div>
         
-        <table class="run-list">
-          <thead>
-            <tr>
-              <th>Run ID</th>
-              <th>Start Time</th>
-              <th>Duration</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="runs-table-body">
-            <tr>
-              <td colspan="4">Select a pipeline to view runs</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div class="pagination">
-          <button id="prev-page" disabled>Previous</button>
-          <span id="page-info">Page 1</span>
-          <button id="next-page" disabled>Next</button>
+        <div id="run-view" style="display: none;">
+          <button id="back-to-runs" class="back-button">← Back to Runs</button>
+          <h2 id="run-title">Run Details</h2>
+          
+          <div class="tabs">
+            <div class="tab active" data-tab="overview">Overview</div>
+            <div class="tab" data-tab="steps">Steps</div>
+            <div class="tab" data-tab="charts">Charts</div>
+          </div>
+          
+          <div class="tab-content active" id="overview-tab">
+            <div class="run-details" id="run-details">
+              <!-- Run details will be shown here -->
+            </div>
+          </div>
+          
+          <div class="tab-content" id="steps-tab">
+            <table class="step-list">
+              <thead>
+                <tr>
+                  <th>Step Name</th>
+                  <th>Start Time</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="steps-table-body">
+                <tr>
+                  <td colspan="4">Loading steps...</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div class="step-details" id="step-details" style="display: none;">
+              <!-- Step details will be shown here -->
+            </div>
+          </div>
+          
+          <div class="tab-content" id="charts-tab">
+            <div class="chart-container">
+              <h3>Execution Timeline (Gantt Chart)</h3>
+              <div id="gantt-chart">
+                <!-- Gantt chart will be shown here -->
+              </div>
+            </div>
+            
+            <div class="chart-container">
+              <h3>Execution Graph</h3>
+              <div id="execution-graph">
+                <!-- Execution graph will be shown here -->
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div class="run-details" id="run-details">
-          <!-- Run details will be shown here -->
+        <div id="step-stats-view" style="display: none;">
+          <button id="back-to-run" class="back-button">← Back to Run</button>
+          <h2 id="step-stats-title">Step Statistics</h2>
+          
+          <div class="filters">
+            <input type="date" id="stats-start-date" placeholder="Start Date">
+            <input type="date" id="stats-end-date" placeholder="End Date">
+            <button id="apply-stats-filters">Apply Filters</button>
+          </div>
+          
+          <div class="chart-container">
+            <h3>Step Performance Over Time</h3>
+            <div id="step-timeseries-chart">
+              <!-- Step timeseries chart will be shown here -->
+            </div>
+          </div>
+          
+          <div class="step-stats" id="step-stats">
+            <!-- Step statistics will be shown here -->
+          </div>
         </div>
       </div>
     </div>
@@ -200,15 +379,21 @@
     document.addEventListener('DOMContentLoaded', function() {
       // State
       let currentPipeline = null;
+      let currentRun = null;
+      let currentStep = null;
       let currentPage = 1;
       const pageSize = 10;
       let totalRuns = 0;
+      let refreshInterval = null;
+      let isAutoRefresh = true;
       
       // Elements
       const pipelineList = document.getElementById('pipeline-list');
       const selectedPipelineTitle = document.getElementById('selected-pipeline');
       const runsTableBody = document.getElementById('runs-table-body');
       const runDetails = document.getElementById('run-details');
+      const stepsTableBody = document.getElementById('steps-table-body');
+      const stepDetails = document.getElementById('step-details');
       const startDateInput = document.getElementById('start-date');
       const endDateInput = document.getElementById('end-date');
       const statusFilter = document.getElementById('status-filter');
@@ -216,6 +401,93 @@
       const prevPageBtn = document.getElementById('prev-page');
       const nextPageBtn = document.getElementById('next-page');
       const pageInfo = document.getElementById('page-info');
+      const autoRefreshCheckbox = document.getElementById('auto-refresh');
+      const refreshIndicator = document.getElementById('refresh-indicator');
+      
+      // Views
+      const mainView = document.getElementById('main-view');
+      const runView = document.getElementById('run-view');
+      const stepStatsView = document.getElementById('step-stats-view');
+      
+      // Tabs
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      // Navigation
+      const backToRunsBtn = document.getElementById('back-to-runs');
+      const backToRunBtn = document.getElementById('back-to-run');
+      
+      // Charts
+      const ganttChart = document.getElementById('gantt-chart');
+      const executionGraph = document.getElementById('execution-graph');
+      const stepTimeseriesChart = document.getElementById('step-timeseries-chart');
+      
+      // Auto-refresh toggle
+      autoRefreshCheckbox.addEventListener('change', function() {
+        isAutoRefresh = this.checked;
+        refreshIndicator.classList.toggle('active', isAutoRefresh);
+        
+        if (isAutoRefresh) {
+          startAutoRefresh();
+        } else {
+          stopAutoRefresh();
+        }
+      });
+      
+      // Start auto-refresh
+      function startAutoRefresh() {
+        if (refreshInterval) {
+          clearInterval(refreshInterval);
+        }
+        
+        refreshInterval = setInterval(() => {
+          if (currentRun) {
+            loadRunDetails(currentRun);
+          } else if (currentPipeline) {
+            loadRuns();
+          }
+        }, 5000); // Refresh every 5 seconds
+      }
+      
+      // Stop auto-refresh
+      function stopAutoRefresh() {
+        if (refreshInterval) {
+          clearInterval(refreshInterval);
+          refreshInterval = null;
+        }
+      }
+      
+      // Tab switching
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabId = tab.getAttribute('data-tab');
+          
+          // Update active tab
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Show corresponding content
+          tabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === `${tabId}-tab`) {
+              content.classList.add('active');
+            }
+          });
+        });
+      });
+      
+      // Navigation
+      backToRunsBtn.addEventListener('click', () => {
+        runView.style.display = 'none';
+        mainView.style.display = 'block';
+        currentRun = null;
+      });
+      
+      backToRunBtn.addEventListener('click', () => {
+        stepStatsView.style.display = 'none';
+        runView.style.display = 'block';
+        currentStep = null;
+      });
       
       // Load pipelines
       async function loadPipelines() {
@@ -279,11 +551,13 @@
           }
           
           const response = await fetch(`/api/runs/${currentPipeline}?${params.toString()}`);
-          const runs = await response.json();
+          const data = await response.json();
           
           // Update pagination
-          totalRuns = runs.length; // This is a simplification - ideally the API would return total count
+          totalRuns = data.total || data.runs.length;
           updatePagination();
+          
+          const runs = data.runs || data;
           
           if (runs.length === 0) {
             runsTableBody.innerHTML = '<tr><td colspan="4">No runs found</td></tr>';
@@ -294,18 +568,14 @@
           runs.forEach(run => {
             const tr = document.createElement('tr');
             
-            // Determine status based on data
-            let status = 'Unknown';
+            // Determine status class
             let statusClass = '';
             
-            if (run.endTime) {
-              status = 'Completed';
+            if (run.status === 'completed') {
               statusClass = 'status-completed';
-            } else if (run.error) {
-              status = 'Failed';
+            } else if (run.status === 'failed') {
               statusClass = 'status-failed';
-            } else {
-              status = 'Running';
+            } else if (run.status === 'running') {
               statusClass = 'status-running';
             }
             
@@ -313,16 +583,39 @@
               <td>${run.runId}</td>
               <td>${new Date(run.startTime).toLocaleString()}</td>
               <td>${formatDuration(run.duration)}</td>
-              <td class="${statusClass}">${status}</td>
+              <td class="${statusClass}">${run.status}</td>
             `;
             
-            tr.addEventListener('click', () => loadRunDetails(run.runId));
+            tr.addEventListener('click', () => showRunDetails(run.runId));
             runsTableBody.appendChild(tr);
           });
         } catch (error) {
           console.error('Error loading runs:', error);
           runsTableBody.innerHTML = '<tr><td colspan="4">Error loading runs</td></tr>';
         }
+      }
+      
+      // Show run details
+      function showRunDetails(runId) {
+        currentRun = runId;
+        
+        // Switch to run view
+        mainView.style.display = 'none';
+        runView.style.display = 'block';
+        
+        // Reset tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        document.querySelector('.tab[data-tab="overview"]').classList.add('active');
+        document.getElementById('overview-tab').classList.add('active');
+        
+        // Set run title
+        document.getElementById('run-title').textContent = `Run Details: ${runId}`;
+        
+        // Load run details
+        loadRunDetails(runId);
+        loadRunSteps(runId);
+        loadRunCharts(runId);
       }
       
       // Load details for a specific run
@@ -335,7 +628,7 @@
           
           // Format the run details
           let detailsHtml = `
-            <h3>Run Details: ${runId}</h3>
+            <h3>Run Details</h3>
             <div style="overflow-x: auto;">
               <pre>${JSON.stringify(data, null, 2)}</pre>
             </div>
@@ -348,11 +641,191 @@
         }
       }
       
+      // Load steps for a specific run
+      async function loadRunSteps(runId) {
+        try {
+          stepsTableBody.innerHTML = '<tr><td colspan="4">Loading steps...</td></tr>';
+          
+          const response = await fetch(`/api/steps/${runId}`);
+          const steps = await response.json();
+          
+          if (steps.length === 0) {
+            stepsTableBody.innerHTML = '<tr><td colspan="4">No steps found</td></tr>';
+            return;
+          }
+          
+          stepsTableBody.innerHTML = '';
+          steps.forEach(step => {
+            const tr = document.createElement('tr');
+            
+            // Determine status
+            let status = 'Unknown';
+            let statusClass = '';
+            
+            if (step.error) {
+              status = 'Failed';
+              statusClass = 'status-failed';
+            } else if (step.result !== undefined) {
+              status = 'Completed';
+              statusClass = 'status-completed';
+            } else {
+              status = 'Running';
+              statusClass = 'status-running';
+            }
+            
+            tr.innerHTML = `
+              <td>${step.name}</td>
+              <td>${new Date(step.time.startTs).toLocaleString()}</td>
+              <td>${formatDuration(step.time.timeUsageMs)}</td>
+              <td class="${statusClass}">${status}</td>
+            `;
+            
+            tr.addEventListener('click', () => showStepDetails(step));
+            stepsTableBody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error('Error loading steps:', error);
+          stepsTableBody.innerHTML = '<tr><td colspan="4">Error loading steps</td></tr>';
+        }
+      }
+      
+      // Show step details
+      function showStepDetails(step) {
+        stepDetails.style.display = 'block';
+        stepDetails.innerHTML = `
+          <h3>Step Details: ${step.name}</h3>
+          <div style="overflow-x: auto;">
+            <pre>${JSON.stringify(step, null, 2)}</pre>
+          </div>
+        `;
+      }
+      
+      // Load charts for a specific run
+      async function loadRunCharts(runId) {
+        try {
+          ganttChart.innerHTML = '<p>Loading Gantt chart...</p>';
+          executionGraph.innerHTML = '<p>Loading execution graph...</p>';
+          
+          // Load Gantt chart
+          const ganttResponse = await fetch(`/api/charts/gantt/${runId}`);
+          const ganttData = await ganttResponse.json();
+          
+          if (ganttData.url) {
+            ganttChart.innerHTML = `<img src="${ganttData.url}" alt="Gantt Chart">`;
+          } else {
+            ganttChart.innerHTML = '<p>Gantt chart not available</p>';
+          }
+          
+          // Load execution graph
+          const graphResponse = await fetch(`/api/charts/execution-graph/${runId}`);
+          const graphData = await graphResponse.json();
+          
+          if (graphData.url) {
+            executionGraph.innerHTML = `<img src="${graphData.url}" alt="Execution Graph">`;
+          } else {
+            executionGraph.innerHTML = '<p>Execution graph not available</p>';
+          }
+        } catch (error) {
+          console.error('Error loading charts:', error);
+          ganttChart.innerHTML = '<p>Error loading Gantt chart</p>';
+          executionGraph.innerHTML = '<p>Error loading execution graph</p>';
+        }
+      }
+      
+      // Show step statistics
+      function showStepStats(stepKey) {
+        currentStep = stepKey;
+        
+        // Switch to step stats view
+        runView.style.display = 'none';
+        stepStatsView.style.display = 'block';
+        
+        // Set step stats title
+        document.getElementById('step-stats-title').textContent = `Step Statistics: ${stepKey}`;
+        
+        // Load step statistics
+        loadStepStats(stepKey);
+      }
+      
+      // Load statistics for a specific step
+      async function loadStepStats(stepKey) {
+        try {
+          const stepStats = document.getElementById('step-stats');
+          stepStats.innerHTML = '<p>Loading step statistics...</p>';
+          
+          // Get pipeline name and step name from the step key
+          const [pipelineName, stepName] = stepKey.split('.');
+          
+          // Build query parameters
+          const params = new URLSearchParams();
+          
+          const statsStartDate = document.getElementById('stats-start-date').value;
+          const statsEndDate = document.getElementById('stats-end-date').value;
+          
+          if (statsStartDate) {
+            params.append('startDate', statsStartDate);
+          }
+          
+          if (statsEndDate) {
+            params.append('endDate', statsEndDate);
+          }
+          
+          const response = await fetch(`/api/step-stats/${pipelineName}/${stepName}?${params.toString()}`);
+          const data = await response.json();
+          
+          // Format the step statistics
+          let statsHtml = `
+            <h3>Step Statistics</h3>
+            <div style="overflow-x: auto;">
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>
+          `;
+          
+          stepStats.innerHTML = statsHtml;
+          
+          // Load step timeseries chart
+          loadStepTimeseriesChart(pipelineName, stepName, statsStartDate, statsEndDate);
+        } catch (error) {
+          console.error('Error loading step statistics:', error);
+          document.getElementById('step-stats').innerHTML = '<p>Error loading step statistics</p>';
+        }
+      }
+      
+      // Load timeseries chart for a specific step
+      async function loadStepTimeseriesChart(pipelineName, stepName, startDate, endDate) {
+        try {
+          stepTimeseriesChart.innerHTML = '<p>Loading timeseries chart...</p>';
+          
+          // Build query parameters
+          const params = new URLSearchParams();
+          
+          if (startDate) {
+            params.append('startDate', startDate);
+          }
+          
+          if (endDate) {
+            params.append('endDate', endDate);
+          }
+          
+          const response = await fetch(`/api/charts/step-timeseries/${pipelineName}/${stepName}?${params.toString()}`);
+          const data = await response.json();
+          
+          if (data.url) {
+            stepTimeseriesChart.innerHTML = `<img src="${data.url}" alt="Step Timeseries Chart">`;
+          } else {
+            stepTimeseriesChart.innerHTML = '<p>Timeseries chart not available</p>';
+          }
+        } catch (error) {
+          console.error('Error loading timeseries chart:', error);
+          stepTimeseriesChart.innerHTML = '<p>Error loading timeseries chart</p>';
+        }
+      }
+      
       // Update pagination controls
       function updatePagination() {
         pageInfo.textContent = `Page ${currentPage}`;
         prevPageBtn.disabled = currentPage <= 1;
-        nextPageBtn.disabled = totalRuns < pageSize;
+        nextPageBtn.disabled = totalRuns <= currentPage * pageSize;
       }
       
       // Format duration in milliseconds to a readable string
@@ -378,6 +851,12 @@
         loadRuns();
       });
       
+      document.getElementById('apply-stats-filters').addEventListener('click', () => {
+        if (currentStep) {
+          loadStepStats(currentStep);
+        }
+      });
+      
       prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
           currentPage--;
@@ -386,7 +865,7 @@
       });
       
       nextPageBtn.addEventListener('click', () => {
-        if (totalRuns >= pageSize) {
+        if (totalRuns > currentPage * pageSize) {
           currentPage++;
           loadRuns();
         }
@@ -394,6 +873,7 @@
       
       // Initialize
       loadPipelines();
+      startAutoRefresh();
     });
   </script>
 </body>
