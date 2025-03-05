@@ -247,9 +247,10 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 ## To Do
 - [X] Decorator support for easier integration.
 - [X] Generate speed analysis stats from multiple runs.
-- [ ] Add Redis support for pub/sub events and data storage.
+- [X] Add Redis / File support for persistent data storage.
+- [ ] Dashboard to monitor execution logs and results.
 - [X] Implement real-time execution monitoring.
-- [ ] Integrate LLM prompt tracking and storage.
+- [ ] Optional LLM-extension that optimize for LLM prompt result and token tracking
 - [ ] Interactive graph to show step results.
 
 ## License
