@@ -450,6 +450,56 @@
     tr[data-target] .expand-icon.fa-chevron-up {
       transform: rotate(180deg);
     }
+    
+    /* Global date range selector */
+    .global-date-range-selector {
+      background-color: white;
+      border-radius: 6px;
+      padding: 0.75rem 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 1.5rem;
+    }
+    
+    .global-date-range-selector #page-title {
+      margin-right: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .global-date-range-selector .form-control,
+    .global-date-range-selector .form-select {
+      border-color: var(--border-color);
+    }
+    
+    .global-date-range-selector .form-control:focus,
+    .global-date-range-selector .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15);
+    }
+    
+    @media (max-width: 1200px) {
+      .global-date-range-selector .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+      }
+      
+      .global-date-range-selector #page-title {
+        margin-bottom: 0.75rem;
+      }
+      
+      .global-date-range-selector .d-flex .d-flex {
+        flex-direction: row;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .global-date-range-selector .d-flex .d-flex {
+        gap: 0.5rem;
+      }
+    }
   </style>
   <!-- Add Flatpickr CSS in the head section -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -473,7 +523,7 @@
           <i class="fas fa-stream"></i> Pipeline Runs
         </a>
         <a href="#" class="nav-link" data-view="step-stats-view">
-          <i class="fas fa-list-ul"></i> Step Stats
+          <i class="fas fa-list-ul"></i> Step Execution Stats
         </a>
       </nav>
       
@@ -498,28 +548,41 @@
     </div>
     
     <div class="content-area">
+      <!-- Global Date Range Selector -->
+      <div class="global-date-range-selector">
+        <div class="d-flex align-items-center justify-content-between">
+          <!-- Page Title - Will be dynamically updated based on current view -->
+          <h1 id="page-title" class="h4 mb-0">Pipeline Runs</h1>
+          
+          <!-- Date Range Controls -->
+          <div class="d-flex align-items-center">
+            <label for="global-time-preset-select" class="me-2 mb-0">Range:</label>
+            <select id="global-time-preset-select" class="form-select form-select-sm me-3" style="width: auto;">
+              <option value="custom">Custom</option>
+              <option value="5">Last 5 minutes</option>
+              <option value="15">Last 15 minutes</option>
+              <option value="30">Last 30 minutes</option>
+              <option value="60">Last 1 hour</option>
+              <option value="360">Last 6 hours</option>
+              <option value="720">Last 12 hours</option>
+              <option value="1440">Last 24 hours</option>
+              <option value="2880">Last 2 days</option>
+              <option value="10080">Last 7 days</option>
+              <option value="43200">Last 30 days</option>
+            </select>
+            <label for="global-start-date" class="me-2 mb-0">From:</label>
+            <input type="text" id="global-start-date" class="form-control form-control-sm me-3" style="width: 160px;">
+            <label for="global-end-date" class="me-2 mb-0">To:</label>
+            <input type="text" id="global-end-date" class="form-control form-control-sm me-3" style="width: 160px;">
+            <button id="global-apply-filter" class="btn btn-primary btn-sm">Apply</button>
+          </div>
+        </div>
+      </div>
+      
       <!-- Runs View -->
       <div id="runs-view" class="view active">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h4 mb-0">Pipeline Runs</h1>
-        </div>
-        
         <div class="card">
           <div class="card-body">
-            <div class="mb-4 pb-3 border-bottom">
-              <div class="row align-items-center">
-                <div class="col-12">
-                  <div class="d-flex flex-wrap align-items-center">
-                    <label for="start-date" class="me-2">From:</label>
-                    <input type="datetime-local" id="start-date" class="form-control form-control-sm me-3" style="width: auto;">
-                    <label for="end-date" class="me-2">To:</label>
-                    <input type="datetime-local" id="end-date" class="form-control form-control-sm me-3" style="width: auto;">
-                    <button id="apply-filter" class="btn btn-primary btn-sm">Apply</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
             <div class="table-responsive">
               <table id="runs-table" class="table table-hover">
                 <thead>
@@ -545,10 +608,6 @@
 
       <!-- Run Detail View -->
       <div id="run-detail-view" class="view">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 id="run-detail-title" class="mb-0">Run Details</h1>
-        </div>
-        
         <div class="card">
           <div class="card-body">
             <button id="back-to-runs" class="btn btn-outline-secondary mb-4">
@@ -591,46 +650,16 @@
 
       <!-- Step Listing View -->
       <div id="step-stats-view" class="view">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h4 mb-0">Step Stats</h1>
-        </div>
-        
         <div class="card">
           <div class="card-body">
             <div class="mb-4 pb-3 border-bottom">
               <div class="row align-items-center mb-3">
                 <div class="col-12">
                   <div class="d-flex flex-wrap align-items-center">
-                    <label for="step-name-select" class="me-2">Step:</label>
+                    <!-- <label for="step-name-select" class="me-2">Step:</label> -->
                     <select id="step-name-select" class="form-select me-3" style="width: auto;">
                       <option value="">Select a step</option>
                     </select>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row align-items-center">
-                <div class="col-md-12 mb-2 mb-md-0">
-                  <div class="d-flex flex-wrap align-items-center">
-                    <label for="step-start-date" class="me-2">From:</label>
-                    <input type="text" id="step-start-date" class="form-control form-control-sm me-3" style="width: auto;">
-                    <label for="step-end-date" class="me-2">To:</label>
-                    <input type="text" id="step-end-date" class="form-control form-control-sm me-3" style="width: auto;">
-                    <label for="time-preset-select" class="me-2">Time range:</label>
-                    <select id="time-preset-select" class="form-select form-select-sm me-3" style="width: auto;">
-                      <option value="custom">Custom</option>
-                      <option value="5">Last 5 minutes</option>
-                      <option value="15">Last 15 minutes</option>
-                      <option value="30">Last 30 minutes</option>
-                      <option value="60">Last 1 hour</option>
-                      <option value="360">Last 6 hours</option>
-                      <option value="720">Last 12 hours</option>
-                      <option value="1440">Last 24 hours</option>
-                      <option value="2880">Last 2 days</option>
-                      <option value="10080">Last 7 days</option>
-                      <option value="43200">Last 30 days</option>
-                    </select>
-                    <button id="apply-step-filter" class="btn btn-primary btn-sm">Apply</button>
                   </div>
                 </div>
               </div>
@@ -638,7 +667,7 @@
             
             <!-- Add step name title here -->
             <div id="step-stats-title" class="mb-4 d-none">
-              <h3 class="h5 mb-3 font-weight-normal">Step: <span id="selected-step-name"></span></h3>
+
             </div>
             
             <!-- Step Statistics Summary -->
@@ -707,10 +736,6 @@
 
       <!-- Step Analysis View -->
       <div id="step-analysis-view" class="view">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 id="step-analysis-title" class="h4 mb-0">Step Analysis</h1>
-        </div>
-        
         <div class="card">
           <div class="card-body">
             <button id="back-to-run-detail" class="btn btn-outline-secondary mb-4">
@@ -746,7 +771,12 @@
       autoRefresh: false,
       refreshInterval: null,
       refreshFrequency: 3000,
-      expandedRows: new Set() // Track expanded rows
+      expandedRows: new Set(), // Track expanded rows
+      globalDateRange: {
+        startDate: null,
+        endDate: null,
+        timePreset: "1440" // Default to last 24 hours
+      }
     };
 
     // DOM Elements
@@ -759,8 +789,7 @@
     const stepStatsTable = document.getElementById('step-stats-table').querySelector('tbody');
     const backToRunsBtn = document.getElementById('back-to-runs');
     const backToRunDetailBtn = document.getElementById('back-to-run-detail');
-    const runDetailTitle = document.getElementById('run-detail-title');
-    const stepAnalysisTitle = document.getElementById('step-analysis-title');
+    const pageTitle = document.getElementById('page-title');
     const stepAnalysisDetails = document.getElementById('step-analysis-details');
     const globalAutoRefreshCheckbox = document.getElementById('global-auto-refresh');
     const globalRefreshIntervalSelect = document.getElementById('global-refresh-interval');
@@ -830,6 +859,13 @@
           view.classList.add('active');
           state.currentView = viewId;
           
+          // Update page title based on current view
+          if (viewId === 'runs-view') {
+            pageTitle.textContent = 'Pipeline Runs';
+          } else if (viewId === 'step-stats-view') {
+            pageTitle.textContent = 'Step Execution Stats';
+          }
+          
           // Load data based on the current view and selected pipeline
           if (state.selectedPipeline) {
             if (viewId === 'runs-view') {
@@ -866,6 +902,9 @@
       url.searchParams.set('runId', runId);
       window.history.pushState({view: 'run-detail', runId}, '', url);
       
+      // Update page title
+      pageTitle.textContent = `Run Details: ${runId}`;
+      
       // Load run details (not an auto-refresh)
       loadRunDetails(runId, false);
     }
@@ -883,8 +922,10 @@
       url.searchParams.set('stepKey', step.key);
       window.history.pushState({view: 'step-analysis', runId: state.selectedRun, stepKey: step.key}, '', url);
       
-      // Update title and details
-      stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
+      // Update page title
+      pageTitle.textContent = `Step Analysis: ${step.name}`;
+      
+      // Update details
       stepAnalysisDetails.innerHTML = `
         <p><strong>Step Key:</strong> ${step.key}</p>
         <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
@@ -964,6 +1005,8 @@
       if (view === 'run-detail' && runId) {
         state.selectedRun = runId;
         showView('run-detail-view');
+        // Update page title
+        pageTitle.textContent = `Run Details: ${runId}`;
         loadRunDetails(runId, false);
       } else if (view === 'step-analysis' && runId && stepKey) {
         state.selectedRun = runId;
@@ -973,7 +1016,8 @@
           .then(step => {
             state.selectedStep = step;
             showView('step-analysis-view');
-            stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
+            // Update page title
+            pageTitle.textContent = `Step Analysis: ${step.name}`;
             stepAnalysisDetails.innerHTML = `
               <p><strong>Step Key:</strong> ${step.key}</p>
               <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
@@ -1061,20 +1105,40 @@
 
     async function loadRuns(pipeline) {
       try {
-        // Get filter values
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-        
         // Build query parameters
         let url = `/api/pipelines/${pipeline}/runs`;
         const params = new URLSearchParams();
         
-        if (startDate) {
-          params.append('startDate', startDate);
-        }
-        
-        if (endDate) {
-          params.append('endDate', endDate);
+        // Use global date range if available
+        if (state.globalDateRange.timePreset !== "custom") {
+          // For preset selections, calculate the start date
+          const minutes = parseInt(state.globalDateRange.timePreset, 10);
+          const now = new Date();
+          const start = new Date(now.getTime() - minutes * 60 * 1000);
+          params.append('startDate', start.toISOString());
+        } else if (state.globalDateRange.startDate || state.globalDateRange.endDate) {
+          // For custom range, use the stored values
+          if (state.globalDateRange.startDate) {
+            const startDate = new Date(state.globalDateRange.startDate).toISOString();
+            params.append('startDate', startDate);
+          }
+          
+          if (state.globalDateRange.endDate) {
+            const endDate = new Date(state.globalDateRange.endDate).toISOString();
+            params.append('endDate', endDate);
+          }
+        } else {
+          // Fallback to the old filter inputs if global date range is not set
+          const startDate = document.getElementById('start-date').value;
+          const endDate = document.getElementById('end-date').value;
+          
+          if (startDate) {
+            params.append('startDate', startDate);
+          }
+          
+          if (endDate) {
+            params.append('endDate', endDate);
+          }
         }
         
         if (params.toString()) {
@@ -1139,8 +1203,10 @@
           state.expandedRows = expandedRows;
         }
         
-        // Update title
-        runDetailTitle.textContent = `Run Details: ${runId}`;
+        // Update page title if not an auto-refresh
+        if (!isAutoRefresh) {
+          pageTitle.textContent = `Run Details: ${runId}`;
+        }
         
         // Load Gantt chart
         loadGanttChart(runId);
@@ -1284,10 +1350,6 @@
               loadStepNames(state.selectedPipeline).then(() => {
                 stepNameSelect.value = step.name;
                 
-                // Update the step name title
-                document.getElementById('selected-step-name').textContent = step.name;
-                document.getElementById('step-stats-title').classList.remove('d-none');
-                
                 // Load the step time series data
                 loadStepTimeSeries(state.selectedPipeline, step.name);
                 
@@ -1406,44 +1468,59 @@
     async function loadStepTimeSeries(pipeline, stepName) {
       try {
         // Update the step name title
-        const stepStatsTitle = document.getElementById('step-stats-title');
-        const selectedStepNameSpan = document.getElementById('selected-step-name');
         const stepStatsSummary = document.getElementById('step-stats-summary');
         
         if (stepName) {
-          selectedStepNameSpan.textContent = stepName;
-          stepStatsTitle.classList.remove('d-none');
         } else {
-          stepStatsTitle.classList.add('d-none');
           stepStatsSummary.classList.add('d-none');
         }
-        
-        // Get filter values
-        const startDateInput = document.getElementById('step-start-date');
-        const endDateInput = document.getElementById('step-end-date');
-        const timePresetSelect = document.getElementById('time-preset-select');
         
         // Build query parameters
         let url = `/api/pipelines/${pipeline}/steps/${stepName}/time-series`;
         const params = new URLSearchParams();
         
-        if (timePresetSelect.value !== "custom") {
-          // If a preset is selected, calculate the start date
-          const minutes = parseInt(timePresetSelect.value, 10);
+        // Use global date range if available
+        if (state.globalDateRange.timePreset !== "custom") {
+          // For preset selections, calculate the start date
+          const minutes = parseInt(state.globalDateRange.timePreset, 10);
           const now = new Date();
           const start = new Date(now.getTime() - minutes * 60 * 1000);
           params.append('startDate', start.toISOString());
-        } else {
-          // For custom range, use the visible input values
-          if (startDateInput.value && endDateInput.value) {
-            const startDate = new Date(startDateInput.value).toISOString();
-            const endDate = new Date(endDateInput.value).toISOString();
+        } else if (state.globalDateRange.startDate || state.globalDateRange.endDate) {
+          // For custom range, use the stored values
+          if (state.globalDateRange.startDate) {
+            const startDate = new Date(state.globalDateRange.startDate).toISOString();
             params.append('startDate', startDate);
+          }
+          
+          if (state.globalDateRange.endDate) {
+            const endDate = new Date(state.globalDateRange.endDate).toISOString();
             params.append('endDate', endDate);
-          } else if (startDateInput.value) {
-            // If only start date is provided, use it
-            const startDate = new Date(startDateInput.value).toISOString();
-            params.append('startDate', startDate);
+          }
+        } else {
+          // Fallback to the step-specific filter inputs
+          const startDateInput = document.getElementById('step-start-date');
+          const endDateInput = document.getElementById('step-end-date');
+          const timePresetSelect = document.getElementById('time-preset-select');
+          
+          if (timePresetSelect.value !== "custom") {
+            // If a preset is selected, calculate the start date
+            const minutes = parseInt(timePresetSelect.value, 10);
+            const now = new Date();
+            const start = new Date(now.getTime() - minutes * 60 * 1000);
+            params.append('startDate', start.toISOString());
+          } else {
+            // For custom range, use the visible input values
+            if (startDateInput.value && endDateInput.value) {
+              const startDate = new Date(startDateInput.value).toISOString();
+              const endDate = new Date(endDateInput.value).toISOString();
+              params.append('startDate', startDate);
+              params.append('endDate', endDate);
+            } else if (startDateInput.value) {
+              // If only start date is provided, use it
+              const startDate = new Date(startDateInput.value).toISOString();
+              params.append('startDate', startDate);
+            }
           }
         }
         
@@ -1491,13 +1568,15 @@
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${timestamp}</td>
+            <td>${instance.runId}</td>
             <td>${instance.stepKey}</td>
             <td>${duration}</td>
-            <td><a href="#" class="step-name-link">${instance.runId}</a></td>
           `;
           
           // Add click event listener to the Run ID link
-          const runIdLink = row.querySelector('.step-name-link');
+          const runIdLink = row.querySelector('td:nth-child(2)');
+          runIdLink.style.cursor = 'pointer';
+          runIdLink.style.color = 'var(--primary)';
           runIdLink.addEventListener('click', (e) => {
             e.preventDefault();
             showRunDetails(instance.runId);
@@ -1559,7 +1638,6 @@
             .then(step => {
               state.selectedStep = step;
               showView('step-analysis-view');
-              stepAnalysisTitle.textContent = `Step Analysis: ${step.name}`;
               stepAnalysisDetails.innerHTML = `
                 <p><strong>Step Key:</strong> ${step.key}</p>
                 <p><strong>Start Time:</strong> ${formatDateTime(step.time.startTs)}</p>
@@ -1603,27 +1681,28 @@
       });
       
       // Set up filter buttons
-      document.getElementById('apply-filter').addEventListener('click', function() {
-        if (state.selectedPipeline) {
-          loadRuns(state.selectedPipeline);
-        }
-      });
-      
-      document.getElementById('apply-step-filter').addEventListener('click', function() {
-        const pipeline = state.selectedPipeline;
-        const stepName = state.selectedStepName;
+      document.getElementById('global-apply-filter').addEventListener('click', function() {
+        // Get values from the global date range selector
+        const timePreset = document.getElementById('global-time-preset-select').value;
+        const startDate = document.getElementById('global-start-date').value;
+        const endDate = document.getElementById('global-end-date').value;
         
-        if (pipeline && stepName) {
-          loadStepTimeSeries(pipeline, stepName);
+        // Update global date range state
+        state.globalDateRange.timePreset = timePreset;
+        state.globalDateRange.startDate = startDate;
+        state.globalDateRange.endDate = endDate;
+        
+        // Apply the filter based on current view
+        if (state.currentView === 'runs-view' && state.selectedPipeline) {
+          loadRuns(state.selectedPipeline);
+        } else if (state.currentView === 'step-stats-view' && state.selectedPipeline && state.selectedStepName) {
+          loadStepTimeSeries(state.selectedPipeline, state.selectedStepName);
         }
       });
       
       // Set default date range (last 24 hours)
       const now = new Date();
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      
-      document.getElementById('step-end-date').value = formatDateForInput(now);
-      document.getElementById('step-start-date').value = formatDateForInput(yesterday);
       
       // Initialize time range presets
       initTimePresets();
@@ -1640,10 +1719,6 @@
         if (stepName && state.selectedPipeline) {
           state.selectedStepName = stepName;
           
-          // Update step name in the title
-          document.getElementById('selected-step-name').textContent = stepName;
-          document.getElementById('step-stats-title').classList.remove('d-none');
-          
           // Update URL with selected step name
           const url = new URL(window.location);
           url.searchParams.set('stepName', stepName);
@@ -1655,10 +1730,7 @@
           
           // Load step instances when a step is selected
           loadStepTimeSeries(state.selectedPipeline, stepName);
-        } else {
-          // Hide the title when no step is selected
-          document.getElementById('step-stats-title').classList.add('d-none');
-          
+        } else {          
           // If no step is selected, remove the stepName parameter from URL
           const url = new URL(window.location);
           url.searchParams.delete('stepName');
@@ -1684,7 +1756,34 @@
         // Flag to track if changes are programmatic
         let isProgrammaticChange = false;
         
-        // Initialize date pickers with Flatpickr
+        // Initialize global date pickers with Flatpickr
+        const globalStartDatePicker = flatpickr("#global-start-date", {
+          enableTime: true,
+          dateFormat: "Y-m-d H:i:S",
+          time_24hr: true,
+          defaultDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+          onChange: function(selectedDates, dateStr) {
+            // Only change to Custom if the user manually selected a date
+            if (!isProgrammaticChange && dateStr !== "") {
+              document.getElementById('global-time-preset-select').value = "custom";
+            }
+          }
+        });
+        
+        const globalEndDatePicker = flatpickr("#global-end-date", {
+          enableTime: true,
+          dateFormat: "Y-m-d H:i:S",
+          time_24hr: true,
+          defaultDate: new Date(), // now
+          onChange: function(selectedDates, dateStr) {
+            // Only change to Custom if the user manually selected a date
+            if (!isProgrammaticChange && dateStr !== "") {
+              document.getElementById('global-time-preset-select').value = "custom";
+            }
+          }
+        });
+        
+        // Initialize step-specific date pickers (keep for backward compatibility)
         const startDatePicker = flatpickr("#step-start-date", {
           enableTime: true,
           dateFormat: "Y-m-d H:i:S",
@@ -1713,9 +1812,35 @@
           }
         });
         
-        console.log('Date pickers initialized:', startDatePicker, endDatePicker);
+        console.log('Date pickers initialized:', globalStartDatePicker, globalEndDatePicker, startDatePicker, endDatePicker);
         
-        // Initialize time preset dropdown
+        // Initialize global time preset dropdown
+        const globalTimePresetSelect = document.getElementById('global-time-preset-select');
+        globalTimePresetSelect.addEventListener('change', function() {
+          // Skip if "Custom" is selected
+          if (this.value === "custom") {
+            return;
+          }
+          
+          // For preset selections, clear both date pickers visually
+          isProgrammaticChange = true; // Set flag before clearing
+          globalStartDatePicker.clear();
+          globalEndDatePicker.clear();
+          isProgrammaticChange = false; // Reset flag after clearing
+          
+          // Store the preset value in state
+          state.globalDateRange.timePreset = this.value;
+          state.globalDateRange.startDate = null;
+          state.globalDateRange.endDate = null;
+          
+          // Store the actual start date in a data attribute for API requests
+          const minutes = parseInt(this.value, 10);
+          const now = new Date();
+          const start = new Date(now.getTime() - minutes * 60 * 1000);
+          document.getElementById('global-start-date').setAttribute('data-preset-value', start.toISOString());
+        });
+        
+        // Initialize step-specific time preset dropdown (keep for backward compatibility)
         const timePresetSelect = document.getElementById('time-preset-select');
         timePresetSelect.addEventListener('change', function() {
           // Skip if "Custom" is selected
@@ -1743,10 +1868,33 @@
         
         // Set default value to 24 hours (1440 minutes)
         timePresetSelect.value = "1440";
+        globalTimePresetSelect.value = "1440";
         
         // Trigger the change event to set up the initial state
         const event = new Event('change');
         timePresetSelect.dispatchEvent(event);
+        globalTimePresetSelect.dispatchEvent(event);
+        
+        // Add event listener for global apply filter button
+        document.getElementById('global-apply-filter').addEventListener('click', function() {
+          // Get the date values
+          if (globalTimePresetSelect.value === "custom") {
+            state.globalDateRange.startDate = document.getElementById('global-start-date').value;
+            state.globalDateRange.endDate = document.getElementById('global-end-date').value;
+            state.globalDateRange.timePreset = "custom";
+          } else {
+            state.globalDateRange.timePreset = globalTimePresetSelect.value;
+            state.globalDateRange.startDate = null;
+            state.globalDateRange.endDate = null;
+          }
+          
+          // Apply the filter based on current view
+          if (state.currentView === 'runs-view' && state.selectedPipeline) {
+            loadRuns(state.selectedPipeline);
+          } else if (state.currentView === 'step-stats-view' && state.selectedPipeline && state.selectedStepName) {
+            loadStepTimeSeries(state.selectedPipeline, state.selectedStepName);
+          }
+        });
       } else {
         console.error('Flatpickr is not loaded!');
       }
@@ -1754,31 +1902,16 @@
 
     // Initialize time range preset dropdown
     function initTimePresets() {
-      const presetSelect = document.getElementById('time-preset-select');
-      const startDateInput = document.getElementById('step-start-date');
-      const endDateInput = document.getElementById('step-end-date');
+      const presetSelect = document.getElementById('global-time-preset-select');
       
-      presetSelect.addEventListener('change', () => {
-        // Skip if "Custom" is selected
-        if (presetSelect.value === "custom") {
-          return;
-        }
-        
-        // For preset selections, clear both date inputs visually
-        startDateInput.value = "";
-        endDateInput.value = "";
-        
-        // Store the actual start date in a data attribute for API requests
-        const minutes = parseInt(presetSelect.value, 10);
-        const now = new Date();
-        const start = new Date(now.getTime() - minutes * 60 * 1000);
-        startDateInput.setAttribute('data-preset-value', start.toISOString());
-        
-        // If a step is selected, automatically apply the filter
-        if (state.selectedStepName) {
-          document.getElementById('apply-step-filter').click();
-        }
-      });
+      // We don't need to add event listeners here as they're handled in initDatePickers
+      
+      // Set default value to 24 hours (1440 minutes)
+      presetSelect.value = "1440";
+      
+      // Trigger the change event to set up the initial state
+      const event = new Event('change');
+      presetSelect.dispatchEvent(event);
     }
   </script>
 </body>
