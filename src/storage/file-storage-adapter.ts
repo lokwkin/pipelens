@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import { StepMeta } from '../step';
-import { FilterOptions, RunMeta, StorageAdapter } from './storage-adapter';
+import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
 import { Pipeline } from '../pipeline';
 
 // Promisify file system operations
@@ -211,7 +211,7 @@ export class FileStorageAdapter implements StorageAdapter {
   /**
    * Lists all steps for a specific run
    */
-  public async listSteps(runId: string): Promise<StepMeta[]> {
+  public async listRunSteps(runId: string): Promise<StepMeta[]> {
     const runDir = path.join(this.basePath, 'runs', runId);
     const stepsPath = path.join(runDir, 'steps.json');
     const stepsDir = path.join(runDir, 'steps');
@@ -284,22 +284,43 @@ export class FileStorageAdapter implements StorageAdapter {
   /**
    * Gets timeseries data for a specific step within a time range
    */
-  public async getStepTimeseries(
+  public async getPipelineStepTimeseries(
     pipelineName: string,
     stepName: string,
     timeRange: { start: number; end: number },
-  ): Promise<any> {
-    const timeseriesPath = path.join(this.basePath, 'timeseries', `${pipelineName}.${stepName}.json`);
+  ): Promise<Array<StepTimeseriesEntry & { stepMeta?: StepMeta }>> {
+    const timeseriesDir = path.join(this.basePath, 'timeseries');
+    const pipelineTimeseriesDir = path.join(timeseriesDir, pipelineName);
+    const timeseriesPath = path.join(pipelineTimeseriesDir, `${stepName}.json`);
 
     try {
-      const data = (await this.readJsonFile(timeseriesPath)) as Array<{
-        timestamp: number;
-        runId: string;
-        value: number;
-      }>;
+      const data = (await this.readJsonFile(timeseriesPath)) as Array<StepTimeseriesEntry>;
 
       // Filter by time range
-      return data.filter((entry) => entry.timestamp >= timeRange.start && entry.timestamp <= timeRange.end);
+      const filteredData = data.filter(
+        (entry) => entry.timestamp >= timeRange.start && entry.timestamp <= timeRange.end,
+      );
+
+      // Fetch step metadata for each entry
+      const result = await Promise.all(
+        filteredData.map(async (entry: StepTimeseriesEntry) => {
+          try {
+            const runDir = path.join(this.basePath, 'runs', entry.runId);
+            const stepPath = path.join(runDir, 'steps', `${entry.stepKey}.json`);
+            const stepMeta = (await this.readJsonFile(stepPath)) as StepMeta;
+
+            return {
+              ...entry,
+              stepMeta,
+            };
+          } catch (error) {
+            // If step metadata can't be found, return just the timeseries data
+            return entry;
+          }
+        }),
+      );
+
+      return result;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return [];
@@ -309,16 +330,25 @@ export class FileStorageAdapter implements StorageAdapter {
   }
 
   /**
+   * Lists all the timeseries steps under a pipeline
+   **/
+  public async listPipelineSteps(pipelineName: string): Promise<string[]> {
+    const pipelineTimeseriesDir = path.join(this.basePath, 'timeseries', pipelineName);
+    const timeseriesFiles = await readdir(pipelineTimeseriesDir);
+    return timeseriesFiles.map((file) => path.basename(file, '.json'));
+  }
+
+  /**
    * Updates the timeseries data for a step
    */
   private async updateStepTimeseries(pipelineName: string, runId: string, step: StepMeta): Promise<void> {
     const timeseriesDir = path.join(this.basePath, 'timeseries');
-    await this.ensureDir(timeseriesDir);
+    const pipelineTimeseriesDir = path.join(timeseriesDir, pipelineName);
+    await this.ensureDir(pipelineTimeseriesDir);
 
     // Use pipeline name + step name for the timeseries file
     // This groups data by logical step rather than by specific step instance
-    const timeseriesKey = `${pipelineName}.${step.name}`;
-    const timeseriesPath = path.join(timeseriesDir, `${timeseriesKey}.json`);
+    const timeseriesPath = path.join(pipelineTimeseriesDir, `${step.name}.json`);
 
     // Create a timeseries entry
     const entry = {

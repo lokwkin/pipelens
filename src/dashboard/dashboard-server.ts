@@ -34,7 +34,7 @@ export class DashboardServer {
     });
 
     // Get runs for a pipeline with filtering and pagination
-    this.app.get('/api/runs/:pipelineName', async (req, res) => {
+    this.app.get('/api/pipelines/:pipelineName/runs', async (req, res) => {
       try {
         const { pipelineName } = req.params;
         const { startDate, endDate, status, limit, offset } = req.query;
@@ -62,7 +62,6 @@ export class DashboardServer {
         }
 
         const runs = await this.storageAdapter.listRuns(pipelineName, options);
-        console.log('runs', runs);
         res.json(runs);
       } catch (error) {
         console.error('Error listing runs:', error);
@@ -71,7 +70,7 @@ export class DashboardServer {
     });
 
     // Get run details
-    this.app.get('/api/run/:runId', async (req, res) => {
+    this.app.get('/api/runs/:runId', async (req, res) => {
       try {
         const { runId } = req.params;
         const runData = await this.storageAdapter.getRunData(runId);
@@ -83,10 +82,10 @@ export class DashboardServer {
     });
 
     // Get steps for a run
-    this.app.get('/api/steps/:runId', async (req, res) => {
+    this.app.get('/api/runs/:runId/steps', async (req, res) => {
       try {
         const { runId } = req.params;
-        const steps = await this.storageAdapter.listSteps(runId);
+        const steps = await this.storageAdapter.listRunSteps(runId);
         res.json(steps);
       } catch (error) {
         console.error('Error listing steps:', error);
@@ -94,8 +93,19 @@ export class DashboardServer {
       }
     });
 
-    // Get step statistics
-    this.app.get('/api/step-stats/:pipelineName/:stepName', async (req, res) => {
+    this.app.get('/api/pipelines/:pipelineName/steps', async (req, res) => {
+      try {
+        const { pipelineName } = req.params;
+        const steps = await this.storageAdapter.listPipelineSteps(pipelineName);
+        res.json(steps);
+      } catch (error) {
+        console.error('Error listing steps:', error);
+        res.status(500).json({ error: 'Failed to list steps' });
+      }
+    });
+
+    // Get step time series
+    this.app.get('/api/pipelines/:pipelineName/steps/:stepName/time-series', async (req, res) => {
       try {
         const { pipelineName, stepName } = req.params;
         const { startDate, endDate } = req.query;
@@ -105,11 +115,39 @@ export class DashboardServer {
 
         const timeRange = { start, end };
 
-        const stats = await this.storageAdapter.getStepTimeseries(pipelineName, stepName, timeRange);
-        res.json(stats);
+        const timeSeries = await this.storageAdapter.getPipelineStepTimeseries(pipelineName, stepName, timeRange);
+
+        // Calculate statistics
+        const durations = timeSeries.filter((item) => item.value > 0).map((item) => item.value);
+
+        // Calculate max, min, average duration
+        const maxDuration = durations.length > 0 ? Math.max(...durations) : 0;
+        const minDuration = durations.length > 0 ? Math.min(...durations) : 0;
+        const avgDuration = durations.length > 0 ? durations.reduce((sum, val) => sum + val, 0) / durations.length : 0;
+
+        // Count total executions
+        const totalExecutions = timeSeries.length;
+
+        // Count errors and successes
+        const errorCount = timeSeries.filter((item) => item.stepMeta?.error).length;
+        const successCount = totalExecutions - errorCount;
+
+        // Return data with statistics
+        res.json({
+          timeSeries: timeSeries.map((item: any) => ({ ...item, duration: item.value })),
+          stats: {
+            maxDuration,
+            minDuration,
+            avgDuration,
+            totalExecutions,
+            errorCount,
+            successCount,
+          },
+        });
+
       } catch (error) {
-        console.error('Error getting step statistics:', error);
-        res.status(500).json({ error: 'Failed to get step statistics' });
+        console.error('Error getting step time series:', error);
+        res.status(500).json({ error: 'Failed to get step time series' });
       }
     });
 
@@ -158,7 +196,7 @@ export class DashboardServer {
     });
 
     // Generate step timeseries chart
-    this.app.get('/api/charts/step-timeseries/:pipelineName/:stepName', async (req, res) => {
+    this.app.get('/api/pipelines/:pipelineName/steps/:stepName/time-series/chart', async (req, res) => {
       try {
         const { pipelineName, stepName } = req.params;
         const { startDate, endDate } = req.query;
@@ -169,7 +207,7 @@ export class DashboardServer {
         const timeRange = { start, end };
 
         // Get step timeseries data
-        const timeseriesData = await this.storageAdapter.getStepTimeseries(pipelineName, stepName, timeRange);
+        const timeseriesData = await this.storageAdapter.getPipelineStepTimeseries(pipelineName, stepName, timeRange);
 
         // Generate chart URL (placeholder implementation)
         const chartUrl = this.generateTimeseriesChartUrl(timeseriesData);
@@ -178,25 +216,6 @@ export class DashboardServer {
       } catch (error) {
         console.error('Error generating step timeseries chart:', error);
         res.status(500).json({ error: 'Failed to generate step timeseries chart' });
-      }
-    });
-
-    // Get step names for a pipeline (new endpoint)
-    this.app.get('/api/step-names/:pipelineName', async (req, res) => {
-      try {
-        const { pipelineName } = req.params;
-
-        // This is a placeholder implementation
-        // In a real implementation, you would query the storage adapter
-        // to get all unique step names for a given pipeline
-
-        // For now, we'll return a static list of step names
-        const stepNames = ['load_config', 'parsing', 'preprocess', 'page_1', 'page_2', 'page_3', 'sample-error'];
-
-        res.json(stepNames);
-      } catch (error) {
-        console.error('Error getting step names:', error);
-        res.status(500).json({ error: 'Failed to get step names' });
       }
     });
 

@@ -18,6 +18,13 @@ export type RunMeta = {
   status: 'completed' | 'failed' | 'running';
 };
 
+export type StepTimeseriesEntry = {
+  timestamp: number;
+  runId: string;
+  value: number;
+  stepKey: string;
+};
+
 export interface StorageAdapter {
   // Connect to the storage, this should be called before any other operations.
   connect(): Promise<void>;
@@ -38,7 +45,7 @@ export interface StorageAdapter {
   getRunData(runId: string): Promise<any>;
 
   // List all the steps under a run
-  listSteps(runId: string): Promise<StepMeta[]>;
+  listRunSteps(runId: string): Promise<StepMeta[]>;
 
   // Initiate a step, this should mark the step as running.
   initiateStep(runId: string, step: StepMeta): Promise<void>;
@@ -47,5 +54,12 @@ export interface StorageAdapter {
   finishStep(runId: string, step: StepMeta): Promise<void>;
 
   // Get the step stats, this should able to retrieve all StepMeta for a given stepKey and timeRange.
-  getStepTimeseries(pipelineName: string, stepName: string, timeRange: { start: number; end: number }): Promise<any>;
+  getPipelineStepTimeseries(
+    pipelineName: string,
+    stepName: string,
+    timeRange: { start: number; end: number },
+  ): Promise<Array<StepTimeseriesEntry & { stepMeta?: StepMeta }>>;
+
+  // List all the available timeserieses of steps under a pipeline
+  listPipelineSteps(pipelineName: string): Promise<string[]>;
 }

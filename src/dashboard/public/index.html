@@ -469,8 +469,8 @@
         <a href="#" class="nav-link active" data-view="runs-view">
           <i class="fas fa-stream"></i> Pipeline Runs
         </a>
-        <a href="#" class="nav-link" data-view="step-listing-view">
-          <i class="fas fa-list-ul"></i> Step Instances
+        <a href="#" class="nav-link" data-view="step-stats-view">
+          <i class="fas fa-list-ul"></i> Step Stats
         </a>
       </nav>
       
@@ -587,9 +587,9 @@
       </div>
 
       <!-- Step Listing View -->
-      <div id="step-listing-view" class="view">
+      <div id="step-stats-view" class="view">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h4 mb-0">Step Instances</h1>
+          <h1 class="h4 mb-0">Step Stats</h1>
         </div>
         
         <div class="card">
@@ -613,8 +613,56 @@
               </div>
             </div>
             
+            <!-- Add step name title here -->
+            <div id="step-stats-title" class="mb-4 d-none">
+              <h3 class="h5 mb-3">Step: <span id="selected-step-name"></span></h3>
+            </div>
+            
+            <!-- Step Statistics Summary -->
+            <div id="step-stats-summary" class="mb-4 d-none">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <div class="card bg-light">
+                    <div class="card-body p-3">
+                      <h5 class="card-title h6">Execution Count</h5>
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <span id="stats-total-executions" class="h4 mb-0">0</span> total
+                        </div>
+                        <div class="text-end">
+                          <span id="stats-success-count" class="text-success">0</span> success<br>
+                          <span id="stats-error-count" class="text-danger">0</span> errors
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-8 mb-3">
+                  <div class="card bg-light">
+                    <div class="card-body p-3">
+                      <h5 class="card-title h6">Duration Statistics</h5>
+                      <div class="row">
+                        <div class="col-md-4">
+                          <div class="text-muted small">Average</div>
+                          <div id="stats-avg-duration" class="h5 mb-0">0ms</div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-muted small">Minimum</div>
+                          <div id="stats-min-duration" class="h5 mb-0">0ms</div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-muted small">Maximum</div>
+                          <div id="stats-max-duration" class="h5 mb-0">0ms</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div class="table-responsive">
-              <table id="step-instances-table" class="table table-hover">
+              <table id="step-stats-table" class="table table-hover">
                 <thead>
                   <tr>
                     <th>Timestamp (UTC)</th>
@@ -685,7 +733,7 @@
     const stepNameSelect = document.getElementById('step-name-select');
     const runsTable = document.getElementById('runs-table').querySelector('tbody');
     const stepsTable = document.getElementById('steps-table').querySelector('tbody');
-    const stepInstancesTable = document.getElementById('step-instances-table').querySelector('tbody');
+    const stepStatsTable = document.getElementById('step-stats-table').querySelector('tbody');
     const backToRunsBtn = document.getElementById('back-to-runs');
     const backToRunDetailBtn = document.getElementById('back-to-run-detail');
     const runDetailTitle = document.getElementById('run-detail-title');
@@ -706,16 +754,22 @@
     function formatDuration(ms) {
       if (!ms) return 'N/A';
       
-      const seconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
+      const totalMs = ms % 1000;
+      const seconds = Math.floor(ms / 1000) % 60;
+      const minutes = Math.floor(ms / (1000 * 60)) % 60;
+      const hours = Math.floor(ms / (1000 * 60 * 60));
+      
+      // If duration is less than 10 seconds, display only milliseconds
+      if (hours === 0 && minutes === 0 && seconds < 10) {
+        return `${ms}ms`;
+      }
       
       if (hours > 0) {
-        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        return `${hours}h ${minutes}m ${seconds}s ${totalMs}ms`;
       } else if (minutes > 0) {
-        return `${minutes}m ${seconds % 60}s`;
+        return `${minutes}m ${seconds}s ${totalMs}ms`;
       } else {
-        return `${seconds}s`;
+        return `${seconds}s ${totalMs}ms`;
       }
     }
 
@@ -731,6 +785,22 @@
         if (view.id === viewId) {
           view.classList.add('active');
           state.currentView = viewId;
+          
+          // Load data based on the current view and selected pipeline
+          if (state.selectedPipeline) {
+            if (viewId === 'runs-view') {
+              loadRuns(state.selectedPipeline);
+            } else if (viewId === 'step-stats-view' && state.selectedStepName) {
+              loadStepNames(state.selectedPipeline).then(() => {
+                stepNameSelect.value = state.selectedStepName;
+                loadStepTimeSeries(state.selectedPipeline, state.selectedStepName);
+              });
+            } else if (viewId === 'step-stats-view') {
+              // If we're switching to step stats view but no step is selected,
+              // make sure the step names are loaded
+              loadStepNames(state.selectedPipeline);
+            }
+          }
         }
       });
     }
@@ -792,9 +862,17 @@
         url.searchParams.set('view', viewId);
         
         // Clear other parameters if going to main views
-        if (viewId === 'runs-view' || viewId === 'step-listing-view') {
+        if (viewId === 'runs-view') {
           url.searchParams.delete('runId');
           url.searchParams.delete('stepKey');
+          url.searchParams.delete('stepName');
+        } else if (viewId === 'step-stats-view') {
+          url.searchParams.delete('runId');
+          url.searchParams.delete('stepKey');
+          // Keep stepName if it exists in state
+          if (state.selectedStepName) {
+            url.searchParams.set('stepName', state.selectedStepName);
+          }
         }
         
         window.history.pushState({view: viewId}, '', url);
@@ -846,7 +924,7 @@
       } else if (view === 'step-analysis' && runId && stepKey) {
         state.selectedRun = runId;
         // We need to find the step data
-        fetch(`/api/run/${runId}/step/${stepKey}`)
+        fetch(`/api/runs/${runId}/step/${stepKey}`)
           .then(response => response.json())
           .then(step => {
             state.selectedStep = step;
@@ -906,8 +984,8 @@
           loadRunDetails(state.selectedRun, true);
         } else if (state.selectedPipeline && state.currentView === 'runs-view') {
           loadRuns(state.selectedPipeline);
-        } else if (state.selectedPipeline && state.selectedStepName && state.currentView === 'step-listing-view') {
-          loadStepInstances(state.selectedPipeline, state.selectedStepName);
+        } else if (state.selectedPipeline && state.selectedStepName && state.currentView === 'step-stats-view') {
+          loadStepTimeSeries(state.selectedPipeline, state.selectedStepName);
         }
       }, state.refreshFrequency);
     }
@@ -922,10 +1000,8 @@
     // API functions
     async function fetchPipelines() {
       try {
-        console.log('Fetching pipelines...');
         const response = await fetch('/api/pipelines');
         const pipelines = await response.json();
-        console.log('Pipelines fetched:', pipelines);
         
         // Populate global pipeline dropdown
         globalPipelineSelect.innerHTML = '<option value="">Select a pipeline</option>';
@@ -946,7 +1022,7 @@
         const endDate = document.getElementById('end-date').value;
         
         // Build query parameters
-        let url = `/api/runs/${pipeline}`;
+        let url = `/api/pipelines/${pipeline}/runs`;
         const params = new URLSearchParams();
         
         if (startDate) {
@@ -1026,7 +1102,7 @@
         loadGanttChart(runId);
         
         // Fetch steps data using the dedicated endpoint
-        const stepsResponse = await fetch(`/api/steps/${runId}`);
+        const stepsResponse = await fetch(`/api/runs/${runId}/steps`);
         const steps = await stepsResponse.json();
         
         // Update steps count
@@ -1156,7 +1232,32 @@
             stepNameLink.addEventListener('click', (e) => {
               e.preventDefault();
               e.stopPropagation();
-              showStepAnalysis(step);
+              
+              // Instead of showing step analysis, navigate to step stats view
+              state.selectedStepName = step.name;
+              
+              // Update step name select dropdown
+              loadStepNames(state.selectedPipeline).then(() => {
+                stepNameSelect.value = step.name;
+                
+                // Update the step name title
+                document.getElementById('selected-step-name').textContent = step.name;
+                document.getElementById('step-stats-title').classList.remove('d-none');
+                
+                // Load the step time series data
+                loadStepTimeSeries(state.selectedPipeline, step.name);
+                
+                // Switch to step stats view
+                showView('step-stats-view');
+                
+                // Update URL
+                const url = new URL(window.location);
+                url.searchParams.set('view', 'step-stats-view');
+                url.searchParams.set('stepName', step.name);
+                url.searchParams.delete('runId');
+                url.searchParams.delete('stepKey');
+                window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
+              });
             });
           });
           
@@ -1241,7 +1342,7 @@
 
     async function loadStepNames(pipeline) {
       try {
-        const response = await fetch(`/api/steps/${pipeline}`);
+        const response = await fetch(`/api/pipelines/${pipeline}/steps`);
         const steps = await response.json();
         
         stepNameSelect.innerHTML = '<option value="">Select a step</option>';
@@ -1249,20 +1350,36 @@
         steps.forEach(step => {
           stepNameSelect.innerHTML += `<option value="${step}">${step}</option>`;
         });
+        
+        return steps; // Return the steps for promise chaining
       } catch (error) {
         console.error('Error loading step names:', error);
         stepNameSelect.innerHTML = '<option value="">Error loading steps</option>';
+        return []; // Return empty array in case of error
       }
     }
 
-    async function loadStepInstances(pipeline, stepName) {
+    async function loadStepTimeSeries(pipeline, stepName) {
       try {
+        // Update the step name title
+        const stepStatsTitle = document.getElementById('step-stats-title');
+        const selectedStepNameSpan = document.getElementById('selected-step-name');
+        const stepStatsSummary = document.getElementById('step-stats-summary');
+        
+        if (stepName) {
+          selectedStepNameSpan.textContent = stepName;
+          stepStatsTitle.classList.remove('d-none');
+        } else {
+          stepStatsTitle.classList.add('d-none');
+          stepStatsSummary.classList.add('d-none');
+        }
+        
         // Get filter values
         const startDate = document.getElementById('step-start-date').value;
         const endDate = document.getElementById('step-end-date').value;
         
         // Build query parameters
-        let url = `/api/step-instances/${pipeline}/${stepName}`;
+        let url = `/api/pipelines/${pipeline}/steps/${stepName}/time-series`;
         const params = new URLSearchParams();
         
         if (startDate) {
@@ -1278,14 +1395,37 @@
         }
         
         const response = await fetch(url);
-        const instances = await response.json();
+        const data = await response.json();
+        
+        // Check if we have the new response format with stats
+        const hasStats = data && data.stats;
+        const instances = hasStats ? data.timeSeries : data;
         
         if (!instances || !instances.length) {
-          stepInstancesTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
+          stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
+          stepStatsSummary.classList.add('d-none');
           return;
         }
         
-        stepInstancesTable.innerHTML = '';
+        // Display statistics if available
+        if (hasStats) {
+          // Update statistics display
+          document.getElementById('stats-total-executions').textContent = data.stats.totalExecutions;
+          document.getElementById('stats-success-count').textContent = data.stats.successCount;
+          document.getElementById('stats-error-count').textContent = data.stats.errorCount;
+          document.getElementById('stats-avg-duration').textContent = formatDuration(data.stats.avgDuration);
+          document.getElementById('stats-min-duration').textContent = formatDuration(data.stats.minDuration);
+          document.getElementById('stats-max-duration').textContent = formatDuration(data.stats.maxDuration);
+          
+          // Show the stats summary section
+          stepStatsSummary.classList.remove('d-none');
+        } else {
+          // Hide stats if not available
+          stepStatsSummary.classList.add('d-none');
+        }
+        
+        // Populate the table with instances
+        stepStatsTable.innerHTML = '';
         
         instances.forEach(instance => {
           const timestamp = formatDateTime(instance.timestamp);
@@ -1294,16 +1434,24 @@
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${timestamp}</td>
-            <td>${instance.runId}</td>
+            <td><a href="#" class="step-name-link">${instance.runId}</a></td>
             <td>${duration}</td>
             <td>${instance.stepKey}</td>
           `;
           
-          stepInstancesTable.appendChild(row);
+          // Add click event listener to the Run ID link
+          const runIdLink = row.querySelector('.step-name-link');
+          runIdLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showRunDetails(instance.runId);
+          });
+          
+          stepStatsTable.appendChild(row);
         });
       } catch (error) {
-        console.error('Error loading step instances:', error);
-        stepInstancesTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading instances</td></tr>';
+        console.error('Error loading step stats:', error);
+        stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading stats</td></tr>';
+        document.getElementById('step-stats-summary').classList.add('d-none');
       }
     }
 
@@ -1315,6 +1463,7 @@
       const view = params.get('view');
       const runId = params.get('runId');
       const stepKey = params.get('stepKey');
+      const stepName = params.get('stepName');
       
       // Fetch pipelines
       fetchPipelines().then(() => {
@@ -1326,8 +1475,15 @@
           // Load data based on the selected pipeline
           if (state.currentView === 'runs-view') {
             loadRuns(pipeline);
-          } else if (state.currentView === 'step-listing-view') {
-            loadStepNames(pipeline);
+          } else if (state.currentView === 'step-stats-view') {
+            loadStepNames(pipeline).then(() => {
+              // If stepName is in URL, select it and load its data
+              if (stepName) {
+                stepNameSelect.value = stepName;
+                state.selectedStepName = stepName;
+                loadStepTimeSeries(pipeline, stepName);
+              }
+            });
           }
         }
       });
@@ -1341,7 +1497,7 @@
         } else if (view === 'step-analysis' && runId && stepKey) {
           state.selectedRun = runId;
           // We need to find the step data
-          fetch(`/api/run/${runId}/step/${stepKey}`)
+          fetch(`/api/runs/${runId}/step/${stepKey}`)
             .then(response => response.json())
             .then(step => {
               state.selectedStep = step;
@@ -1373,7 +1529,7 @@
           // Load data based on current view
           if (state.currentView === 'runs-view') {
             loadRuns(pipeline);
-          } else if (state.currentView === 'step-listing-view') {
+          } else if (state.currentView === 'step-stats-view') {
             loadStepNames(pipeline);
             // Clear step name selection
             stepNameSelect.innerHTML = '<option value="">Select a step</option>';
@@ -1398,7 +1554,7 @@
       
       document.getElementById('apply-step-filter').addEventListener('click', function() {
         if (state.selectedPipeline && state.selectedStepName) {
-          loadStepInstances(state.selectedPipeline, state.selectedStepName);
+          loadStepTimeSeries(state.selectedPipeline, state.selectedStepName);
         }
       });
       
@@ -1407,6 +1563,41 @@
       
       // Set initial state of refresh indicator based on auto-refresh state
       refreshIndicator.classList.toggle('active', state.autoRefresh);
+      
+      // Set up step name selector
+      stepNameSelect.addEventListener('change', function() {
+        const stepName = this.value;
+        if (stepName && state.selectedPipeline) {
+          state.selectedStepName = stepName;
+          
+          // Update step name in the title
+          document.getElementById('selected-step-name').textContent = stepName;
+          document.getElementById('step-stats-title').classList.remove('d-none');
+          
+          // Update URL with selected step name
+          const url = new URL(window.location);
+          url.searchParams.set('stepName', stepName);
+          window.history.replaceState({
+            view: state.currentView, 
+            pipeline: state.selectedPipeline,
+            stepName: stepName
+          }, '', url);
+          
+          // Load step instances when a step is selected
+          loadStepTimeSeries(state.selectedPipeline, stepName);
+        } else {
+          // Hide the title when no step is selected
+          document.getElementById('step-stats-title').classList.add('d-none');
+          
+          // If no step is selected, remove the stepName parameter from URL
+          const url = new URL(window.location);
+          url.searchParams.delete('stepName');
+          window.history.replaceState({
+            view: state.currentView,
+            pipeline: state.selectedPipeline
+          }, '', url);
+        }
+      });
     }
     
     // Call initialization function when the DOM is fully loaded

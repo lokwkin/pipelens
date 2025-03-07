@@ -1,5 +1,5 @@
 import { StepMeta } from '../step';
-import { FilterOptions, RunMeta, StorageAdapter } from './storage-adapter';
+import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
 import { Pipeline } from '../pipeline';
 import { createClient, RedisClientType, TimeSeriesDuplicatePolicies } from 'redis';
 import '@redis/json';
@@ -196,7 +196,7 @@ export class RedisStorageAdapter implements StorageAdapter {
   /**
    * Lists all steps for a specific run
    */
-  public async listSteps(runId: string): Promise<StepMeta[]> {
+  public async listRunSteps(runId: string): Promise<StepMeta[]> {
     try {
       return (await this.client.json.get(`run:${runId}:steps`)) as StepMeta[];
     } catch (error) {
@@ -226,11 +226,11 @@ export class RedisStorageAdapter implements StorageAdapter {
   /**
    * Gets timeseries data for a specific step within a time range
    */
-  public async getStepTimeseries(
+  public async getPipelineStepTimeseries(
     pipelineName: string,
     stepName: string,
     timeRange: { start: number; end: number },
-  ): Promise<any> {
+  ): Promise<Array<StepTimeseriesEntry & { stepMeta?: StepMeta }>> {
     const timeseriesKey = `ts:${pipelineName}.${stepName}`;
 
     try {
@@ -246,18 +246,49 @@ export class RedisStorageAdapter implements StorageAdapter {
             this.client.hGet(metaKey, 'stepKey'),
           ]);
 
+          let stepMeta: StepMeta | undefined;
+          // Try to fetch step metadata if available
+          if (runId && stepKey) {
+            try {
+              const steps = await this.listRunSteps(runId);
+              stepMeta = steps.find((s) => s.key === stepKey);
+            } catch (error) {
+              // Ignore errors when fetching step metadata
+            }
+          }
+
           return {
             timestamp: point.timestamp,
             value: point.value,
             runId,
             stepKey,
-          };
+            stepMeta,
+          } as StepTimeseriesEntry & { stepMeta?: StepMeta };
         }),
       );
 
       return enrichedPoints;
     } catch (error) {
       console.error('Error getting timeseries data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Lists all available timeseries steps for a pipeline
+   */
+  public async listPipelineSteps(pipelineName: string): Promise<string[]> {
+    try {
+      // Find all timeseries keys for this pipeline
+      const keys = await this.client.keys(`ts:${pipelineName}.*`);
+
+      // Extract step names from the keys
+      return keys.map((key) => {
+        const parts = key.split('.');
+        return parts[parts.length - 1];
+      });
+    } catch (error) {
+      console.error('Error listing pipeline timeseries steps:', error);
       return [];
     }
   }
