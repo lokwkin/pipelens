@@ -715,6 +715,16 @@
               </div>
             </div>
             
+            <!-- Step Time Series Chart -->
+            <div id="step-time-series-chart-container" class="mb-4 d-none">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title h6 font-weight-normal mb-3">Performance Over Time</h5>
+                  <div id="step-time-series-chart" style="width: 100%; height: 400px;"></div>
+                </div>
+              </div>
+            </div>
+            
             <div class="table-responsive">
               <table id="step-stats-table" class="table table-hover">
                 <thead>
@@ -1084,6 +1094,200 @@
       if (state.refreshInterval) {
         clearInterval(state.refreshInterval);
         state.refreshInterval = null;
+      }
+    }
+
+    // Process time series data for chart visualization
+    function processTimeSeriesDataForChart(instances, timeRange) {
+      // If no instances, return empty data
+      if (!instances || instances.length === 0) {
+        return {
+          timePoints: [],
+          maxDurations: [],
+          minDurations: [],
+          avgDurations: [],
+          successCounts: [],
+          errorCounts: []
+        };
+      }
+      
+      // Sort instances by timestamp
+      instances.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      
+      // Determine start and end times from the data or from timeRange
+      let startTime, endTime;
+      
+      if (timeRange && timeRange.startDate) {
+        startTime = new Date(timeRange.startDate).getTime();
+      } else {
+        startTime = new Date(instances[0].timestamp).getTime();
+      }
+      
+      if (timeRange && timeRange.endDate) {
+        endTime = new Date(timeRange.endDate).getTime();
+      } else {
+        endTime = new Date(instances[instances.length - 1].timestamp).getTime();
+      }
+      
+      // Calculate time interval (divide the range into 30 periods)
+      const totalTimeRange = endTime - startTime;
+      const intervalMs = Math.max(totalTimeRange / 30, 1000); // At least 1 second
+      
+      // Create buckets for each time interval
+      const buckets = [];
+      let currentTime = startTime;
+      
+      while (currentTime <= endTime) {
+        buckets.push({
+          startTime: currentTime,
+          endTime: currentTime + intervalMs,
+          instances: [],
+          maxDuration: 0,
+          minDuration: Infinity,
+          avgDuration: 0,
+          successCount: 0,
+          errorCount: 0
+        });
+        currentTime += intervalMs;
+      }
+      
+      // Assign instances to buckets
+      instances.forEach(instance => {
+        const instanceTime = new Date(instance.timestamp).getTime();
+        const bucketIndex = Math.min(
+          Math.floor((instanceTime - startTime) / intervalMs),
+          buckets.length - 1
+        );
+        
+        if (bucketIndex >= 0 && bucketIndex < buckets.length) {
+          buckets[bucketIndex].instances.push(instance);
+        }
+      });
+      
+      // Calculate statistics for each bucket
+      buckets.forEach(bucket => {
+        if (bucket.instances.length > 0) {
+          // Calculate duration statistics
+          let totalDuration = 0;
+          
+          bucket.instances.forEach(instance => {
+            const duration = instance.duration || 0;
+            
+            // Update max and min durations
+            bucket.maxDuration = Math.max(bucket.maxDuration, duration);
+            bucket.minDuration = Math.min(bucket.minDuration, duration);
+            
+            // Add to total for average calculation
+            totalDuration += duration;
+            
+            // Count successes and errors
+            if (instance.error) {
+              bucket.errorCount++;
+            } else {
+              bucket.successCount++;
+            }
+          });
+          
+          // Calculate average duration
+          bucket.avgDuration = totalDuration / bucket.instances.length;
+        }
+        
+        // If no instances in this bucket, set min to 0 instead of Infinity
+        if (bucket.minDuration === Infinity) {
+          bucket.minDuration = 0;
+        }
+      });
+      
+      // Extract data for chart
+      const timePoints = buckets.map(bucket => new Date(bucket.startTime));
+      const maxDurations = buckets.map(bucket => bucket.maxDuration);
+      const minDurations = buckets.map(bucket => bucket.minDuration);
+      const avgDurations = buckets.map(bucket => bucket.avgDuration);
+      const successCounts = buckets.map(bucket => bucket.successCount);
+      const errorCounts = buckets.map(bucket => bucket.errorCount);
+      
+      return {
+        timePoints,
+        maxDurations,
+        minDurations,
+        avgDurations,
+        successCounts,
+        errorCounts
+      };
+    }
+    
+    // Draw the step time series chart
+    function drawStepTimeSeriesChart(chartData) {
+      const chartContainer = document.getElementById('step-time-series-chart-container');
+      const chartElement = document.getElementById('step-time-series-chart');
+      
+      // If no data or empty data, hide the chart container and return
+      if (!chartData || chartData.timePoints.length === 0) {
+        chartContainer.classList.add('d-none');
+        return;
+      }
+      
+      // Show the chart container
+      chartContainer.classList.remove('d-none');
+      
+      // Load Google Charts
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+      
+      function drawChart() {
+        // Create data table
+        const data = new google.visualization.DataTable();
+        
+        // Add columns
+        data.addColumn('datetime', 'Time');
+        data.addColumn('number', 'Max Duration (ms)');
+        data.addColumn('number', 'Avg Duration (ms)');
+        data.addColumn('number', 'Min Duration (ms)');
+        data.addColumn('number', 'Success Count');
+        data.addColumn('number', 'Error Count');
+        
+        // Add rows
+        const rows = chartData.timePoints.map((time, index) => [
+          time,
+          chartData.maxDurations[index],
+          chartData.avgDurations[index],
+          chartData.minDurations[index],
+          chartData.successCounts[index],
+          chartData.errorCounts[index]
+        ]);
+        
+        data.addRows(rows);
+        
+        // Set chart options
+        const options = {
+          height: 400,
+          legend: { position: 'top', maxLines: 3 },
+          seriesType: 'line',
+          series: {
+            0: { color: '#ef4444', lineWidth: 2 }, // Max Duration (red)
+            1: { color: '#2563eb', lineWidth: 2 }, // Avg Duration (blue)
+            2: { color: '#10b981', lineWidth: 2 }, // Min Duration (green)
+            3: { type: 'bars', color: '#10b981', targetAxisIndex: 1 }, // Success Count (green)
+            4: { type: 'bars', color: '#ef4444', targetAxisIndex: 1 }  // Error Count (red)
+          },
+          isStacked: true,
+          vAxes: {
+            0: { title: 'Duration (ms)', minValue: 0 },
+            1: { title: 'Count', minValue: 0 }
+          },
+          hAxis: {
+            title: 'Time',
+            format: 'HH:mm:ss'
+          },
+          chartArea: {
+            width: '80%',
+            height: '70%'
+          }
+        };
+        
+        // Create and draw the chart
+        const chart = new google.visualization.ComboChart(chartElement);
+        chart.draw(data, options);
       }
     }
 
@@ -1635,6 +1839,7 @@
         if (!instances || !instances.length) {
           stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
           stepStatsSummary.classList.add('d-none');
+          document.getElementById('step-time-series-chart-container').classList.add('d-none');
           return;
         }
         
@@ -1654,6 +1859,16 @@
           // Hide stats if not available
           stepStatsSummary.classList.add('d-none');
         }
+        
+        // Process data for chart
+        const timeRange = {
+          startDate: params.get('startDate'),
+          endDate: params.get('endDate')
+        };
+        const chartData = processTimeSeriesDataForChart(instances, timeRange);
+        
+        // Draw the chart
+        drawStepTimeSeriesChart(chartData);
         
         // Populate the table with instances
         stepStatsTable.innerHTML = '';
@@ -1685,6 +1900,7 @@
         console.error('Error loading step stats:', error);
         stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading stats</td></tr>';
         document.getElementById('step-stats-summary').classList.add('d-none');
+        document.getElementById('step-time-series-chart-container').classList.add('d-none');
       }
     }
 
