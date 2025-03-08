@@ -26,6 +26,11 @@
       --text-secondary: #546e7a;
       --bg-light: #f5f7fa;
       --card-bg: #ffffff;
+      --font-size-base: 0.875rem;      /* Base font size - 14px */
+      --font-size-sm: 0.8125rem;       /* Small font size - 13px */
+      --font-size-xs: 0.75rem;         /* Extra small - 12px */
+      --font-size-lg: 0.9375rem;       /* Large - 15px */
+      --font-size-xl: 1.0625rem;       /* Extra large - 17px */
     }
     
     body {
@@ -33,6 +38,7 @@
       font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       color: var(--text-primary);
       overflow-x: hidden;
+      font-size: var(--font-size-base);
     }
     
     /* Sidebar */
@@ -50,28 +56,28 @@
     }
     
     .sidebar-header {
-      padding: 1.5rem 1.5rem 1.5rem;
+      padding: 1.25rem 1.25rem 1.25rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
     
     .sidebar-header h1 {
-      font-size: 1.25rem;
+      font-size: var(--font-size-lg);
       font-weight: 600;
       color: #f8fafc;
       letter-spacing: 0.5px;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
     
     /* Pipeline selector in sidebar */
     .pipeline-selector {
-      margin-top: 1rem;
+      margin-top: 0.75rem;
     }
     
     .pipeline-selector select {
       background-color: rgba(255,255,255,0.1);
       border: 1px solid rgba(255,255,255,0.2);
       color: white;
-      font-size: 0.9rem;
+      font-size: var(--font-size-xs);
       width: 100%;
       padding: 0.375rem 2.25rem 0.375rem 0.75rem;
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
@@ -94,15 +100,15 @@
     /* Sidebar navigation */
     nav {
       flex: 1;
-      padding: 1.5rem 0;
+      padding: 1.25rem 0;
     }
     
     .nav-link {
       color: rgba(255,255,255,0.7);
       border-left: 3px solid transparent;
-      padding: 0.75rem 1.5rem;
+      padding: 0.625rem 1.25rem;
       transition: all 0.2s ease;
-      font-size: 0.95rem;
+      font-size: var(--font-size-sm);
       letter-spacing: 0.3px;
     }
     
@@ -125,7 +131,7 @@
     
     /* Sidebar footer with auto-refresh controls */
     .sidebar-footer {
-      padding: 1.5rem;
+      padding: 1.25rem;
       border-top: 1px solid rgba(255,255,255,0.1);
       margin-top: auto; /* Push to bottom */
       background-color: var(--sidebar-bg); /* Ensure it has background */
@@ -133,7 +139,7 @@
     
     .auto-refresh-controls {
       color: rgba(255,255,255,0.8);
-      font-size: 0.9rem;
+      font-size: var(--font-size-xs);
     }
     
     .auto-refresh-controls .form-check-input {
@@ -150,7 +156,7 @@
       background-color: rgba(255,255,255,0.1);
       border: 1px solid rgba(255,255,255,0.2);
       color: white;
-      font-size: 0.85rem;
+      font-size: var(--font-size-xs);
       width: 100%;
       padding: 0.375rem 2.25rem 0.375rem 0.75rem;
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
@@ -200,7 +206,7 @@
     /* Content area */
     .content-area {
       margin-left: var(--sidebar-width);
-      padding: 2rem;
+      padding: 1.5rem;
       width: calc(100% - var(--sidebar-width));
       max-width: 100%;
     }
@@ -217,18 +223,19 @@
     .card-header {
       background-color: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
-      padding: 1.25rem 1.5rem;
+      padding: 1rem 1.25rem;
       font-weight: 600;
+      font-size: var(--font-size-sm);
     }
     
     .card-body {
-      padding: 1.5rem;
+      padding: 1.25rem;
     }
     
     /* Tables */
     .table {
       margin-bottom: 0;
-      font-size: 0.95rem;
+      font-size: var(--font-size-sm);
     }
     
     .table th {
@@ -236,15 +243,15 @@
       color: var(--text-primary);
       border-top: none;
       background-color: var(--bg-light);
-      padding: 0.75rem 1rem;
-      font-size: 0.85rem;
+      padding: 0.625rem 0.875rem;
+      font-size: var(--font-size-xs);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     
     .table td {
       vertical-align: middle;
-      padding: 0.75rem 1rem;
+      padding: 0.625rem 0.875rem;
       border-color: var(--border-color);
     }
     
@@ -308,7 +315,7 @@
     }
     
     .detail-header h4 {
-      font-size: 0.9rem;
+      font-size: var(--font-size-xs);
       font-weight: 600;
       color: var(--text-primary);
       margin: 0;
@@ -336,7 +343,7 @@
       border-radius: 4px;
       background-color: white;
       font-family: 'JetBrains Mono', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
-      font-size: 0.85rem;
+      font-size: var(--font-size-xs);
       line-height: 1.4;
       resize: vertical;
       white-space: pre;
@@ -347,7 +354,7 @@
     /* Form elements */
     .form-select, .form-control {
       border-color: var(--border-color);
-      font-size: 0.95rem;
+      font-size: var(--font-size-sm);
     }
     
     .form-select:focus, .form-control:focus {
@@ -381,7 +388,7 @@
     }
     
     .section-header h3 {
-      font-size: 1.1rem;
+      font-size: var(--font-size-lg);
       color: var(--text-primary);
       margin: 0;
       font-weight: 600;
@@ -389,7 +396,7 @@
     
     /* Run detail title */
     #run-detail-title {
-      font-size: 1.2rem;
+      font-size: var(--font-size-lg);
       font-weight: 500;
       color: var(--text-primary);
     }
@@ -457,12 +464,13 @@
     .global-date-range-selector {
       background-color: white;
       border-radius: 4px;
-      padding: 0.75rem 1.5rem;
+      padding: 0.625rem 1.25rem;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       margin-bottom: 1.5rem;
     }
     
     .global-date-range-selector #page-title {
+      font-size: var(--font-size-lg);
       margin-right: 1rem;
       white-space: nowrap;
       overflow: hidden;
@@ -472,6 +480,9 @@
     .global-date-range-selector .form-control,
     .global-date-range-selector .form-select {
       border-color: var(--border-color);
+      font-size: var(--font-size-xs);
+      padding: 0.25rem 0.5rem;
+      height: calc(1.5em + 0.5rem + 2px);
     }
     
     .global-date-range-selector .form-control:focus,
@@ -501,6 +512,39 @@
       .global-date-range-selector .d-flex .d-flex {
         gap: 0.5rem;
       }
+    }
+    
+    /* Stats display */
+    #step-stats-summary .h4 {
+      font-size: var(--font-size-lg);
+    }
+    
+    #step-stats-summary .h5 {
+      font-size: var(--font-size-base);
+    }
+    
+    #step-stats-summary .small {
+      font-size: var(--font-size-xs);
+    }
+    
+    /* Step analysis view */
+    #step-analysis-view h4 {
+      font-size: var(--font-size-base);
+    }
+    
+    #step-analysis-details {
+      font-size: var(--font-size-xs);
+    }
+    
+    /* Gantt chart container */
+    .gantt-placeholder h5 {
+      font-size: var(--font-size-sm);
+    }
+    
+    /* Button sizes */
+    .btn-sm {
+      font-size: var(--font-size-xs);
+      padding: 0.25rem 0.5rem;
     }
   </style>
   <!-- Add Flatpickr CSS in the head section -->
