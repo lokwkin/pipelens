@@ -11,11 +11,11 @@ import {
 export type TimeMeta = {
   startTs: number;
   endTs: number;
-  timeUsageMs?: number;
+  timeUsageMs: number;
 };
 
 export type StepMeta = {
-  name?: string;
+  name: string;
   key: string;
   time: TimeMeta;
   record: Record<string, any>;
@@ -23,41 +23,41 @@ export type StepMeta = {
   error?: string;
 };
 
-export type RunData = {
-  result: any;
-  error?: Error;
-  time: TimeMeta;
-  records: Record<string, any>;
-};
 export type StepEvents = 'step-start' | 'step-success' | 'step-error' | 'step-record' | 'step-complete';
 
 export type StepGanttArg = GanttChartArgs & {
   filter?: RegExp | string[];
 };
 
-export type RecordListener = (key: string, data: any) => void | Promise<void>;
-export type StepStartListener = (key: string) => void | Promise<void>;
-export type StepSuccessListener = (key: string, result: any) => void | Promise<void>;
-export type StepErrorListener = (key: string, error: Error) => void | Promise<void>;
-export type StepCompleteListener = (key: string, runData: RunData) => void | Promise<void>;
-export type StepRecordListener = (key: string, recordKey: string, data: any) => void | Promise<void>;
+export type RecordListener = (key: string, data: any, stepMeta?: StepMeta) => void | Promise<void>;
+export type StepStartListener = (key: string, stepMeta?: StepMeta) => void | Promise<void>;
+export type StepSuccessListener = (key: string, result: any, stepMeta?: StepMeta) => void | Promise<void>;
+export type StepErrorListener = (key: string, error: Error, stepMeta?: StepMeta) => void | Promise<void>;
+export type StepCompleteListener = (key: string, stepMeta?: StepMeta) => void | Promise<void>;
+export type StepRecordListener = (
+  key: string,
+  recordKey: string,
+  data: any,
+  stepMeta?: StepMeta,
+) => void | Promise<void>;
 
 export class Step {
-  private name: string;
-  private key: string;
-  private result?: any;
-  private error?: Error;
-  private records: Record<string, any>;
-  private time: TimeMeta;
-  private parent: Step | null;
-  private ctx: Step;
-  private steps: Array<Step>;
-  private eventEmitter: EventEmitter;
+  protected name: string;
+  protected key: string;
+  protected result?: any;
+  protected error?: Error;
+  protected records: Record<string, any>;
+  protected time: TimeMeta;
+  protected parent: Step | null;
+  protected ctx: Step;
+  protected steps: Array<Step>;
+  protected eventEmitter: EventEmitter;
 
   constructor(
     name: string,
     options?: {
       parent?: Step;
+      key?: string;
       eventEmitter?: EventEmitter;
     },
   ) {
@@ -68,7 +68,16 @@ export class Step {
       endTs: Date.now(),
       timeUsageMs: 0,
     };
-    this.key = `${options?.parent ? `${options?.parent?.key}.` : ''}${this.name.replace(/\./g, '_')}`;
+    // 1. if expicitly specified by parent, use it.
+    // 2. otherwise, deduce it from the parent's key + own's name
+    // 3. otherwise, use the name as key
+    if (options?.key) {
+      this.key = options.key;
+    } else if (options?.parent) {
+      this.key = `${options?.parent?.key}.${this.name.replace(/[\.\-]/g, '_')}`;
+    } else {
+      this.key = this.name.replace(/[\.\-]/g, '_');
+    }
     this.parent = options?.parent ?? null;
     this.ctx = this;
     this.steps = [];
@@ -78,38 +87,58 @@ export class Step {
     }
   }
 
+  public getName(): string {
+    return this.name;
+  }
+
+  public getKey(): string {
+    return this.key;
+  }
+
+  /**
+   * This method output a nested array of step meta, only includes the meta of the current step.
+   */
+  public getStepMeta(): StepMeta {
+    return {
+      name: this.name,
+      key: this.key,
+      time: this.time,
+      record: this.records,
+      result: this.result,
+      error: this.error ? this.error.message || this.error.toString() || this.error.name : undefined,
+    };
+  }
+
   protected async run(callable: (st: Step) => Promise<any>) {
     this.time.startTs = Date.now();
-    let error: Error | undefined;
     try {
-      this.eventEmitter.emit('step-start', this.key);
+      this.eventEmitter.emit('step-start', this.key, this.getStepMeta());
       this.result = await callable(this.ctx);
-      this.eventEmitter.emit('step-success', this.key, this.result);
+      this.eventEmitter.emit('step-success', this.key, this.result, this.getStepMeta());
       return this.result;
     } catch (err) {
       this.error = err as Error;
-      this.eventEmitter.emit('step-error', this.key, error);
+      this.eventEmitter.emit('step-error', this.key, this.error, this.getStepMeta());
       throw err;
     } finally {
       this.time.endTs = Date.now();
       this.time.timeUsageMs = this.time.endTs - this.time.startTs;
-
-      const runData: RunData = {
-        result: this.result,
-        error: this.error,
-        time: this.time,
-        records: this.records,
-      };
-      this.eventEmitter.emit('step-complete', this.key, runData);
+      this.eventEmitter.emit('step-complete', this.key, this.getStepMeta());
     }
   }
 
+  /**
+   * Create a new step and run it.
+   */
   public async step<T>(name: string, callable: (st: Step) => Promise<T>): Promise<T> {
     const step = new Step(name, { parent: this, eventEmitter: this.eventEmitter });
-    if (this.steps.some((s) => s.key === step.key)) {
+    const duplicates = this.steps.filter((s) => s.key === step.key).length;
+    if (duplicates > 0) {
+      const newKey = `${step.key}-${duplicates}`;
       console.warn(
-        `Step with key "${step.key}" already exists under same parent step. Consider assigning unique keys to avoid confusion.`,
+        `Step with key "${step.key}" already exists under same parent step. Assigning a new key "${newKey}" to avoid confusion.`,
       );
+      step.key = newKey;
     }
     this.steps.push(step);
     return await step.run(callable);
@@ -124,8 +153,8 @@ export class Step {
   }
   public async record(recordKey: string, data: any) {
     this.records[recordKey] = data;
-    this.eventEmitter.emit('record', recordKey, data); // deprecated
-    this.eventEmitter.emit('step-record', this.key, recordKey, data);
+    this.eventEmitter.emit('record', recordKey, data, this.getStepMeta()); // deprecated
+    this.eventEmitter.emit('step-record', this.key, recordKey, data, this.getStepMeta());
     return this;
   }
 
@@ -142,6 +171,9 @@ export class Step {
     return this;
   }
 
+  /**
+   * This method output a nested array of step meta, including it own meta and its substeps' meta.
+   */
   public outputHierarchy(): StepMeta & { substeps: StepMeta[] } {
     return {
       name: this.name,
@@ -154,6 +186,9 @@ export class Step {
     };
   }
 
+  /**
+   * This method output a flattened array of step meta, including it own meta and its substeps' meta.
+   */
   public outputFlattened(): StepMeta[] {
     const substeps = this.steps.map((step) => step.outputFlattened()).flat();
     return [
@@ -169,14 +204,24 @@ export class Step {
     ];
   }
 
+  /**
+   * Same as `outputFlattened()`
+   */
+  public outputSteps(): StepMeta[] {
+    return this.outputFlattened();
+  }
+
   public getRecords(): Record<string, any> {
     return this.records;
   }
 
-  public getTime(): TimeMeta {
+  public getTimeMeta(): TimeMeta {
     return this.time;
   }
 
+  /**
+   * Generate a execution graph via QuickChart.io, returning an quickchart URL.
+   */
   public executionGraphQuickchart(): string {
     const buildGraph = (step: Step): GraphItem[] => {
       const item: GraphItem = {
