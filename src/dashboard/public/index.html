@@ -8,27 +8,29 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts - Roboto Mono for code and technical data -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Google Fonts - JetBrains Mono for code and technical data, Inter for main text -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --sidebar-bg: #1e293b;
+      --primary: #2c6e9b;
+      --primary-dark: #1e5378;
+      --sidebar-bg: #2c3e50;
       --sidebar-width: 250px;
-      --border-color: #e2e8f0;
-      --code-bg: #f8fafc;
-      --success: #10b981;
-      --error: #ef4444;
-      --warning: #f59e0b;
-      --text-primary: #334155;
-      --text-secondary: #64748b;
+      --border-color: #dde2e7;
+      --code-bg: #f5f7fa;
+      --success: #2e7d32;
+      --error: #d32f2f;
+      --warning: #ed6c02;
+      --text-primary: #37474f;
+      --text-secondary: #546e7a;
+      --bg-light: #f5f7fa;
+      --card-bg: #ffffff;
     }
     
     body {
-      background-color: #f1f5f9;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-light);
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       color: var(--text-primary);
       overflow-x: hidden;
     }
@@ -206,14 +208,14 @@
     /* Cards */
     .card {
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       margin-bottom: 1.5rem;
-      background-color: white;
+      background-color: var(--card-bg);
     }
     
     .card-header {
-      background-color: white;
+      background-color: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
       padding: 1.25rem 1.5rem;
       font-weight: 600;
@@ -233,7 +235,7 @@
       font-weight: 600;
       color: var(--text-primary);
       border-top: none;
-      background-color: #f8fafc;
+      background-color: var(--bg-light);
       padding: 0.75rem 1rem;
       font-size: 0.85rem;
       text-transform: uppercase;
@@ -253,7 +255,7 @@
     }
     
     tr[data-target]:hover {
-      background-color: rgba(37, 99, 235, 0.04);
+      background-color: rgba(44, 110, 155, 0.04);
     }
     
     /* Details row specific styles */
@@ -284,8 +286,8 @@
     
     /* Step details */
     .step-details {
-      background-color: #f8fafc;
-      border-radius: 6px;
+      background-color: var(--bg-light);
+      border-radius: 4px;
       padding: 1rem;
       margin-top: 0.5rem;
     }
@@ -323,7 +325,7 @@
     }
     
     .copy-btn:hover {
-      background-color: rgba(37, 99, 235, 0.08);
+      background-color: rgba(44, 110, 155, 0.08);
     }
     
     .detail-content textarea {
@@ -333,7 +335,7 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       background-color: white;
-      font-family: 'Roboto Mono', monospace;
+      font-family: 'JetBrains Mono', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
       font-size: 0.85rem;
       line-height: 1.4;
       resize: vertical;
@@ -350,7 +352,7 @@
     
     .form-select:focus, .form-control:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15);
+      box-shadow: 0 0 0 0.25rem rgba(44, 110, 155, 0.15);
     }
     
     .btn-primary {
@@ -369,7 +371,7 @@
     }
     
     .btn-outline-secondary:hover {
-      background-color: #f1f5f9;
+      background-color: var(--bg-light);
       color: var(--text-primary);
     }
     
@@ -395,7 +397,7 @@
     /* Gantt chart */
     .gantt-placeholder {
       background-color: white;
-      border-radius: 6px;
+      border-radius: 4px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
     }
@@ -454,7 +456,7 @@
     /* Global date range selector */
     .global-date-range-selector {
       background-color: white;
-      border-radius: 6px;
+      border-radius: 4px;
       padding: 0.75rem 1.5rem;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       margin-bottom: 1.5rem;
@@ -475,7 +477,7 @@
     .global-date-range-selector .form-control:focus,
     .global-date-range-selector .form-select:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.15);
+      box-shadow: 0 0 0 0.25rem rgba(44, 110, 155, 0.15);
     }
     
     @media (max-width: 1200px) {
@@ -1264,11 +1266,11 @@
           legend: { position: 'top', maxLines: 3 },
           seriesType: 'line',
           series: {
-            0: { color: '#ef4444', lineWidth: 2 }, // Max Duration (red)
-            1: { color: '#2563eb', lineWidth: 2 }, // Avg Duration (blue)
-            2: { color: '#10b981', lineWidth: 2 }, // Min Duration (green)
-            3: { type: 'bars', color: '#10b981', targetAxisIndex: 1 }, // Success Count (green)
-            4: { type: 'bars', color: '#ef4444', targetAxisIndex: 1 }  // Error Count (red)
+            0: { color: '#d32f2f', lineWidth: 2 }, // Max Duration (red)
+            1: { color: '#2c6e9b', lineWidth: 2 }, // Avg Duration (blue)
+            2: { color: '#2e7d32', lineWidth: 2 }, // Min Duration (green)
+            3: { type: 'bars', color: '#2e7d32', targetAxisIndex: 1 }, // Success Count (green)
+            4: { type: 'bars', color: '#d32f2f', targetAxisIndex: 1 }  // Error Count (red)
           },
           isStacked: true,
           vAxes: {
@@ -1719,19 +1721,19 @@
               percentEnabled: false,
               palette: [
                 {
-                  color: '#047857', // Success - dark green (changed from #10b981)
-                  dark: '#065f46', // Darker shade
-                  light: '#d1fae5' // Light shade for hover
+                  color: '#2e7d32', // Success - dark green
+                  dark: '#1b5e20', // Darker shade
+                  light: '#e8f5e9' // Light shade for hover
                 },
                 {
-                  color: '#ef4444', // Error - red
-                  dark: '#b91c1c',
-                  light: '#fee2e2'
+                  color: '#d32f2f', // Error - red
+                  dark: '#b71c1c',
+                  light: '#ffebee'
                 },
                 {
-                  color: '#f59e0b', // Running - yellow/orange
-                  dark: '#d97706',
-                  light: '#fef3c7'
+                  color: '#ed6c02', // Running - orange
+                  dark: '#e65100',
+                  light: '#fff3e0'
                 }
               ]
             }
