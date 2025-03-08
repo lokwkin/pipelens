@@ -5,13 +5,13 @@ describe('Step', () => {
   let step: Step;
 
   beforeEach(() => {
-    step = new Step('test-step');
+    step = new Step('test_step');
   });
 
   describe('Constructor', () => {
     it('should create a step with basic properties', () => {
-      expect(step['name']).toBe('test-step');
-      expect(step['key']).toBe('test-step');
+      expect(step['name']).toBe('test_step');
+      expect(step['key']).toBe('test_step');
       expect(step['records']).toEqual({});
       expect(step['steps']).toEqual([]);
       expect(step['parent']).toBeNull();
@@ -59,7 +59,7 @@ describe('Step', () => {
     beforeEach(() => {
       events = [];
       eventEmitter = new EventEmitter();
-      step = new Step('test-step', { eventEmitter });
+      step = new Step('test_step', { eventEmitter });
 
       // Track all events
       ['step-start', 'step-success', 'step-error', 'step-record', 'step-complete'].forEach((event) => {
@@ -116,12 +116,12 @@ describe('Step', () => {
 
       const output = step.outputHierarchy();
       expect(output).toMatchObject({
-        name: 'test-step',
-        key: 'test-step',
+        name: 'test_step',
+        key: 'test_step',
         substeps: [
           {
             name: 'child1',
-            key: 'test-step.child1',
+            key: 'test_step.child1',
             record: { key1: 'value1' },
             result: 'result1',
           },
@@ -139,7 +139,7 @@ describe('Step', () => {
       expect(output).toHaveLength(2);
       expect(output[1]).toMatchObject({
         name: 'child1',
-        key: 'test-step.child1',
+        key: 'test_step.child1',
         record: { key1: 'value1' },
         result: 'result1',
       });
@@ -157,18 +157,18 @@ describe('Step', () => {
 
       const output = step.outputHierarchy();
       expect(output).toMatchObject({
-        name: 'test-step',
-        key: 'test-step',
+        name: 'test_step',
+        key: 'test_step',
         substeps: [
           {
             name: 'parent',
-            key: 'test-step.parent',
+            key: 'test_step.parent',
             record: { parentKey: 'parentValue' },
             result: 'parentResult',
             substeps: [
               {
                 name: 'child',
-                key: 'test-step.parent.child',
+                key: 'test_step.parent.child',
                 record: { childKey: 'childValue' },
                 result: 'childResult',
               },
@@ -192,13 +192,13 @@ describe('Step', () => {
       expect(output).toHaveLength(3);
       expect(output[1]).toMatchObject({
         name: 'parent',
-        key: 'test-step.parent',
+        key: 'test_step.parent',
         record: { parentKey: 'parentValue' },
         result: 'parentResult',
       });
       expect(output[2]).toMatchObject({
         name: 'child',
-        key: 'test-step.parent.child',
+        key: 'test_step.parent.child',
         record: { childKey: 'childValue' },
         result: 'childResult',
       });
