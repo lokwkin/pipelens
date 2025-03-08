@@ -41,7 +41,7 @@ async function main() {
       const pages = await st.step('preprocess', async (st: Step) => {
         // Some preprocess logic
         st.record('pageCount', 3);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
       });
 
@@ -58,6 +58,7 @@ async function main() {
 
       await st
         .step('sample-error', async (st) => {
+          await new Promise((resolve) => setTimeout(resolve, 800));
           throw new Error('Sample Error');
         })
         .catch((err) => {

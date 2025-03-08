@@ -144,32 +144,9 @@ export class DashboardServer {
             successCount,
           },
         });
-
       } catch (error) {
         console.error('Error getting step time series:', error);
         res.status(500).json({ error: 'Failed to get step time series' });
-      }
-    });
-
-    // Generate Gantt chart for a run
-    this.app.get('/api/charts/gantt/:runId', async (req, res) => {
-      try {
-        const { runId } = req.params;
-        const runData = await this.storageAdapter.getRunData(runId);
-
-        // Create a temporary Step instance to generate the chart
-        const tempStep = new Step('temp');
-
-        // Apply the run data to the step (this is a simplified approach)
-        Object.assign(tempStep, runData);
-
-        // Generate the chart URL
-        const chartUrl = tempStep.ganttQuickchart();
-
-        res.json({ url: chartUrl });
-      } catch (error) {
-        console.error('Error generating Gantt chart:', error);
-        res.status(500).json({ error: 'Failed to generate Gantt chart' });
       }
     });
 
