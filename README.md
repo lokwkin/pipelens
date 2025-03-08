@@ -248,10 +248,17 @@ console.log(JSON.stringify(pipeline.outputFlattened(), null, 2));
 - [X] Decorator support for easier integration.
 - [X] Generate speed analysis stats from multiple runs.
 - [X] Add Redis / File support for persistent data storage.
-- [ ] Dashboard to monitor execution logs and results.
+- [X] Dashboard to monitor execution logs and results.
 - [X] Implement real-time execution monitoring.
-- [ ] Optional LLM-extension that optimize for LLM prompt result and token tracking
-- [ ] Interactive graph to show step results.
+- [ ] Optional LLM-extension that optimize for LLM response and usage tracking
+- [ ] Independent Monitoring Portal deployment & Dockerization
+- [ ] Enhance StepsTrack Monitoring Portal
+  - [ ] Improve json view of record & results
+  - [ ] Better support for in-progress steps (tracking of step real-time status)
+  - [ ] Fine tuning step execution stats graph appearances
+  - [ ] Update ReadMe with visualizations
+- [ ] Python version of logger
+
 
 ## License
 [MIT License](LICENSE)
