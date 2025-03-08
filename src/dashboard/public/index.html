@@ -504,6 +504,8 @@
   <!-- Add Flatpickr CSS in the head section -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- Google Charts -->
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
   <div class="main-content">
@@ -1428,21 +1430,116 @@
         // Show loading state
         ganttPlaceholder.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
         
-        // Fetch the Gantt chart URL
-        const response = await fetch(`/api/charts/gantt/${runId}`);
-        const data = await response.json();
+        // Fetch the steps data for the run
+        const response = await fetch(`/api/runs/${runId}/steps`);
+        const steps = await response.json();
         
-        if (data.url) {
-          // Replace placeholder with the actual chart
-          ganttPlaceholder.innerHTML = `
-            <img src="${data.url}" alt="Gantt Chart" class="img-fluid">
-          `;
-        } else {
-          ganttPlaceholder.innerHTML = '<div class="alert alert-warning">Gantt Chart Unavailable</div>';
+        if (!steps || !steps.length) {
+          ganttPlaceholder.innerHTML = '<div class="alert alert-warning">No steps data available for Gantt Chart</div>';
+          return;
+        }
+        
+        // Create a div for the chart
+        ganttPlaceholder.innerHTML = '<div id="gantt_chart" style="width: 100%; height: 400px;"></div>';
+        
+        // Load the Google Charts visualization library
+        google.charts.load('current', {'packages':['gantt']});
+        google.charts.setOnLoadCallback(() => {
+          drawGanttChart(steps);
+        });
+        
+        function drawGanttChart(steps) {
+          const data = new google.visualization.DataTable();
+          
+          // Add columns
+          data.addColumn('string', 'Task ID');
+          data.addColumn('string', 'Task Name');
+          data.addColumn('string', 'Resource');
+          data.addColumn('date', 'Start Date');
+          data.addColumn('date', 'End Date');
+          data.addColumn('number', 'Duration');
+          data.addColumn('number', 'Percent Complete');
+          data.addColumn('string', 'Dependencies');
+          
+          // Compute the minimum start date, used as the overall start date for the Gantt chart
+          const ganttStartTs = steps.map(step => step.time.startTs).reduce((a, b) => Math.min(a, b));
+
+          const rows = steps.map(step => {
+            // Create start and end dates
+            const relativeStartTs = step.time.startTs - ganttStartTs;
+            // const relativeEndTs = step.time.endTs - ganttStartTs;
+            
+            // Handle steps that are still running or failed
+            let endDate;
+            let percentComplete;
+            
+            if (step.time.endTs && step.time.endTs > 0) {
+              endDate = new Date(step.time.endTs);
+              percentComplete = 100; // Completed
+            } else {
+              // For running steps, use current time as temporary end
+              endDate = new Date();
+              percentComplete = 50; // In progress
+            }
+            
+            // Determine color based on status
+            let resource = 'Success';
+            if (step.error) {
+              resource = 'Error';
+            } else if (!step.time.endTs || step.time.endTs === 0) {
+              resource = 'Running';
+            }
+            
+            return [
+              step.key, // Task ID
+              step.name, // Task Name
+              resource, // Resource (used for coloring)
+              new Date(relativeStartTs),
+              null,
+              step.time.timeUsageMs, // Duration (null because we're using start/end dates)
+              percentComplete,
+              null // Dependencies (we're not showing dependencies)
+            ];
+          });
+          
+          data.addRows(rows);
+          
+          // Set chart options
+          const options = {
+            // height: 400,
+            gantt: {
+              trackHeight: 30,
+              barHeight: 20,
+              labelMaxWidth: 300,
+              criticalPathEnabled: false,
+              percentEnabled: false,
+              palette: [
+                {
+                  color: '#047857', // Success - dark green (changed from #10b981)
+                  dark: '#065f46', // Darker shade
+                  light: '#d1fae5' // Light shade for hover
+                },
+                {
+                  color: '#ef4444', // Error - red
+                  dark: '#b91c1c',
+                  light: '#fee2e2'
+                },
+                {
+                  color: '#f59e0b', // Running - yellow/orange
+                  dark: '#d97706',
+                  light: '#fef3c7'
+                }
+              ]
+            }
+          };
+          
+          // Create and draw the chart
+          const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
+          chart.draw(data, options);
         }
       } catch (error) {
-        console.error('Error loading Gantt chart:', error);
-        document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Loading Gantt Chart</div>';
+        console.error('Error generating Gantt chart:', error);
+        document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Generating Gantt Chart</div>';
       }
     }
 
