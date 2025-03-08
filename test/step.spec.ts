@@ -29,7 +29,7 @@ describe('Step', () => {
   describe('Step Execution', () => {
     it('should track execution time and result', async () => {
       const result = await step.step('test', async (_st) => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 150));
         return 'success';
       });
 
