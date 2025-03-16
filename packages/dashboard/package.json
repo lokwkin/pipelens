@@ -1,0 +1,32 @@
+{
+  "name": "steps-track-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard for visualizing steps-track data",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch src src/index.ts",
+    "docker:build": "docker build -t steps-track-dashboard .",
+    "docker:run": "docker run -p 3000:3000 steps-track-dashboard"
+  },
+  "author": "lokwkin <lokwkin@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "steps-track": "^1.4.0",
+    "opener": "^1.5.2",
+    "@redis/json": "^1.0.7",
+    "@redis/time-series": "^1.1.0",
+    "redis": "^4.7.0",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^18.11.18",
+    "@types/opener": "^1.4.3",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
+  }
+} 
