@@ -53,7 +53,7 @@ export interface StorageAdapter {
   // Finish a step, this should mark the step as either completed or failed, and write the step meta to storage.
   finishStep(runId: string, step: StepMeta): Promise<void>;
 
-  // Get the step stats, this should able to retrieve all StepMeta for a given stepKey and timeRange.
+  // Get the step timeseries, this should able to retrieve all StepMeta for a given stepKey and timeRange.
   getPipelineStepTimeseries(
     pipelineName: string,
     stepName: string,
