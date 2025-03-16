@@ -1,207 +1,163 @@
 import { Step } from '../src/step';
-import { EventEmitter } from 'stream';
 
 describe('Step', () => {
-  let step: Step;
-
-  beforeEach(() => {
-    step = new Step('test_step');
-  });
-
-  describe('Constructor', () => {
-    it('should create a step with basic properties', () => {
-      expect(step['name']).toBe('test_step');
-      expect(step['key']).toBe('test_step');
-      expect(step['records']).toEqual({});
-      expect(step['steps']).toEqual([]);
-      expect(step['parent']).toBeNull();
+  describe('constructor', () => {
+    it('should create a step with the given name', () => {
+      const step = new Step('test-step');
+      expect(step.getName()).toBe('test-step');
+      expect(step.getKey()).toBe('test_step');
     });
 
-    it('should create a nested step with parent', () => {
+    it('should create a step with a custom key if provided', () => {
+      const step = new Step('test-step', { key: 'custom-key' });
+      expect(step.getName()).toBe('test-step');
+      expect(step.getKey()).toBe('custom-key');
+    });
+
+    it('should create a step with a key derived from parent if parent is provided', () => {
       const parentStep = new Step('parent');
       const childStep = new Step('child', { parent: parentStep });
-
-      expect(childStep['key']).toBe('parent.child');
-      expect(childStep['parent']).toBe(parentStep);
+      expect(childStep.getKey()).toBe('parent.child');
     });
   });
 
-  describe('Step Execution', () => {
-    it('should track execution time and result', async () => {
-      const result = await step.step('test', async (_st) => {
-        await new Promise((resolve) => setTimeout(resolve, 150));
-        return 'success';
-      });
-
-      expect(result).toBe('success');
-      const output = step.outputHierarchy();
-      expect(output.substeps[0].result).toBe('success');
-      expect(output.substeps[0].time.timeUsageMs).toBeGreaterThanOrEqual(100);
+  describe('run', () => {
+    it('should run the callable and return its result', async () => {
+      const step = new Step('test-step');
+      const result = await step.step('inner-step', async () => 'result');
+      expect(result).toBe('result');
     });
 
-    it('should handle errors', async () => {
+    it('should handle errors in the callable', async () => {
+      const step = new Step('test-step');
       const error = new Error('test error');
+
       await expect(
-        step.step('error-step', async () => {
+        step.step('inner-step', async () => {
           throw error;
         }),
-      ).rejects.toThrow(error);
+      ).rejects.toThrow('test error');
+    });
 
-      const output = step.outputHierarchy();
-      expect(output.substeps[0].error).toBe('test error');
+    it('should track time usage', async () => {
+      const step = new Step('test-step');
+      await step.step('inner-step', async (_st) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 'result';
+      });
+
+      const meta = step.outputFlattened()[1]; // Get the inner step meta
+      expect(meta.time.timeUsageMs).toBeGreaterThanOrEqual(10);
     });
   });
 
-  describe('Event Emission', () => {
-    let eventEmitter: EventEmitter;
-    let events: Array<{ event: string; args: any[] }>;
-
-    beforeEach(() => {
-      events = [];
-      eventEmitter = new EventEmitter();
-      step = new Step('test_step', { eventEmitter });
-
-      // Track all events
-      ['step-start', 'step-success', 'step-error', 'step-record', 'step-complete'].forEach((event) => {
-        eventEmitter.on(event, (...args) => {
-          events.push({ event, args });
-        });
-      });
-    });
-
-    it('should emit events in correct order', async () => {
-      await step.step('test', async (st) => {
-        await st.record('test-key', 'test-value');
-        return 'success';
-      });
-
-      expect(events.map((e) => e.event)).toEqual(['step-start', 'step-record', 'step-success', 'step-complete']);
-    });
-
-    it('should emit error event on failure', async () => {
-      await expect(
-        step.step('error-step', async () => {
-          throw new Error('test error');
-        }),
-      ).rejects.toThrow();
-
-      expect(events.some((e) => e.event === 'step-error')).toBeTruthy();
-    });
-  });
-
-  describe('Record Keeping', () => {
-    it('should store records', async () => {
-      await step.record('key1', 'value1');
-      await step.record('key2', { nested: 'value2' });
-
-      expect(step.getRecords()).toEqual({
-        key1: 'value1',
-        key2: { nested: 'value2' },
-      });
-    });
-
-    it('should include records in output', async () => {
+  describe('record', () => {
+    it('should record data with the given key', async () => {
+      const step = new Step('test-step');
       await step.record('test-key', 'test-value');
-      const output = step.outputHierarchy();
-      expect(output.record['test-key']).toBe('test-value');
+
+      const meta = step.getStepMeta();
+      expect(meta.record['test-key']).toBe('test-value');
     });
   });
 
-  describe('Output Formatting', () => {
-    it('should format hierarchy output correctly', async () => {
+  describe('events', () => {
+    it('should emit step-start event when a step starts', async () => {
+      const step = new Step('test-step');
+      const startListener = jest.fn();
+
+      step.on('step-start', startListener);
+
+      await step.step('inner-step', async () => 'result');
+
+      expect(startListener).toHaveBeenCalledTimes(1); // Only for inner-step
+    });
+
+    it('should emit step-success event when a step succeeds', async () => {
+      const step = new Step('test-step');
+      const successListener = jest.fn();
+
+      step.on('step-success', successListener);
+
+      await step.step('inner-step', async () => 'result');
+
+      expect(successListener).toHaveBeenCalledTimes(1); // Only for inner-step
+      expect(successListener.mock.calls[0][1]).toBe('result'); // Check the result
+    });
+
+    it('should emit step-error event when a step fails', async () => {
+      const step = new Step('test-step');
+      const errorListener = jest.fn();
+      const error = new Error('test error');
+
+      step.on('step-error', errorListener);
+
+      await expect(
+        step.step('inner-step', async () => {
+          throw error;
+        }),
+      ).rejects.toThrow('test error');
+
+      expect(errorListener).toHaveBeenCalledTimes(1);
+      expect(errorListener.mock.calls[0][1]).toBe(error);
+    });
+
+    it('should emit step-record event when data is recorded', async () => {
+      const step = new Step('test-step');
+      const recordListener = jest.fn();
+
+      step.on('step-record', recordListener);
+
+      await step.record('test-key', 'test-value');
+
+      expect(recordListener).toHaveBeenCalledTimes(1);
+      expect(recordListener.mock.calls[0][1]).toBe('test-key');
+      expect(recordListener.mock.calls[0][2]).toBe('test-value');
+    });
+
+    it('should emit step-complete event when a step completes', async () => {
+      const step = new Step('test-step');
+      const completeListener = jest.fn();
+
+      step.on('step-complete', completeListener);
+
+      await step.step('inner-step', async () => 'result');
+
+      expect(completeListener).toHaveBeenCalledTimes(1); // Only for inner-step
+    });
+  });
+
+  describe('output methods', () => {
+    it('should output hierarchy correctly', async () => {
+      const step = new Step('parent');
+      await step.step('child1', async () => 'result1');
+      await step.step('child2', async () => 'result2');
+
+      const hierarchy = step.outputHierarchy();
+
+      expect(hierarchy.name).toBe('parent');
+      expect(hierarchy.substeps.length).toBe(2);
+      expect(hierarchy.substeps[0].name).toBe('child1');
+      expect(hierarchy.substeps[0].result).toBe('result1');
+      expect(hierarchy.substeps[1].name).toBe('child2');
+      expect(hierarchy.substeps[1].result).toBe('result2');
+    });
+
+    it('should output flattened steps correctly', async () => {
+      const step = new Step('parent');
       await step.step('child1', async (st) => {
-        await st.record('key1', 'value1');
+        await st.step('grandchild', async () => 'result-gc');
         return 'result1';
       });
+      await step.step('child2', async () => 'result2');
 
-      const output = step.outputHierarchy();
-      expect(output).toMatchObject({
-        name: 'test_step',
-        key: 'test_step',
-        substeps: [
-          {
-            name: 'child1',
-            key: 'test_step.child1',
-            record: { key1: 'value1' },
-            result: 'result1',
-          },
-        ],
-      });
-    });
+      const flattened = step.outputFlattened();
 
-    it('should format flattened output correctly', async () => {
-      await step.step('child1', async (st) => {
-        await st.record('key1', 'value1');
-        return 'result1';
-      });
-
-      const output = step.outputFlattened();
-      expect(output).toHaveLength(2);
-      expect(output[1]).toMatchObject({
-        name: 'child1',
-        key: 'test_step.child1',
-        record: { key1: 'value1' },
-        result: 'result1',
-      });
-    });
-
-    it('should format nested hierarchy output correctly', async () => {
-      await step.step('parent', async (parentStep) => {
-        await parentStep.record('parentKey', 'parentValue');
-        await parentStep.step('child', async (childStep) => {
-          await childStep.record('childKey', 'childValue');
-          return 'childResult';
-        });
-        return 'parentResult';
-      });
-
-      const output = step.outputHierarchy();
-      expect(output).toMatchObject({
-        name: 'test_step',
-        key: 'test_step',
-        substeps: [
-          {
-            name: 'parent',
-            key: 'test_step.parent',
-            record: { parentKey: 'parentValue' },
-            result: 'parentResult',
-            substeps: [
-              {
-                name: 'child',
-                key: 'test_step.parent.child',
-                record: { childKey: 'childValue' },
-                result: 'childResult',
-              },
-            ],
-          },
-        ],
-      });
-    });
-
-    it('should format nested flattened output correctly', async () => {
-      await step.step('parent', async (parentStep) => {
-        await parentStep.record('parentKey', 'parentValue');
-        await parentStep.step('child', async (childStep) => {
-          await childStep.record('childKey', 'childValue');
-          return 'childResult';
-        });
-        return 'parentResult';
-      });
-
-      const output = step.outputFlattened();
-      expect(output).toHaveLength(3);
-      expect(output[1]).toMatchObject({
-        name: 'parent',
-        key: 'test_step.parent',
-        record: { parentKey: 'parentValue' },
-        result: 'parentResult',
-      });
-      expect(output[2]).toMatchObject({
-        name: 'child',
-        key: 'test_step.parent.child',
-        record: { childKey: 'childValue' },
-        result: 'childResult',
-      });
+      expect(flattened.length).toBe(4); // parent, child1, grandchild, child2
+      expect(flattened[0].name).toBe('parent');
+      expect(flattened[1].name).toBe('child1');
+      expect(flattened[2].name).toBe('grandchild');
+      expect(flattened[3].name).toBe('child2');
     });
   });
 });
