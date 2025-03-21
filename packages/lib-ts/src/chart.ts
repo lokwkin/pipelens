@@ -84,93 +84,148 @@ function isChartJSAvailable(): boolean {
 export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: GanttChartArgs): Promise<Buffer> {
   const { unit, minWidth, minHeight } = {
     ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
+/**
+ * Generates a Gantt chart HTML using Google Charts
+ *
+ * @param timeSpans Array of TimeSpan objects containing start and end timestamps
+ * @param args Optional configuration arguments
+ * @returns HTML string containing the Google Charts Gantt chart
+ */
+export function generateGanttChartGoogle(timeSpans: TimeSpan[], args?: GanttChartArgs): string {
+  const { minHeight } = {
+    ...{ minHeight: 300 },
     ...(args ?? {}),
   };
 
-  if (!isChartJSAvailable()) {
-    throw new Error(
-      'chartjs-node-canvas and chart.js are required but not installed properly. Please install it using:\n' +
-        'npm install chart.js@3 chartjs-node-canvas@4',
-    );
-  }
+  // Calculate height based on the number of items
+  const height = Math.max(minHeight, timeSpans.length * 25);
 
-  const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
+  // Create the HTML for a Google Gantt chart
+  const html = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+      google.charts.load("current", {packages:["gantt"]});
+      google.charts.setOnLoadCallback(drawChart);
 
-  const maxEndTs = Math.max(...timeSpans.map((span) => span.endTs));
+      function drawChart() {
+        try {
+          var container = document.getElementById('gantt_chart');
+          var chart = new google.visualization.Gantt(container);
+          var dataTable = new google.visualization.DataTable();
 
-  const chartData: ChartConfiguration = {
-    type: 'bar', // ChartJS uses 'bar' for both vertical and horizontal bar charts
-    plugins: [
-      {
-        id: 'customCanvasBackgroundColor',
-        beforeDraw: (chart: any, _args: any, _options: any) => {
-          const { ctx } = chart;
-          ctx.save();
-          ctx.globalCompositeOperation = 'destination-over';
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, chart.width, chart.height);
-          ctx.restore();
-        },
-      },
-    ],
-    data: {
-      labels: timeSpans.map(
-        (span) => `${span.key} - ${(span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000)}${unit}`,
-      ),
-      datasets: [
-        {
-          label: 'offset',
-          data: timeSpans.map((span) => span.startTs / (unit === 'ms' ? 1 : 1000)),
-          backgroundColor: 'white',
-        },
-        {
-          label: 'data',
-          data: timeSpans.map((span) => (span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000)),
-          backgroundColor: '#23395d',
-        },
-      ],
-    },
-    options: {
-      indexAxis: 'y', // This makes the bar chart horizontal
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-      scales: {
-        x: {
-          position: 'top',
-          min: 0,
-          max: maxEndTs / (unit === 'ms' ? 1 : 1000),
-          stacked: true,
-          ticks: {
-            color: '#333333',
-          },
-        },
-        y: {
-          beginAtZero: true,
-          stacked: true,
-          ticks: {
-            color: '#333333',
-          },
-        },
-      },
-      layout: {
-        padding: {
-          left: 10,
-          right: 10,
-          top: 10,
-          bottom: 10,
-        },
-      },
-    },
-  };
+          // Add columns
+          dataTable.addColumn('string', 'Task ID');
+          dataTable.addColumn('string', 'Task Name');
+          dataTable.addColumn('string', 'Resource');
+          dataTable.addColumn('date', 'Start Date');
+          dataTable.addColumn('date', 'End Date');
+          dataTable.addColumn('number', 'Duration');
+          dataTable.addColumn('number', 'Percent Complete');
+          dataTable.addColumn('string', 'Dependencies');
 
-  // Create a canvas and render the chart
-  const chartJSNodeCanvas = new ChartJSNodeCanvas({
-    width: Math.max(minWidth, timeSpans.length * 25),
-    height: Math.max(minHeight, timeSpans.length * 25),
-  });
-  const image = await chartJSNodeCanvas.renderToBuffer(chartData);
-  return image;
+          var steps = ${JSON.stringify(timeSpans)};
+          
+          // Compute the minimum start time to make timestamps relative
+          var ganttStartTs = Number.MAX_SAFE_INTEGER;
+          for (var i = 0; i < steps.length; i++) {
+            ganttStartTs = Math.min(ganttStartTs, steps[i].startTs);
+          }
+          
+          var rows = [];
+          
+          for (var i = 0; i < steps.length; i++) {
+            var step = steps[i];
+            
+            // Create relative start time (milliseconds from the start of the first step)
+            var relativeStartTs = step.startTs - ganttStartTs;
+            
+            // For the Gantt chart, use a base date (Jan 1, 1970) and add the relative time
+            // This ensures the chart displays properly
+            var startDate = new Date(relativeStartTs);
+            var percentComplete;
+            var duration = null;
+            
+            // Default to Success status
+            var resource = 'Success';
+            
+            // Check for error (if there's an error property in your data)
+            if (step.error) {
+              resource = 'Error';
+              percentComplete = 100; // Error is considered complete
+              if (step.endTs && step.endTs > 0) {
+                duration = step.endTs - step.startTs;
+              }
+            } 
+            // Check if still running
+            else if (step.endTs === 0 || !step.endTs) {
+              resource = 'Running';
+              percentComplete = 50; // In progress
+              // For running tasks, set some arbitrary duration to show them on the chart
+              duration = 1000; // 1 second placeholder
+            } else {
+              percentComplete = 100; // Completed successfully
+              duration = step.endTs - step.startTs;
+            }
+            
+            rows.push([
+              step.key,           // Task ID
+              step.key,           // Task Name
+              resource,           // Resource (used for coloring)
+              startDate,          // Start Date
+              null,               // End Date (null when using duration)
+              duration,           // Duration
+              percentComplete,    // Percent Complete
+              null                // Dependencies
+            ]);
+          }
+          
+          dataTable.addRows(rows);
+          
+          var options = {
+            height: ${height},
+            gantt: {
+              trackHeight: 30,
+              barHeight: 20,
+              labelMaxWidth: 300,
+              criticalPathEnabled: false,
+              percentEnabled: false,
+              palette: [
+                {
+                  color: '#2e7d32', // Success - dark green
+                  dark: '#1b5e20',  // Darker shade
+                  light: '#e8f5e9'  // Light shade for hover
+                },
+                {
+                  color: '#d32f2f', // Error - red
+                  dark: '#b71c1c',
+                  light: '#ffebee'
+                },
+                {
+                  color: '#ed6c02', // Running - orange
+                  dark: '#e65100',
+                  light: '#fff3e0'
+                }
+              ]
+            }
+          };
+          
+          chart.draw(dataTable, options);
+        } catch (err) {
+          console.error('Error creating chart:', err);
+          document.getElementById('gantt_chart').innerHTML = 
+            '<div style="color: red; padding: 20px;">Error drawing chart: ' + err + '</div>';
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="gantt_chart" style="width: 100%; height: ${height}px;"></div>
+  </body>
+</html>
+`;
+
+  return html;
 }
