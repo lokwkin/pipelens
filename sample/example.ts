@@ -78,7 +78,6 @@ async function main() {
   const stepsFlattened = pipeline.outputFlattened();
 
   const ganttChartUrl = pipeline.ganttQuickchart(ganttArgs); // gantt chart URL by quickchart.io
-  const ganttChartBuffer = await pipeline.ganttLocal(ganttArgs); // gantt chart generated locally using chart.js, in png format
   const executionGraphUrl = pipeline.executionGraphQuickchart();
 
   console.log('Gantt Chart: ', ganttChartUrl);

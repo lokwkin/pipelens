@@ -1,5 +1,3 @@
-import type { ChartConfiguration } from 'chart.js';
-
 const QUICKCHART_URL = 'https://quickchart.io';
 
 export type GanttChartArgs = {
@@ -70,27 +68,6 @@ export function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: Gantt
   return chartUrl;
 }
 
-// Type guard to check if chartjs-node-canvas is available
-function isChartJSAvailable(): boolean {
-  try {
-    require.resolve('chartjs-node-canvas');
-    require.resolve('chart.js');
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-export async function generateGanttChartLocal(timeSpans: TimeSpan[], args?: GanttChartArgs): Promise<Buffer> {
-  const { unit, minWidth, minHeight } = {
-    ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
-/**
- * Generates a Gantt chart HTML using Google Charts
- *
- * @param timeSpans Array of TimeSpan objects containing start and end timestamps
- * @param args Optional configuration arguments
- * @returns HTML string containing the Google Charts Gantt chart
- */
 export function generateGanttChartGoogle(timeSpans: TimeSpan[], args?: GanttChartArgs): string {
   const { minHeight } = {
     ...{ minHeight: 300 },

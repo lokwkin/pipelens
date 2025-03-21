@@ -2,7 +2,7 @@ import { EventEmitter } from 'stream';
 import {
   GanttChartArgs,
   generateExecutionGraphQuickchart,
-  generateGanttChartLocal,
+  generateGanttChartGoogle,
   generateGanttChartQuickchart,
   GraphItem,
   TimeSpan,
@@ -270,10 +270,10 @@ export class Step {
   }
 
   /**
-   * Generate a Gantt chart locally via ChartJS, returning a Buffer.
+   * Generate a Gantt chart locally via ChartJS, returning a string of HTML.
    */
-  public async ganttLocal(args?: StepGanttArg): Promise<Buffer> {
-    return generateGanttChartLocal(Step.getGanttSpans(this.outputFlattened(), args?.filter), args);
+  public ganttGoogleChartHtml(args?: StepGanttArg): string {
+    return generateGanttChartGoogle(Step.getGanttSpans(this.outputFlattened(), args?.filter), args);
   }
 
   /**
@@ -284,9 +284,9 @@ export class Step {
   }
 
   /**
-   * Generate a Gantt chart locally via ChartJS, returning a Buffer.
+   * Generate a Gantt chart locally via ChartJS, returning a string of HTML.
    */
-  public static ganttLocal(steps: StepMeta[], args?: StepGanttArg): Promise<Buffer> {
-    return generateGanttChartLocal(Step.getGanttSpans(steps, args?.filter), args);
+  public static ganttGoogleChartHtml(steps: StepMeta[], args?: StepGanttArg): string {
+    return generateGanttChartGoogle(Step.getGanttSpans(steps, args?.filter), args);
   }
 }
