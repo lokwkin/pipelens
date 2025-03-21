@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import { StorageAdapter, FileStorageAdapter, Step } from 'steps-track';
+import { StorageAdapter, FileStorageAdapter } from 'steps-track';
 
 export class DashboardServer {
   private app: express.Application;
