@@ -155,28 +155,6 @@ export class DashboardServer {
       }
     });
 
-    // Generate execution graph for a run
-    this.app.get('/api/charts/execution-graph/:runId', async (req, res) => {
-      try {
-        const { runId } = req.params;
-        const runData = await this.storageAdapter.getRunData(runId);
-
-        // Create a temporary Step instance to generate the chart
-        const tempStep = new Step('temp');
-
-        // Apply the run data to the step (this is a simplified approach)
-        Object.assign(tempStep, runData);
-
-        // Generate the chart URL
-        const chartUrl = tempStep.executionGraphQuickchart();
-
-        res.json({ url: chartUrl });
-      } catch (error) {
-        console.error('Error generating execution graph:', error);
-        res.status(500).json({ error: 'Failed to generate execution graph' });
-      }
-    });
-
     // Generate step timeseries chart
     this.app.get('/api/pipelines/:pipelineName/steps/:stepName/time-series/chart', async (req, res) => {
       try {

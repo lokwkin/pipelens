@@ -1,4 +1,5 @@
 const QUICKCHART_URL = 'https://quickchart.io';
+import axios from 'axios';
 
 export type GanttChartArgs = {
   unit?: 'ms' | 's';
@@ -17,13 +18,25 @@ export type GraphItem = {
   label?: string;
 };
 
+/**
+ * Generates a URL for an execution graph visualization using QuickChart's GraphViz service.
+ *
+ * @param {GraphItem[]} graphItems - Array of graph items to visualize.
+ * @returns {string} A URL that can be used to display the execution graph.
+ */
 export function generateExecutionGraphQuickchart(graphItems: GraphItem[]): string {
   const param = `digraph G {${graphItems.map((item) => `${item.descriptor}${item.label ? ` [label="${item.label}"]` : ''};`).join('\n')}}`;
   const chartUrl = `${QUICKCHART_URL}/graphviz?graph=${encodeURIComponent(param)}`;
   return chartUrl;
 }
 
-export function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: GanttChartArgs): string {
+/**
+ * Generates a Gantt chart as a PNG image using the QuickChart API.
+ *
+ * This function converts an array of time spans into a horizontal bar chart
+ * representation and returns the chart as a binary buffer.
+ */
+export async function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: GanttChartArgs): Promise<Buffer> {
   const { unit, minWidth, minHeight } = {
     ...{ unit: 'ms', minWidth: 500, minHeight: 300 },
     ...(args ?? {}),
@@ -64,10 +77,33 @@ export function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?: Gantt
     },
   };
 
-  const chartUrl = `${QUICKCHART_URL}/chart?c=${encodeURIComponent(JSON.stringify(chartData))}&w=${Math.max(minWidth, timeSpans.length * 25)}&h=${Math.max(minHeight, timeSpans.length * 25)}`;
-  return chartUrl;
+  // Calculate width and height based on the number of timeSpans
+  const width = Math.max(minWidth, timeSpans.length * 25);
+  const height = Math.max(minHeight, timeSpans.length * 25);
+
+  try {
+    // Use POST request to avoid URL length limitations
+    const response = await axios.post(
+      `${QUICKCHART_URL}/chart`,
+      {
+        chart: JSON.stringify(chartData),
+        width: width.toString(),
+        height: height.toString(),
+        format: 'png', // This returns a PNG image as buffer
+      },
+      { responseType: 'arraybuffer', headers: { 'Content-Type': 'application/json' } },
+    );
+    // Return the buffer directly
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error('Error generating QuickChart:', error);
+    throw new Error('Failed to generate chart with QuickChart API');
+  }
 }
 
+/**
+ * Generates an HTML page containing a Google Gantt Chart visualization.
+ */
 export function generateGanttChartGoogle(timeSpans: TimeSpan[], args?: GanttChartArgs): string {
   const { minHeight } = {
     ...{ minHeight: 300 },

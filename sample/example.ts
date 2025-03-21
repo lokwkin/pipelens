@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg } from '../src';
-import { FileStorageAdapter } from '../src/storage/file-storage-adapter';
+import { Step, Pipeline, StepGanttArg } from '../packages/lib-ts/src';
+import { FileStorageAdapter } from '../packages/lib-ts/src/storage/file-storage-adapter';
+import * as fs from 'fs';
 
 const parsePage = (page: string) => {
   return new Promise((resolve) => {
@@ -68,20 +69,21 @@ async function main() {
   });
 
   const ganttArgs: StepGanttArg = {
-    unit: 'ms', // 's' | 'ms'. Default 'ms'
-    minWidth: 100, // Default 500
-    minHeight: 100, // Default 300
+    unit: 's', // 's' | 'ms'. Default 'ms'
+    minWidth: 500, // Default 500
+    minHeight: 300, // Default 300
     filter: /pipeline.parsing(\.[a-zA-Z0-9-_])?/, // string[] | RegExp. if not provided, all steps will be included
   };
 
   const stepsHierarchy = pipeline.outputHierarchy();
   const stepsFlattened = pipeline.outputFlattened();
 
-  const ganttChartUrl = pipeline.ganttQuickchart(ganttArgs); // gantt chart URL by quickchart.io
-  const executionGraphUrl = pipeline.executionGraphQuickchart();
+  const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs); // gantt chart URL by quickchart.io
+  const ganttChartHtml = pipeline.ganttGoogleChartHtml(ganttArgs);
 
-  console.log('Gantt Chart: ', ganttChartUrl);
-  console.log('Execution Graph: ', executionGraphUrl);
+  fs.writeFileSync('gantt.png', ganttChartBuffer);
+  fs.writeFileSync('gantt.html', ganttChartHtml);
+
   console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
 }
 
