@@ -21,9 +21,6 @@ COPY package*.json ./
 COPY packages/dashboard/package*.json ./packages/dashboard/
 COPY packages/lib-ts/package*.json ./packages/lib-ts/
 
-# Install peer dependencies explicitly 
-RUN npm install --no-save chart.js@3 chartjs-node-canvas@4
-
 # Copy source code
 COPY packages/lib-ts ./packages/lib-ts
 COPY packages/dashboard ./packages/dashboard

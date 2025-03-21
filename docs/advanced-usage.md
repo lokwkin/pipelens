@@ -155,10 +155,7 @@ const ganttArgs = {
 };
 
 // Generate a Gantt chart URL
-const ganttChartUrl = pipeline.ganttQuickchart(ganttArgs);
-
-// Generate a local Gantt chart (requires chart.js and chartjs-node-canvas)
-const ganttChartBuffer = await pipeline.ganttLocal(ganttArgs);
+const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
 ```
 
 ### Execution Graph Customization
