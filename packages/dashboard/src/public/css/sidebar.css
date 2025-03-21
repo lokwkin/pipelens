@@ -1,0 +1,161 @@
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  color: white;
+  position: fixed;
+  height: 100vh;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 1.25rem 1.25rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-header h1 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+/* Pipeline selector in sidebar */
+.pipeline-selector {
+  margin-top: 0.75rem;
+}
+
+.pipeline-selector select {
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: var(--font-size-xs);
+  width: 100%;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+}
+
+.pipeline-selector select:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.pipeline-selector select option {
+  background-color: var(--sidebar-bg);
+  color: white;
+}
+
+/* Sidebar navigation */
+nav {
+  flex: 1;
+  padding: 1.25rem 0;
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.7);
+  border-left: 3px solid transparent;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s ease;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.3px;
+}
+
+.nav-link:hover {
+  color: white;
+  background-color: rgba(255,255,255,0.08);
+}
+
+.nav-link.active {
+  color: white;
+  background-color: rgba(255,255,255,0.08);
+  border-left: 3px solid var(--primary);
+}
+
+.nav-link i {
+  width: 20px;
+  text-align: center;
+  margin-right: 8px;
+}
+
+/* Sidebar footer with auto-refresh controls */
+.sidebar-footer {
+  padding: 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: auto; /* Push to bottom */
+  background-color: var(--sidebar-bg); /* Ensure it has background */
+}
+
+.auto-refresh-controls {
+  color: rgba(255,255,255,0.8);
+  font-size: var(--font-size-xs);
+}
+
+.auto-refresh-controls .form-check-input {
+  background-color: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.auto-refresh-controls .form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.auto-refresh-controls select {
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: var(--font-size-xs);
+  width: 100%;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+  transition: all 0.2s ease;
+}
+
+.auto-refresh-controls select:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.auto-refresh-controls select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23aaaaaa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  border-color: rgba(255,255,255,0.1);
+}
+
+.auto-refresh-controls select option {
+  background-color: var(--sidebar-bg);
+  color: white;
+}
+
+.refresh-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--success);
+  margin-right: 5px;
+}
+
+.refresh-indicator.active {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+} 

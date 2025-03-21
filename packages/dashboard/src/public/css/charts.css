@@ -1,0 +1,49 @@
+/* Charts and visualizations */
+
+/* Gantt chart */
+.gantt-placeholder {
+  background-color: white;
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Gantt chart container */
+.gantt-placeholder h5 {
+  font-size: var(--font-size-sm);
+}
+
+/* Run detail title */
+#run-detail-title {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Stats display */
+#step-stats-summary .h4 {
+  font-size: var(--font-size-lg);
+}
+
+#step-stats-summary .h5 {
+  font-size: var(--font-size-base);
+}
+
+#step-stats-summary .small {
+  font-size: var(--font-size-xs);
+}
+
+/* Step analysis view */
+#step-analysis-view h4 {
+  font-size: var(--font-size-base);
+}
+
+#step-analysis-details {
+  font-size: var(--font-size-xs);
+}
+
+/* Button sizes */
+.btn-sm {
+  font-size: var(--font-size-xs);
+  padding: 0.25rem 0.5rem;
+} 
