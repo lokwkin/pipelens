@@ -39,6 +39,11 @@ echo "Committing version update to git..."
 git add .
 git commit -m "v$NEW_VERSION"
 
+# Create git tag
+echo "Creating git tag v$NEW_VERSION..."
+git tag -a "v$NEW_VERSION" -m "Version $NEW_VERSION"
+
 echo "Version update complete!"
 echo "Root and all packages are now at version $NEW_VERSION"
-echo "Changes committed to git with message: v$NEW_VERSION" 
+echo "Changes committed to git with message: v$NEW_VERSION"
+echo "Created git tag: v$NEW_VERSION" 
