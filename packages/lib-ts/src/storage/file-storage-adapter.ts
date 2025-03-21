@@ -4,6 +4,7 @@ import { promisify } from 'util';
 import { StepMeta } from '../step';
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
 import { Pipeline } from '../pipeline';
+import { setTimeout } from 'timers/promises';
 
 // Promisify file system operations
 const mkdir = promisify(fs.mkdir);
@@ -31,7 +32,6 @@ const stat = promisify(fs.stat);
  */
 export class FileStorageAdapter implements StorageAdapter {
   private basePath: string;
-  private lockMap: Map<string, Promise<any>> = new Map();
 
   /**
    * Creates a new FileStorageAdapter
@@ -136,8 +136,11 @@ export class FileStorageAdapter implements StorageAdapter {
     const runDir = path.join(this.basePath, 'runs', runId);
     await this.ensureDir(runDir);
 
-    // Write run metadata
-    await this.writeJsonFile(path.join(runDir, 'meta.json'), runMeta);
+    // Write run metadata with file locking
+    const metaPath = path.join(runDir, 'meta.json');
+    await this.withFileLock(metaPath, async () => {
+      await this.writeJsonFile(metaPath, runMeta);
+    });
 
     // Update pipeline runs index
     await this.updatePipelineIndex(pipelineName, runMeta);
@@ -155,25 +158,37 @@ export class FileStorageAdapter implements StorageAdapter {
 
     // Read current run metadata
     const metaPath = path.join(runDir, 'meta.json');
-    const runMeta = (await this.readJsonFile(metaPath)) as RunMeta;
+    let runMeta: RunMeta | null = null;
+    
+    await this.withFileLock(metaPath, async () => {
+      runMeta = (await this.readJsonFile(metaPath)) as RunMeta;
 
-    // Update run metadata
-    const endTime = Date.now();
-    const updatedMeta: RunMeta = {
-      ...runMeta,
-      endTime,
-      duration: endTime - runMeta.startTime,
-      status,
-    };
+      // Update run metadata
+      const endTime = Date.now();
+      const updatedMeta: RunMeta = {
+        ...runMeta,
+        endTime,
+        duration: endTime - runMeta.startTime,
+        status,
+      };
 
-    // Write updated metadata
-    await this.writeJsonFile(metaPath, updatedMeta);
+      // Write updated metadata
+      await this.writeJsonFile(metaPath, updatedMeta);
+      
+      // Update run metadata for use outside this lock
+      runMeta = updatedMeta;
+    });
 
     // Write steps data in a whole
-    await this.writeJsonFile(path.join(runDir, 'steps.json'), stepsDump);
+    const stepsPath = path.join(runDir, 'steps.json');
+    await this.withFileLock(stepsPath, async () => {
+      await this.writeJsonFile(stepsPath, stepsDump);
+    });
 
     // Update pipeline runs index
-    await this.updatePipelineIndex(pipelineName, updatedMeta);
+    if (runMeta){
+      await this.updatePipelineIndex(pipelineName, runMeta);
+    }
   }
 
   /**
@@ -262,8 +277,11 @@ export class FileStorageAdapter implements StorageAdapter {
     const stepsDir = path.join(runDir, 'steps');
     await this.ensureDir(stepsDir);
 
-    // Write step data to individual file
-    await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
+    // Write step data to individual file with file locking
+    const stepPath = path.join(stepsDir, `${step.key}.json`);
+    await this.withFileLock(stepPath, async () => {
+      await this.writeJsonFile(stepPath, step);
+    });
   }
 
   /**
@@ -274,8 +292,11 @@ export class FileStorageAdapter implements StorageAdapter {
     const stepsDir = path.join(runDir, 'steps');
     await this.ensureDir(stepsDir);
 
-    // Write updated step data
-    await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
+    // Write updated step data with file locking
+    const stepPath = path.join(stepsDir, `${step.key}.json`);
+    await this.withFileLock(stepPath, async () => {
+      await this.writeJsonFile(stepPath, step);
+    });
 
     // Update timeseries data for this step
     await this.updateStepTimeseries(step.key.split('.')[0], runId, step);
@@ -438,40 +459,68 @@ export class FileStorageAdapter implements StorageAdapter {
    * Reads and parses a JSON file
    */
   private async readJsonFile(filePath: string): Promise<any> {
-    const data = await readFile(filePath, 'utf8');
-    return JSON.parse(data);
+    try {
+      const data = await readFile(filePath, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw error; // Let the caller handle "file not found"
+      }
+      // For JSON parsing errors, provide more context
+      if (error instanceof SyntaxError) {
+        throw new Error(`Failed to parse JSON from ${filePath}: ${error.message}`);
+      }
+      throw error;
+    }
   }
 
   /**
    * Writes data to a JSON file
    */
   private async writeJsonFile(filePath: string, data: any): Promise<void> {
-    await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+    try {
+      await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+    } catch (error) {
+      throw new Error(`Failed to write to ${filePath}: ${(error as Error).message}`);
+    }
   }
 
   /**
    * Executes a function with a file lock to prevent race conditions
    */
   private async withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
-    // Check if there's an existing lock
-    const lock = this.lockMap.get(filePath);
-
-    // Create a new promise chain
-    const newLock = (lock || Promise.resolve()).then(async () => {
+    const lockFilePath = `${filePath}.lock`;
+    const maxRetries = 10;
+    const retryDelay = 100; // ms
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return await fn();
-      } finally {
-        // If this is the current lock, remove it
-        if (this.lockMap.get(filePath) === newLock) {
-          this.lockMap.delete(filePath);
+        // Try to create the lock file exclusively
+        const lockFd = fs.openSync(lockFilePath, 'wx');
+        
+        try {
+          // We got the lock, execute the function
+          return await fn();
+        } finally {
+          // Always release the lock when done
+          fs.closeSync(lockFd);
+          fs.unlinkSync(lockFilePath);
         }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+          // Lock file exists, wait and retry
+          await setTimeout(retryDelay);
+          continue;
+        }
+        // For other errors, create the directory and try again
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          await this.ensureDir(path.dirname(lockFilePath));
+          continue;
+        }
+        throw error;
       }
-    });
-
-    // Set the new lock
-    this.lockMap.set(filePath, newLock);
-
-    // Return the result of the function
-    return newLock;
+    }
+    
+    throw new Error(`Could not acquire lock for ${filePath} after ${maxRetries} attempts`);
   }
 }
