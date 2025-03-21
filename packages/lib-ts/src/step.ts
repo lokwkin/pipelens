@@ -18,7 +18,7 @@ export type StepMeta = {
   name: string;
   key: string;
   time: TimeMeta;
-  record: Record<string, any>;
+  records: Record<string, any>;
   result?: any;
   error?: string;
 };
@@ -103,7 +103,7 @@ export class Step {
       name: this.name,
       key: this.key,
       time: this.time,
-      record: this.records,
+      records: this.records,
       result: this.result,
       error: this.error ? this.error.message || this.error.toString() || this.error.name : undefined,
     };
@@ -179,7 +179,7 @@ export class Step {
       name: this.name,
       key: this.key,
       time: this.time,
-      record: this.records,
+      records: this.records,
       result: this.result,
       error: this.error ? this.error.message || this.error.toString() || this.error.name : undefined,
       substeps: this.steps.map((step) => step.outputHierarchy()),
@@ -196,7 +196,7 @@ export class Step {
         name: this.name,
         key: this.key,
         time: this.time,
-        record: this.records,
+        records: this.records,
         result: this.result,
         error: this.error ? this.error.message || this.error.toString() || this.error.name : undefined,
       },
@@ -217,6 +217,10 @@ export class Step {
 
   public getTimeMeta(): TimeMeta {
     return this.time;
+  }
+
+  public getTime() {
+    return this.getTimeMeta();
   }
 
   /**
