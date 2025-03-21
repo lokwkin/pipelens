@@ -74,9 +74,9 @@ export class Step {
     if (options?.key) {
       this.key = options.key;
     } else if (options?.parent) {
-      this.key = `${options?.parent?.key}.${this.name.replace(/[\.\-]/g, '_')}`;
+      this.key = `${options?.parent?.key}.${this.name.replace(/[\.]/g, '_')}`;
     } else {
-      this.key = this.name.replace(/[\.\-]/g, '_');
+      this.key = this.name.replace(/[\.]/g, '_');
     }
     this.parent = options?.parent ?? null;
     this.ctx = this;
@@ -134,7 +134,7 @@ export class Step {
     const step = new Step(name, { parent: this, eventEmitter: this.eventEmitter });
     const duplicates = this.steps.filter((s) => s.key === step.key).length;
     if (duplicates > 0) {
-      const newKey = `${step.key}-${duplicates}`;
+      const newKey = `${step.key}___${duplicates}`;
       console.warn(
         `Step with key "${step.key}" already exists under same parent step. Assigning a new key "${newKey}" to avoid confusion.`,
       );
