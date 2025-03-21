@@ -37,7 +37,7 @@ cd "$ROOT_DIR"
 # Commit changes to git
 echo "Committing version update to git..."
 git add .
-git commit -m "v$NEW_VERSION"
+git commit -m "$NEW_VERSION"
 
 # Create git tag
 echo "Creating git tag v$NEW_VERSION..."
