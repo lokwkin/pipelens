@@ -57,7 +57,7 @@ describe('Step', () => {
       await step.record('test-key', 'test-value');
 
       const meta = step.getStepMeta();
-      expect(meta.record['test-key']).toBe('test-value');
+      expect(meta.records['test-key']).toBe('test-value');
     });
   });
 

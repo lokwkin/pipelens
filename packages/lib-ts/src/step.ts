@@ -219,6 +219,9 @@ export class Step {
     return this.time;
   }
 
+  /**
+   * @deprecated Use `getTimeMeta()` instead.
+   */
   public getTime() {
     return this.getTimeMeta();
   }
