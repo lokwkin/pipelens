@@ -1,0 +1,177 @@
+/* Tables */
+.table {
+  margin-bottom: 0;
+  font-size: var(--font-size-sm);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--text-primary);
+  border-top: none;
+  background-color: var(--bg-light);
+  padding: 0.625rem 0.875rem;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  vertical-align: middle;
+  padding: 0.625rem 0.875rem;
+  border-color: var(--border-color);
+}
+
+/* Clickable rows */
+tr[data-target] {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+tr[data-target]:hover {
+  background-color: rgba(44, 110, 155, 0.04);
+}
+
+/* Details row specific styles */
+.details-row {
+  background-color: transparent !important;
+  cursor: default !important;
+}
+
+.details-row:hover {
+  background-color: transparent !important;
+}
+
+/* Step details */
+.step-details {
+  background-color: var(--bg-light);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.detail-section {
+  margin-bottom: 1rem;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.detail-header h4 {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.copy-btn:hover {
+  background-color: rgba(44, 110, 155, 0.08);
+}
+
+.detail-content textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+  font-family: 'JetBrains Mono', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  resize: vertical;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text-primary);
+}
+
+/* Step name link */
+.step-name-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.step-name-link:hover {
+  text-decoration: underline;
+}
+
+/* Expand icon */
+.expand-icon {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+tr[data-target] .expand-icon.fa-chevron-up {
+  transform: rotate(180deg);
+}
+
+/* Global date range selector */
+.global-date-range-selector {
+  background-color: white;
+  border-radius: 4px;
+  padding: 0.625rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+}
+
+.global-date-range-selector #page-title {
+  font-size: var(--font-size-lg);
+  margin-right: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.global-date-range-selector .form-control,
+.global-date-range-selector .form-select {
+  border-color: var(--border-color);
+  font-size: var(--font-size-xs);
+  padding: 0.25rem 0.5rem;
+  height: calc(1.5em + 0.5rem + 2px);
+}
+
+.global-date-range-selector .form-control:focus,
+.global-date-range-selector .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.25rem rgba(44, 110, 155, 0.15);
+}
+
+@media (max-width: 1200px) {
+  .global-date-range-selector .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .global-date-range-selector #page-title {
+    margin-bottom: 0.75rem;
+  }
+  
+  .global-date-range-selector .d-flex .d-flex {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .global-date-range-selector .d-flex .d-flex {
+    gap: 0.5rem;
+  }
+} 
