@@ -105,6 +105,6 @@ describe('WithStep Decorator', () => {
     await instance.testMethod(parentStep);
 
     const output = parentStep.outputHierarchy();
-    expect(output.substeps[0].record['test-key']).toBe('test-value');
+    expect(output.substeps[0].records['test-key']).toBe('test-value');
   });
 });

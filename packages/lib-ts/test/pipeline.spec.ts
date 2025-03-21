@@ -141,7 +141,7 @@ describe('Pipeline', () => {
       // Test record method from Step
       await pipeline.record('test-key', 'test-value');
       const meta = pipeline.getStepMeta();
-      expect(meta.record['test-key']).toBe('test-value');
+      expect(meta.records['test-key']).toBe('test-value');
 
       // Test event handling from Step
       const recordListener = jest.fn();

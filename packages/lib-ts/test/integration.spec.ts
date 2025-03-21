@@ -125,7 +125,7 @@ describe('End-to-End Integration Tests', () => {
     expect(hierarchy.substeps[2].result).toBe(30);
 
     // Verify recorded data
-    expect(hierarchy.record['data-count']).toBe(5);
+    expect(hierarchy.records['data-count']).toBe(5);
 
     // Verify time tracking
     expect(hierarchy.time.timeUsageMs).toBeGreaterThan(0);
