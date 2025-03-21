@@ -58,14 +58,15 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 - [X] Add Redis / File support for persistent data storage.
 - [X] Dashboard to monitor execution logs and results.
 - [X] Implement real-time execution monitoring.
-- [ ] Independent Monitoring Portal deployment & Dockerization
+- [X] Independent Monitoring Portal deployment & Dockerization
+- [X] Obselete chart.js generation, use GoogleChart / QuickChart instead
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
+- [ ] Update README with visualizations and dashboard usage
 - [ ] Enhance StepsTrack Monitoring Portal
   - [ ] Improve json view of record & results
   - [ ] Allow importing external logs into dashboard
   - [ ] Better support for in-progress steps (tracking of step real-time status)
   - [ ] Fine tuning step execution stats graph appearances
-  - [ ] Update ReadMe with visualizations
 - [ ] Python version of logger
 
 
