@@ -23,7 +23,7 @@ describe('Pipeline', () => {
     it('should create a pipeline with the given name', () => {
       const pipeline = new Pipeline('test-pipeline');
       expect(pipeline.getName()).toBe('test-pipeline');
-      expect(pipeline.getKey()).toBe('test_pipeline');
+      expect(pipeline.getKey()).toBe('test-pipeline');
     });
 
     it('should generate a runId if not provided', () => {

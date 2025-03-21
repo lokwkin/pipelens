@@ -117,7 +117,7 @@ describe('End-to-End Integration Tests', () => {
     expect(hierarchy.substeps[1].result).toEqual([2, 4, 6, 8, 10]);
 
     // Count the number of process-item steps
-    const processItemSteps = steps.filter((step) => step.key.startsWith('integration_test.process_data.process_item'));
+    const processItemSteps = steps.filter((step) => step.key.startsWith('integration-test.process-data.process-item'));
     expect(processItemSteps.length).toBe(5);
 
     // Check the third step (aggregate-results)
