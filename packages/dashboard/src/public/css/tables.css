@@ -71,7 +71,13 @@ tr[data-target]:hover {
   margin: 0;
 }
 
-.copy-btn {
+.detail-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.copy-btn,
+.view-btn {
   background: none;
   border: none;
   color: var(--primary);
@@ -81,20 +87,21 @@ tr[data-target]:hover {
   transition: background-color 0.15s ease;
 }
 
-.copy-btn:hover {
+.copy-btn:hover,
+.view-btn:hover {
   background-color: rgba(44, 110, 155, 0.08);
 }
 
 .detail-content textarea {
   width: 100%;
-  min-height: 100px;
+  min-height: 200px;
   padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background-color: white;
   font-family: 'JetBrains Mono', 'Roboto Mono', 'Consolas', 'Courier New', monospace;
   font-size: var(--font-size-xs);
-  line-height: 1.4;
+  line-height: 1.6;
   resize: vertical;
   white-space: pre;
   overflow-x: auto;

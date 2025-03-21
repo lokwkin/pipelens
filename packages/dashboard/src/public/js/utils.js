@@ -23,12 +23,36 @@ const utils = {
   },
 
   /**
-   * Format duration in milliseconds to a human-readable string
+   * Format duration specifically for statistics display with at most 2 decimal places
    * @param {number} ms - Duration in milliseconds
    * @returns {string} Formatted duration string
    */
-  formatDuration(ms) {
+  formatDurationStats(ms) {
+    if (!ms) return '0ms';
+    
+    if (ms >= 3600000) { // More than 1 hour
+      return `${(ms / 3600000).toFixed(2)}h`;
+    } else if (ms >= 60000) { // More than 1 minute
+      return `${(ms / 60000).toFixed(2)}m`;
+    } else if (ms >= 1000) { // More than 1 second
+      return `${(ms / 1000).toFixed(2)}s`;
+    } else {
+      return `${Math.round(ms)}ms`;
+    }
+  },
+
+  /**
+   * Format duration in milliseconds to a human-readable string
+   * @param {number} ms - Duration in milliseconds
+   * @param {boolean} isStats - Whether this is for statistics display
+   * @returns {string} Formatted duration string
+   */
+  formatDuration(ms, isStats = false) {
     if (!ms) return 'N/A';
+    
+    if (isStats) {
+      return this.formatDurationStats(ms);
+    }
     
     const totalMs = ms % 1000;
     const seconds = Math.floor(ms / 1000) % 60;

@@ -262,12 +262,17 @@ const ui = {
             <div class="detail-section">
               <div class="detail-header">
                 <h4>Record:</h4>
-                <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
-                  <i class="fa fa-copy"></i>
-                </button>
+                <div class="detail-actions">
+                  <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
+                    <i class="fa fa-expand"></i>
+                  </button>
+                  <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
+                    <i class="fa fa-copy"></i>
+                  </button>
+                </div>
               </div>
               <div class="detail-content">
-                <textarea readonly>${recordJson}</textarea>
+                <textarea readonly rows="10">${recordJson}</textarea>
               </div>
             </div>
           `;
@@ -279,12 +284,17 @@ const ui = {
               <div class="detail-section">
                 <div class="detail-header">
                   <h4>Result:</h4>
-                  <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
-                    <i class="fa fa-copy"></i>
-                  </button>
+                  <div class="detail-actions">
+                    <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
+                      <i class="fa fa-expand"></i>
+                    </button>
+                    <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
+                      <i class="fa fa-copy"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="detail-content">
-                  <textarea readonly>${resultJson}</textarea>
+                  <textarea readonly rows="10">${resultJson}</textarea>
                 </div>
               </div>
             `;
@@ -296,12 +306,17 @@ const ui = {
               <div class="detail-section">
                 <div class="detail-header">
                   <h4>Error:</h4>
-                  <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
-                    <i class="fa fa-copy"></i>
-                  </button>
+                  <div class="detail-actions">
+                    <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
+                      <i class="fa fa-expand"></i>
+                    </button>
+                    <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
+                      <i class="fa fa-copy"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="detail-content">
-                  <textarea readonly>${step.error}</textarea>
+                  <textarea readonly rows="10">${step.error}</textarea>
                 </div>
               </div>
             `;
@@ -338,6 +353,133 @@ const ui = {
               url.searchParams.delete('runId');
               url.searchParams.delete('stepKey');
               window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
+            });
+          });
+
+          // Add event listeners for view buttons
+          detailsRow.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation(); // Prevent row expansion when clicking view
+              const content = decodeURIComponent(this.getAttribute('data-content'));
+              const title = this.closest('.detail-section').querySelector('h4').textContent;
+              
+              // Calculate popup dimensions (80% of screen size)
+              const width = Math.min(1200, Math.floor(window.innerWidth * 0.8));
+              const height = Math.min(900, Math.floor(window.innerHeight * 0.8));
+              
+              // Calculate center position relative to the browser window
+              const left = Math.floor(window.screenX + (window.innerWidth - width) / 2);
+              const top = Math.floor(window.screenY + (window.innerHeight - height) / 2);
+              
+              // Open popup window with calculated dimensions and position
+              const popup = window.open('', '_blank', 
+                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+              );
+              
+              popup.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>${title}</title>
+                  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 20px;
+                      font-family: 'JetBrains Mono', monospace;
+                      background: #f5f7fa;
+                      height: 100vh;
+                      box-sizing: border-box;
+                    }
+                    .container {
+                      position: relative;
+                      height: calc(100vh - 40px);
+                    }
+                    pre {
+                      background: white;
+                      padding: 20px;
+                      border-radius: 4px;
+                      border: 1px solid #dde2e7;
+                      overflow: auto;
+                      margin: 0;
+                      font-size: 14px;
+                      line-height: 1.6;
+                      white-space: pre-wrap;
+                      word-wrap: break-word;
+                      height: 100%;
+                      box-sizing: border-box;
+                    }
+                    .copy-btn {
+                      position: absolute;
+                      top: 10px;
+                      right: 10px;
+                      background: white;
+                      border: 1px solid #dde2e7;
+                      border-radius: 4px;
+                      padding: 8px 12px;
+                      font-size: 14px;
+                      color: #2c6e9b;
+                      cursor: pointer;
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      transition: all 0.2s ease;
+                      z-index: 1;
+                    }
+                    .copy-btn:hover {
+                      background: #f5f7fa;
+                      border-color: #2c6e9b;
+                    }
+                    .copy-btn i {
+                      font-size: 14px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <button class="copy-btn" onclick="copyContent()">
+                      <i class="fa fa-copy"></i>
+                      Copy
+                    </button>
+                    <pre>${content}</pre>
+                  </div>
+                  <script>
+                    function copyContent() {
+                      const content = document.querySelector('pre').textContent;
+                      navigator.clipboard.writeText(content).then(() => {
+                        const btn = document.querySelector('.copy-btn');
+                        const originalHtml = btn.innerHTML;
+                        btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+                        setTimeout(() => {
+                          btn.innerHTML = originalHtml;
+                        }, 2000);
+                      }).catch(err => {
+                        console.error('Failed to copy text:', err);
+                      });
+                    }
+                  </script>
+                </body>
+                </html>
+              `);
+              popup.document.close();
+            });
+          });
+
+          // Add event listeners for copy buttons
+          detailsRow.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation(); // Prevent row expansion when clicking copy
+              const content = decodeURIComponent(this.getAttribute('data-content'));
+              navigator.clipboard.writeText(content).then(() => {
+                // Show temporary success message
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fa fa-check"></i>';
+                setTimeout(() => {
+                  this.innerHTML = originalText;
+                }, 2000);
+              }).catch(err => {
+                console.error('Failed to copy text: ', err);
+              });
             });
           });
         });
@@ -456,9 +598,9 @@ const ui = {
         document.getElementById('stats-total-executions').textContent = data.stats.totalExecutions;
         document.getElementById('stats-success-count').textContent = data.stats.successCount;
         document.getElementById('stats-error-count').textContent = data.stats.errorCount;
-        document.getElementById('stats-avg-duration').textContent = utils.formatDuration(data.stats.avgDuration);
-        document.getElementById('stats-min-duration').textContent = utils.formatDuration(data.stats.minDuration);
-        document.getElementById('stats-max-duration').textContent = utils.formatDuration(data.stats.maxDuration);
+        document.getElementById('stats-avg-duration').textContent = utils.formatDuration(data.stats.avgDuration, true);
+        document.getElementById('stats-min-duration').textContent = utils.formatDuration(data.stats.minDuration, true);
+        document.getElementById('stats-max-duration').textContent = utils.formatDuration(data.stats.maxDuration, true);
         
         // Show the stats summary section
         stepStatsSummary.classList.remove('d-none');
