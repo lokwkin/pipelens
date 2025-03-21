@@ -33,18 +33,6 @@
     "tsup": "^8.0.1",
     "typescript": "^4.9.4"
   },
-  "peerDependencies": {
-    "chart.js": "^3.9.1",
-    "chartjs-node-canvas": "^4.1.6"
-  },
-  "peerDependenciesMeta": {
-    "chartjs-node-canvas": {
-      "optional": true
-    },
-    "chart.js": {
-      "optional": true
-    }
-  },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node"
@@ -52,5 +40,8 @@
   "bugs": {
     "url": "https://github.com/lokwkin/steps-track/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme"
+  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "dependencies": {
+    "axios": "^1.8.4"
+  }
 }
