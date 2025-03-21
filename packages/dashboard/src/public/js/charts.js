@@ -88,6 +88,7 @@ const charts = {
   async loadGanttChart(runId) {
     try {
       const ganttPlaceholder = document.querySelector('.gantt-placeholder');
+      const expandContainer = document.querySelector('.gantt-expand-container');
       
       // Show loading state
       ganttPlaceholder.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
@@ -98,28 +99,91 @@ const charts = {
       
       if (!steps || !steps.length) {
         ganttPlaceholder.innerHTML = '<div class="alert alert-warning">No steps data available for Gantt Chart</div>';
+        expandContainer.classList.add('d-none');
         return;
       }
       
       // Create a div for the chart
       ganttPlaceholder.innerHTML = `<div id="gantt_chart" style="width: 100%; height: 400px;"></div>`;
       
+      // Show expand button if there are more than 10 steps
+      if (steps.length > 10) {
+        expandContainer.classList.remove('d-none');
+        const expandBtn = document.getElementById('gantt-expand-btn');
+        
+        // Set up click handler for expand/collapse
+        expandBtn.onclick = () => {
+          // Get current expanded state
+          let willBeExpanded = !expandBtn.classList.contains('expanded');
+          
+          // Set the chart height based on whether we're expanding or collapsing
+          const chartHeight = willBeExpanded ? 
+            Math.max(400, steps.length * 30 + 50) : // Expanded height
+            400;                                    // Collapsed height
+          
+          // Update class state
+          if (willBeExpanded) {
+            expandBtn.classList.add('expanded');
+          } else {
+            expandBtn.classList.remove('expanded');
+          }
+          
+          // Set the correct icon and text based on the new state
+          const icon = expandBtn.querySelector('i');
+          const textSpan = expandBtn.querySelector('span');
+          
+          if (willBeExpanded) {
+            // Show "collapse" UI (up arrow + "Show Less")
+            icon.className = 'fas fa-chevron-up';
+            textSpan.textContent = ' Show Less';
+          } else {
+            // Show "expand" UI (down arrow + "Show More")
+            icon.className = 'fas fa-chevron-down';
+            textSpan.textContent = ' Show More';
+          }
+          
+          // Update chart height and redraw
+          document.getElementById('gantt_chart').style.height = `${chartHeight}px`;
+          this.drawGanttChart(steps, chartHeight);
+        };
+      } else {
+        expandContainer.classList.add('d-none');
+      }
+      
       // Load the Google Charts visualization library
       google.charts.load('current', {'packages':['gantt']});
       google.charts.setOnLoadCallback(() => {
-        this.drawGanttChart(steps);
+        this.drawGanttChart(steps, 400); // Initial height
+        
+        // Ensure the expand button has the correct icon on initial load
+        const expandBtn = document.getElementById('gantt-expand-btn');
+        if (expandBtn) {
+          const isExpanded = expandBtn.classList.contains('expanded');
+          const icon = expandBtn.querySelector('i');
+          const textSpan = expandBtn.querySelector('span');
+          
+          if (isExpanded) {
+            icon.className = 'fas fa-chevron-up';
+            textSpan.textContent = ' Show Less';
+          } else {
+            icon.className = 'fas fa-chevron-down';
+            textSpan.textContent = ' Show More';
+          }
+        }
       });
     } catch (error) {
       console.error('Error generating Gantt chart:', error);
       document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Generating Gantt Chart</div>';
+      document.querySelector('.gantt-expand-container').classList.add('d-none');
     }
   },
 
   /**
    * Draw the Gantt chart with the provided steps data
    * @param {Array} steps - Array of step objects
+   * @param {number} height - Height of the chart in pixels
    */
-  drawGanttChart(steps) {
+  drawGanttChart(steps, height = 400) {
     const data = new google.visualization.DataTable();
     
     // Add columns
@@ -176,9 +240,10 @@ const charts = {
     
     // Set chart options
     const options = {
-      height: 400,
+      height: height,
+      backgroundColor: '#e8f0fe',  // Light blue background
       gantt: {
-        trackHeight: 30,
+        trackHeight: 30,  // each row is 30px tall
         barHeight: 20,
         labelMaxWidth: 300,
         criticalPathEnabled: false,

@@ -6,11 +6,17 @@
   border-radius: 4px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: height 0.3s ease-in-out;
 }
 
 /* Gantt chart container */
 .gantt-placeholder h5 {
   font-size: var(--font-size-sm);
+}
+
+/* Gantt expand button */
+.gantt-expand-container {
+  margin-top: -1rem;
 }
 
 /* Run detail title */
