@@ -7,11 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "build:lib": "cd packages/steps-track && npm run build",
+    "build:lib": "cd packages/lib-ts && npm run build",
     "build:dashboard": "cd packages/dashboard && npm run build",
     "build": "npm run build:lib && npm run build:dashboard",
-    "docker:dashboard": "cd packages/dashboard && npm run docker:build",
-    "test": "cd packages/steps-track && npm run test"
+    "dev:dashboard": "cd packages/dashboard && npm run dev",
+    "publish:lib": "cd packages/lib-ts && npm publish",
+    "test": "cd packages/lib-ts && npm run test"
   },
   "repository": {
     "type": "git",

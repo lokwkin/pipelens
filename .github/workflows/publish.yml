@@ -21,10 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Build all packages
       - name: Build
         run: npm run build
 
-      - name: Publish to NPM
-        run: npm publish
+      - name: Publish js library to NPM
+        run: npm run publish:lib
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

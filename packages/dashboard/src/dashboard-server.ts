@@ -13,10 +13,16 @@ export class DashboardServer {
     this.app = express();
 
     // Serve static files
+    // This works both in development and production after build
     this.app.use(express.static(path.join(__dirname, 'public')));
 
     // Setup API routes
     this.setupRoutes();
+
+    // Default route - serve index.html for any unmatched routes
+    this.app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    });
   }
 
   private setupRoutes() {
@@ -194,11 +200,6 @@ export class DashboardServer {
         res.status(500).json({ error: 'Failed to generate step timeseries chart' });
       }
     });
-
-    // Default route
-    this.app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    });
   }
 
   // Helper method to generate a timeseries chart URL
@@ -244,5 +245,3 @@ export class DashboardServer {
     });
   }
 }
-
-new DashboardServer({}).start();

@@ -4,17 +4,15 @@
   "description": "Dashboard for visualizing steps-track data",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon --watch src src/index.ts",
-    "docker:build": "docker build -t steps-track-dashboard .",
-    "docker:run": "docker run -p 3000:3000 steps-track-dashboard"
+    "build": "tsc -p tsconfig.json --outDir ./dist && cp -r src/public ./dist/",
+    "start": "node ./dist/index.js",
+    "dev": "nodemon --watch src src/index.ts"
   },
   "author": "lokwkin <lokwkin@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",
-    "steps-track": "^1.4.0",
+    "steps-track": "file:../lib-ts",
     "opener": "^1.5.2",
     "@redis/json": "^1.0.7",
     "@redis/time-series": "^1.1.0",
