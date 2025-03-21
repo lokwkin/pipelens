@@ -12,7 +12,8 @@
     "build": "npm run build:lib && npm run build:dashboard",
     "dev:dashboard": "cd packages/dashboard && npm run dev",
     "publish:lib": "cd packages/lib-ts && npm publish",
-    "test": "cd packages/lib-ts && npm run test"
+    "test": "cd packages/lib-ts && npm run test",
+    "eslint": "eslint . --ext .ts"
   },
   "repository": {
     "type": "git",
