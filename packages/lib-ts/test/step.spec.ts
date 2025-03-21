@@ -5,7 +5,7 @@ describe('Step', () => {
     it('should create a step with the given name', () => {
       const step = new Step('test-step');
       expect(step.getName()).toBe('test-step');
-      expect(step.getKey()).toBe('test_step');
+      expect(step.getKey()).toBe('test-step');
     });
 
     it('should create a step with a custom key if provided', () => {

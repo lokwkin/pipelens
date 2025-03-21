@@ -1,0 +1,67 @@
+###################
+# BUILD STAGE
+###################
+FROM node:20-bullseye-slim AS builder
+
+WORKDIR /app
+
+# Install dependencies for Canvas & ChartJS
+RUN apt-get update && apt-get install -y \
+    procps \
+    build-essential \
+    g++ \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package.json files
+COPY package*.json ./
+COPY packages/dashboard/package*.json ./packages/dashboard/
+COPY packages/lib-ts/package*.json ./packages/lib-ts/
+
+# Install peer dependencies explicitly 
+RUN npm install --no-save chart.js@3 chartjs-node-canvas@4
+
+# Copy source code
+COPY packages/lib-ts ./packages/lib-ts
+COPY packages/dashboard ./packages/dashboard
+
+# Install all dependencies
+RUN npm ci
+
+# Build both packages
+RUN npm run build
+
+###################
+# PRODUCTION STAGE
+###################
+FROM node:20-bullseye-slim AS production
+
+WORKDIR /app
+
+# Copy package.json files for production
+COPY package*.json ./
+COPY packages/dashboard/package*.json ./packages/dashboard/
+COPY packages/lib-ts/package*.json ./packages/lib-ts/
+
+# Install only production dependencies and required peer dependencies
+RUN npm ci --omit=dev
+
+# Copy built artifacts from builder stage
+COPY --from=builder /app/packages/dashboard/dist ./dist
+COPY --from=builder /app/packages/lib-ts/dist ./packages/lib-ts/dist
+
+# Set Node to production mode
+ENV NODE_ENV=production
+
+# Expose the port
+EXPOSE 3000
+
+# Run as non-root user for better security
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+USER appuser
+
+# Set the command to run the application
+CMD ["node", "dist/index.js"] 
