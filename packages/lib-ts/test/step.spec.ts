@@ -42,12 +42,12 @@ describe('Step', () => {
     it('should track time usage', async () => {
       const step = new Step('test-step');
       await step.step('inner-step', async (_st) => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 20));
         return 'result';
       });
 
       const meta = step.outputFlattened()[1]; // Get the inner step meta
-      expect(meta.time.timeUsageMs).toBeGreaterThanOrEqual(10);
+      expect(meta.time.timeUsageMs).toBeGreaterThanOrEqual(15);
     });
   });
 
