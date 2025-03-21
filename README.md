@@ -45,7 +45,8 @@ await pipeline.track(async (st: Step) => {
 });
 
 // Generate visualizations
-const ganttChartUrl = pipeline.ganttQuickchart();
+const ganttChartUrl = await pipeline.ganttQuickchart();
+const ganttChartHtml = await pipeline.ganttGoogleChartHtml();
 const executionGraphUrl = pipeline.executionGraphQuickchart();
 ```
 
@@ -69,4 +70,4 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 
 
 ## License
-[MIT License](LICENSE)
+MIT © [lokwkin](https://github.com/lokwkin)
