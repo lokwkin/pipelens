@@ -70,6 +70,7 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
   - [ ] Allow importing external logs into dashboard
   - [ ] Better support for in-progress steps (tracking of step real-time status)
   - [ ] Fine tuning step execution stats graph appearances
+  - [ ] Pagination and filter on steps
 - [ ] Python version of logger
 
 
