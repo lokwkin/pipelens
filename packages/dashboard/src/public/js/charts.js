@@ -48,6 +48,12 @@ const charts = {
       
       data.addRows(rows);
       
+      // Find max values for scaling the axes
+      const maxDuration = Math.max(...chartData.maxDurations);
+      const maxCount = Math.max(
+        ...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i])
+      );
+      
       // Set chart options
       const options = {
         height: 400,
@@ -62,16 +68,51 @@ const charts = {
         },
         isStacked: true,
         vAxes: {
-          0: { title: 'Duration (ms)', minValue: 0 },
-          1: { title: 'Count', minValue: 0 }
+          0: { 
+            title: 'Duration (ms)', 
+            minValue: 0,
+            // Control the number of grid lines for durations
+            gridlines: { 
+              count: 5,  // Reduced from default
+              color: '#e0e0e0' 
+            },
+            minorGridlines: { count: 0 } // Remove minor gridlines
+          },
+          1: { 
+            title: 'Count', 
+            minValue: 0,
+            // Control the number of grid lines for counts
+            gridlines: { 
+              count: 5,  // Reduced from default
+              color: '#e0e0e0' 
+            },
+            minorGridlines: { count: 0 } // Remove minor gridlines
+          }
         },
         hAxis: {
           title: 'Time',
-          format: 'HH:mm:ss'
+          format: 'HH:mm:ss',
+          gridlines: { 
+            count: 10,
+            color: '#e0e0e0' 
+          },
+          minorGridlines: { count: 0 } // Remove minor gridlines
         },
         chartArea: {
           width: '80%',
           height: '70%'
+        },
+        backgroundColor: {
+          fill: 'transparent'  // Make chart background transparent
+        },
+        // Make the grid less prominent
+        gridlineColor: '#e0e0e0',
+        focusTarget: 'category',  // When hovering, highlight entire time point
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 0.1
         }
       };
       
