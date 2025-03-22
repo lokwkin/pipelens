@@ -62,7 +62,10 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 - [X] Obselete chart.js generation, use GoogleChart / QuickChart instead
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Update README with visualizations and dashboard usage
+- [ ] Use memory-store instead of storing nested steps class
 - [ ] Enhance StepsTrack Monitoring Portal
+  - [X] Improve overall UIUX and fix UI defects
+  - [ ] Fix in-progress steps
   - [ ] Improve json view of record & results
   - [ ] Allow importing external logs into dashboard
   - [ ] Better support for in-progress steps (tracking of step real-time status)
