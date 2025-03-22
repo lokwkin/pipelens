@@ -111,6 +111,13 @@ const charts = {
         expandContainer.classList.remove('d-none');
         const expandBtn = document.getElementById('gantt-expand-btn');
         
+        // Reset the expand button state to collapsed when loading the chart
+        expandBtn.classList.remove('expanded');
+        const icon = expandBtn.querySelector('i');
+        const textSpan = expandBtn.querySelector('span');
+        icon.className = 'fas fa-chevron-down';
+        textSpan.textContent = ' Show More';
+        
         // Set up click handler for expand/collapse
         expandBtn.onclick = () => {
           // Get current expanded state
@@ -153,23 +160,7 @@ const charts = {
       // Load the Google Charts visualization library
       google.charts.load('current', {'packages':['gantt']});
       google.charts.setOnLoadCallback(() => {
-        this.drawGanttChart(steps, 400); // Initial height
-        
-        // Ensure the expand button has the correct icon on initial load
-        const expandBtn = document.getElementById('gantt-expand-btn');
-        if (expandBtn) {
-          const isExpanded = expandBtn.classList.contains('expanded');
-          const icon = expandBtn.querySelector('i');
-          const textSpan = expandBtn.querySelector('span');
-          
-          if (isExpanded) {
-            icon.className = 'fas fa-chevron-up';
-            textSpan.textContent = ' Show Less';
-          } else {
-            icon.className = 'fas fa-chevron-down';
-            textSpan.textContent = ' Show More';
-          }
-        }
+        this.drawGanttChart(steps, 400); // Initial height - always start at default height
       });
     } catch (error) {
       console.error('Error generating Gantt chart:', error);
