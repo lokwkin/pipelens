@@ -439,8 +439,8 @@ const ui = {
                       border: 1px solid #dde2e7;
                       overflow: auto;
                       margin: 0;
-                      font-size: 14px;
-                      line-height: 1.6;
+                      font-size: 12px;
+                      line-height: 1.5;
                       white-space: pre-wrap;
                       word-wrap: break-word;
                       height: 100%;
@@ -623,7 +623,7 @@ const ui = {
     if (!stepName) {
       stepStatsSummary.classList.add('d-none');
       chartContainer.classList.add('d-none');
-      stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Select a step to view statistics</td></tr>';
+      stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Select a step to view statistics</td></tr>';
       return;
     }
     
@@ -648,7 +648,7 @@ const ui = {
       const instances = hasStats ? data.timeSeries : data;
       
       if (!instances || !instances.length) {
-        stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
+        stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">No instances found</td></tr>';
         stepStatsSummary.classList.add('d-none');
         chartContainer.classList.add('d-none');
         return;
@@ -683,32 +683,280 @@ const ui = {
       // Populate the table with instances
       stepStatsTable.innerHTML = '';
       
-      instances.forEach(instance => {
+      instances.forEach((instance, index) => {
         const timestamp = utils.formatDateTime(instance.timestamp);
         const duration = utils.formatDuration(instance.duration);
         
+        // Create unique IDs for each row and details section
+        const rowId = `step-stat-row-${index}`;
+        const detailsId = `step-stat-details-${index}`;
+        
+        // Main row
         const row = document.createElement('tr');
+        row.id = rowId;
+        row.setAttribute('data-target', detailsId);
         row.innerHTML = `
           <td>${timestamp}</td>
-          <td>${instance.runId}</td>
+          <td><a href="#" class="run-id-link">${instance.runId}</a></td>
           <td>${instance.stepKey}</td>
           <td>${duration}</td>
+          <td class="text-end">
+            <i class="fas fa-chevron-down expand-icon"></i>
+          </td>
         `;
         
         // Add click event listener to the Run ID link
-        const runIdLink = row.querySelector('td:nth-child(2)');
-        runIdLink.style.cursor = 'pointer';
-        runIdLink.style.color = 'var(--primary)';
+        const runIdLink = row.querySelector('.run-id-link');
         runIdLink.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           this.showRunDetails(instance.runId);
         });
         
         stepStatsTable.appendChild(row);
+        
+        // Details row
+        const detailsRow = document.createElement('tr');
+        detailsRow.id = detailsId;
+        detailsRow.className = 'details-row';
+        detailsRow.style.display = 'none';
+        
+        // Create the details cell
+        const detailsCell = document.createElement('td');
+        detailsCell.colSpan = 5;
+        
+        // Fetch step details for this instance
+        api.loadRunDetails(instance.runId).then(steps => {
+          // Find the matching step
+          const step = steps.find(s => s.key === instance.stepKey);
+          
+          if (step) {
+            let detailsContent = '<div class="step-details">';
+            
+            // Record section
+            const recordJson = JSON.stringify(step.record || {}, null, 2);
+            detailsContent += `
+              <div class="detail-section">
+                <div class="detail-header">
+                  <h4>Record:</h4>
+                  <div class="detail-actions">
+                    <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
+                      <i class="fa fa-expand"></i>
+                    </button>
+                    <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
+                      <i class="fa fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="detail-content">
+                  <textarea readonly rows="10">${recordJson}</textarea>
+                </div>
+              </div>
+            `;
+            
+            // Result section (if available)
+            if (step.result !== undefined) {
+              const resultJson = JSON.stringify(step.result, null, 2);
+              detailsContent += `
+                <div class="detail-section">
+                  <div class="detail-header">
+                    <h4>Result:</h4>
+                    <div class="detail-actions">
+                      <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
+                        <i class="fa fa-expand"></i>
+                      </button>
+                      <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
+                        <i class="fa fa-copy"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="detail-content">
+                    <textarea readonly rows="10">${resultJson}</textarea>
+                  </div>
+                </div>
+              `;
+            }
+            
+            // Error section (if available)
+            if (step.error) {
+              detailsContent += `
+                <div class="detail-section">
+                  <div class="detail-header">
+                    <h4>Error:</h4>
+                    <div class="detail-actions">
+                      <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
+                        <i class="fa fa-expand"></i>
+                      </button>
+                      <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
+                        <i class="fa fa-copy"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="detail-content">
+                    <textarea readonly rows="10">${step.error}</textarea>
+                  </div>
+                </div>
+              `;
+            }
+            
+            detailsContent += '</div>';
+            detailsCell.innerHTML = detailsContent;
+            
+            // Add event listeners for view buttons
+            detailsRow.querySelectorAll('.view-btn').forEach(btn => {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent row expansion when clicking view
+                const content = decodeURIComponent(this.getAttribute('data-content'));
+                const title = this.closest('.detail-section').querySelector('h4').textContent;
+                
+                // Calculate popup dimensions (80% of screen size)
+                const width = Math.min(1200, Math.floor(window.innerWidth * 0.8));
+                const height = Math.min(900, Math.floor(window.innerHeight * 0.8));
+                
+                // Calculate center position relative to the browser window
+                const left = Math.floor(window.screenX + (window.innerWidth - width) / 2);
+                const top = Math.floor(window.screenY + (window.innerHeight - height) / 2);
+                
+                // Open popup window with calculated dimensions and position
+                const popup = window.open('', '_blank', 
+                  `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+                );
+                
+                popup.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>${title}</title>
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                    <style>
+                      body {
+                        margin: 0;
+                        padding: 20px;
+                        font-family: 'JetBrains Mono', monospace;
+                        background: #f5f7fa;
+                        height: 100vh;
+                        box-sizing: border-box;
+                      }
+                      .container {
+                        position: relative;
+                        height: calc(100vh - 40px);
+                      }
+                      pre {
+                        background: white;
+                        padding: 20px;
+                        border-radius: 4px;
+                        border: 1px solid #dde2e7;
+                        overflow: auto;
+                        margin: 0;
+                        font-size: 12px;
+                        line-height: 1.5;
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                        height: 100%;
+                        box-sizing: border-box;
+                      }
+                      .copy-btn {
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                        background: white;
+                        border: 1px solid #dde2e7;
+                        border-radius: 4px;
+                        padding: 8px 12px;
+                        font-size: 14px;
+                        color: #2c6e9b;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        transition: all 0.2s ease;
+                        z-index: 1;
+                      }
+                      .copy-btn:hover {
+                        background: #f5f7fa;
+                        border-color: #2c6e9b;
+                      }
+                      .copy-btn i {
+                        font-size: 14px;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <button class="copy-btn" onclick="copyContent()">
+                        <i class="fa fa-copy"></i>
+                        Copy
+                      </button>
+                      <pre>${content}</pre>
+                    </div>
+                    <script>
+                      function copyContent() {
+                        const content = document.querySelector('pre').textContent;
+                        navigator.clipboard.writeText(content).then(() => {
+                          const btn = document.querySelector('.copy-btn');
+                          const originalHtml = btn.innerHTML;
+                          btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+                          setTimeout(() => {
+                            btn.innerHTML = originalHtml;
+                          }, 2000);
+                        }).catch(err => {
+                          console.error('Failed to copy text:', err);
+                        });
+                      }
+                    </script>
+                  </body>
+                  </html>
+                `);
+              });
+            });
+            
+            // Add event listeners for copy buttons
+            detailsRow.querySelectorAll('.copy-btn').forEach(btn => {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent row expansion when clicking copy
+                const content = decodeURIComponent(this.getAttribute('data-content'));
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(content).then(() => {
+                  // Show success feedback
+                  const originalHtml = this.innerHTML;
+                  this.innerHTML = '<i class="fa fa-check"></i>';
+                  
+                  // Restore original icon after 2 seconds
+                  setTimeout(() => {
+                    this.innerHTML = originalHtml;
+                  }, 2000);
+                }).catch(err => {
+                  console.error('Failed to copy text:', err);
+                });
+              });
+            });
+          } else {
+            detailsCell.innerHTML = `<div class="p-3 text-center">Step details not found for ${instance.stepKey}</div>`;
+          }
+        }).catch(error => {
+          console.error('Error loading step details:', error);
+          detailsCell.innerHTML = `<div class="p-3 text-center">Error loading step details: ${error.message}</div>`;
+        });
+        
+        detailsRow.appendChild(detailsCell);
+        stepStatsTable.appendChild(detailsRow);
+        
+        // Add click event to toggle details visibility
+        row.addEventListener('click', () => {
+          // Toggle details visibility
+          const isVisible = detailsRow.style.display !== 'none';
+          detailsRow.style.display = isVisible ? 'none' : 'table-row';
+          
+          // Update icon
+          const icon = row.querySelector('.expand-icon');
+          icon.classList.toggle('fa-chevron-down', isVisible);
+          icon.classList.toggle('fa-chevron-up', !isVisible);
+        });
       });
     } catch (error) {
       console.error('Error loading step stats:', error);
-      stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading stats</td></tr>';
+      stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Error loading stats</td></tr>';
       stepStatsSummary.classList.add('d-none');
       chartContainer.classList.add('d-none');
     }

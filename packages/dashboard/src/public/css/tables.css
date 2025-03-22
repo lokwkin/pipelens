@@ -181,4 +181,14 @@ tr[data-target] .expand-icon.fa-chevron-up {
   .global-date-range-selector .d-flex .d-flex {
     gap: 0.5rem;
   }
+}
+
+.run-id-link {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.run-id-link:hover {
+  text-decoration: underline;
 } 
