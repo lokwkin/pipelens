@@ -245,7 +245,7 @@ const charts = {
       gantt: {
         trackHeight: 30,  // each row is 30px tall
         barHeight: 20,
-        labelMaxWidth: 300,
+        labelMaxWidth: 500,
         criticalPathEnabled: false,
         percentEnabled: false,
         palette: [
@@ -265,11 +265,91 @@ const charts = {
             light: '#fff3e0'
           }
         ]
-      }
+      },
     };
     
     // Create and draw the chart
     const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
     chart.draw(data, options);
+
+    google.visualization.events.addListener(chart, 'select', function() {
+      const selection = chart.getSelection();
+      
+      // Get the steps table
+      const stepsTable = document.getElementById('steps-table').querySelector('tbody');
+      const allRows = stepsTable.querySelectorAll('tr:not(.details-row)');
+      const allDetailRows = stepsTable.querySelectorAll('tr.details-row');
+      
+      if (selection.length > 0) {
+        // A row was selected
+        const selectedIndex = selection[0].row;
+        
+        // Hide all rows first
+        allRows.forEach((row, index) => {
+          row.style.display = 'none';
+          
+          // Also hide corresponding detail rows
+          const detailRow = document.getElementById(`step-details-${index}`);
+          if (detailRow) {
+            detailRow.style.display = 'none';
+          }
+        });
+        
+        // Show only the selected row
+        if (allRows[selectedIndex]) {
+          allRows[selectedIndex].style.display = 'table-row';
+          
+          // Add a "clear selection" button if it doesn't exist
+          let clearButton = document.getElementById('clear-gantt-selection');
+          if (!clearButton) {
+            clearButton = document.createElement('button');
+            clearButton.id = 'clear-gantt-selection';
+            clearButton.className = 'btn btn-sm btn-outline-secondary mt-2 mb-3';
+            clearButton.innerHTML = '<i class="fas fa-times"></i> Clear Selection';
+            
+            clearButton.addEventListener('click', function() {
+              // Show all rows again
+              allRows.forEach(row => row.style.display = 'table-row');
+              
+              // Restore details rows to their previous state (hidden by default)
+              allDetailRows.forEach(row => {
+                // Check if this row was previously expanded
+                const wasExpanded = app.state.expandedRows.has(row.id);
+                row.style.display = wasExpanded ? 'table-row' : 'none';
+              });
+              
+              // Remove the clear button
+              this.remove();
+              
+              // Clear the chart selection
+              chart.setSelection([]);
+              
+              // Force a redraw of the chart to clear visual selection state
+              chart.draw(data, options);
+            });
+            
+            // Insert before the steps table
+            const stepsCount = document.getElementById('steps-count');
+            stepsCount.parentNode.insertBefore(clearButton, stepsCount.nextSibling);
+          }
+        }
+      } else {
+        // Selection was cleared, show all rows
+        allRows.forEach(row => row.style.display = 'table-row');
+        
+        // Restore details rows to their previous state
+        allDetailRows.forEach(row => {
+          // Check if this row was previously expanded
+          const wasExpanded = app.state.expandedRows.has(row.id);
+          row.style.display = wasExpanded ? 'table-row' : 'none';
+        });
+        
+        // Remove the clear button if it exists
+        const clearButton = document.getElementById('clear-gantt-selection');
+        if (clearButton) {
+          clearButton.remove();
+        }
+      }
+    });
   }
 }; 
