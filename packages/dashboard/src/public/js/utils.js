@@ -95,18 +95,36 @@ const utils = {
     // Sort instances by timestamp
     instances.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Determine start and end times from the data or from timeRange
+    // Always determine start and end times from the timeRange parameter
     let startTime, endTime;
+    const now = new Date().getTime();
     
-    if (timeRange && timeRange.startDate) {
-      startTime = new Date(timeRange.startDate).getTime();
+    // Get start time from timeRange if provided, otherwise fall back to instances
+    if (timeRange) {
+      if (timeRange.timePreset !== "custom") {
+        // For preset selections, calculate the start date from minutes
+        const minutes = parseInt(timeRange.timePreset, 10);
+        startTime = now - (minutes * 60 * 1000);
+        endTime = now;
+      } else {
+        // For custom range, use the provided dates
+        if (timeRange.startDate) {
+          startTime = new Date(timeRange.startDate).getTime();
+        } else {
+          // Fall back to using the first instance if no start date is provided
+          startTime = new Date(instances[0].timestamp).getTime();
+        }
+        
+        if (timeRange.endDate) {
+          endTime = new Date(timeRange.endDate).getTime();
+        } else {
+          // Fall back to now if no end date is provided
+          endTime = now;
+        }
+      }
     } else {
+      // If no timeRange is provided, use instances data as fallback
       startTime = new Date(instances[0].timestamp).getTime();
-    }
-    
-    if (timeRange && timeRange.endDate) {
-      endTime = new Date(timeRange.endDate).getTime();
-    } else {
       endTime = new Date(instances[instances.length - 1].timestamp).getTime();
     }
     
