@@ -22,6 +22,15 @@ const ui = {
         view.classList.add('active');
         app.state.currentView = viewId;
         
+        // Update URL with the current view
+        const url = new URL(window.location);
+        // Map view IDs (HTML element IDs) to URL parameter values
+        const urlViewParam = viewId === 'runs-view' ? 'runs-view' :
+                            viewId === 'run-detail-view' ? 'run-detail' :
+                            viewId === 'step-stats-view' ? 'step-stats-view' :
+                            viewId === 'step-analysis-view' ? 'step-analysis' : viewId;
+        url.searchParams.set('view', urlViewParam);
+        
         // Update page title based on current view
         const pageTitle = document.getElementById('page-title');
         if (viewId === 'runs-view') {
@@ -30,21 +39,34 @@ const ui = {
           pageTitle.textContent = 'Step Execution Stats';
         }
         
+        // Get state from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const selectedPipeline = params.get('pipeline');
+        const selectedStepName = params.get('stepName');
+        
         // Load data based on the current view and selected pipeline
-        if (app.state.selectedPipeline) {
+        if (selectedPipeline) {
           if (viewId === 'runs-view') {
-            this.loadRuns(app.state.selectedPipeline);
-          } else if (viewId === 'step-stats-view' && app.state.selectedStepName) {
-            this.loadStepNames(app.state.selectedPipeline).then(() => {
-              document.getElementById('step-name-select').value = app.state.selectedStepName;
-              this.loadStepTimeSeries(app.state.selectedPipeline, app.state.selectedStepName);
-            });
+            this.loadRuns(selectedPipeline);
           } else if (viewId === 'step-stats-view') {
-            // If we're switching to step stats view but no step is selected,
-            // make sure the step names are loaded
-            this.loadStepNames(app.state.selectedPipeline);
+            // Always load step names first to populate the dropdown
+            this.loadStepNames(selectedPipeline).then(() => {
+              // If a step name is selected in the URL params, load its data
+              if (selectedStepName) {
+                this.loadStepTimeSeries(selectedPipeline, selectedStepName);
+              } else {
+                // Hide step stats content if no step selected
+                document.getElementById('step-stats-summary').classList.add('d-none');
+                document.getElementById('step-time-series-chart-container').classList.add('d-none');
+                document.getElementById('step-stats-table').querySelector('tbody').innerHTML = 
+                  '<tr><td colspan="4" class="text-center py-4">Select a step to view statistics</td></tr>';
+              }
+            });
           }
         }
+        
+        // Update browser history
+        window.history.pushState({view: urlViewParam}, '', url);
       }
     });
   },
@@ -55,20 +77,20 @@ const ui = {
    */
   showRunDetails(runId) {
     // Reset expanded rows when navigating to a different run
-    if (app.state.selectedRun !== runId) {
-      app.state.expandedRows = new Set();
-    }
+    const params = new URLSearchParams(window.location.search);
+    const currentRunId = params.get('runId');
     
-    app.state.selectedRun = runId;
+    if (currentRunId !== runId) {
+      app.state.expandedRows = new Set(); // Keep this in memory state as specified
+    }
     
     // Switch to run detail view
     this.showView('run-detail-view');
     
-    // Update URL
+    // Update URL - showView has already set the view parameter
     const url = new URL(window.location);
-    url.searchParams.set('view', 'run-detail');
     url.searchParams.set('runId', runId);
-    window.history.pushState({view: 'run-detail', runId}, '', url);
+    window.history.replaceState({view: 'run-detail', runId}, '', url);
     
     // Update page title
     document.getElementById('page-title').textContent = `Run Details: ${runId}`;
@@ -82,17 +104,20 @@ const ui = {
    * @param {Object} step - Step object
    */
   showStepAnalysis(step) {
-    app.state.selectedStep = step;
-    
     // Switch to step analysis view
     this.showView('step-analysis-view');
     
     // Update URL
     const url = new URL(window.location);
     url.searchParams.set('view', 'step-analysis');
-    url.searchParams.set('runId', app.state.selectedRun);
+    
+    // Get runId from URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const runId = params.get('runId');
+    
+    url.searchParams.set('runId', runId);
     url.searchParams.set('stepKey', step.key);
-    window.history.pushState({view: 'step-analysis', runId: app.state.selectedRun, stepKey: step.key}, '', url);
+    window.history.pushState({view: 'step-analysis', runId, stepKey: step.key}, '', url);
     
     // Update page title
     document.getElementById('page-title').textContent = `Step Analysis: ${step.name}`;
@@ -115,7 +140,19 @@ const ui = {
     const runsTable = document.getElementById('runs-table').querySelector('tbody');
     
     try {
-      const runs = await api.loadRuns(pipeline, app.state.globalDateRange);
+      // Get date range from URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const timePreset = params.get('timePreset') || app.state.globalDateRange.timePreset;
+      const startDate = params.get('startDate') || app.state.globalDateRange.startDate;
+      const endDate = params.get('endDate') || app.state.globalDateRange.endDate;
+      
+      const dateRange = {
+        timePreset,
+        startDate,
+        endDate
+      };
+      
+      const runs = await api.loadRuns(pipeline, dateRange);
       
       if (!runs?.length) {
         runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">No runs found</td></tr>';
@@ -333,27 +370,27 @@ const ui = {
             e.preventDefault();
             e.stopPropagation();
             
-            // Instead of showing step analysis, navigate to step stats view
-            app.state.selectedStepName = step.name;
+            // Get pipeline from URL
+            const currentUrl = new URL(window.location);
+            const pipeline = currentUrl.searchParams.get('pipeline');
             
-            // Update step name select dropdown
-            this.loadStepNames(app.state.selectedPipeline).then(() => {
-              document.getElementById('step-name-select').value = step.name;
-              
-              // Load the step time series data
-              this.loadStepTimeSeries(app.state.selectedPipeline, step.name);
-              
-              // Switch to step stats view
-              this.showView('step-stats-view');
-              
-              // Update URL
-              const url = new URL(window.location);
-              url.searchParams.set('view', 'step-stats-view');
-              url.searchParams.set('stepName', step.name);
-              url.searchParams.delete('runId');
-              url.searchParams.delete('stepKey');
-              window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
-            });
+            if (!pipeline) {
+              console.error('No pipeline selected');
+              return;
+            }
+            
+            // Prepare URL for navigation to step stats view
+            const url = new URL(window.location);
+            url.searchParams.set('view', 'step-stats-view');
+            url.searchParams.set('stepName', step.name);
+            url.searchParams.delete('runId');
+            url.searchParams.delete('stepKey');
+            
+            // Use pushState to navigate to the step stats view
+            window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
+            
+            // Show the step stats view
+            this.showView('step-stats-view');
           });
 
           // Add event listeners for view buttons
@@ -497,7 +534,7 @@ const ui = {
             const isExpanded = detailsRow.style.display !== 'none';
             const expandIcon = this.querySelector('.expand-icon');
             
-            // Update expanded state in our state object
+            // Update expanded state in the app state object (keeping UI interaction state in memory)
             if (isExpanded) {
               app.state.expandedRows.delete(targetId);
               expandIcon.classList.remove('fa-chevron-up');
@@ -555,6 +592,15 @@ const ui = {
         stepNameSelect.innerHTML += `<option value="${step}">${step}</option>`;
       });
       
+      // Get selected step from URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const selectedStepName = params.get('stepName');
+      
+      // If a step is selected in the URL, set the dropdown value
+      if (selectedStepName && steps.includes(selectedStepName)) {
+        stepNameSelect.value = selectedStepName;
+      }
+      
       return steps; // Return the steps for promise chaining
     } catch (error) {
       console.error('Error loading step names:', error);
@@ -571,15 +617,31 @@ const ui = {
   async loadStepTimeSeries(pipeline, stepName) {
     const stepStatsTable = document.getElementById('step-stats-table').querySelector('tbody');
     const stepStatsSummary = document.getElementById('step-stats-summary');
+    const chartContainer = document.getElementById('step-time-series-chart-container');
+    
+    // Early return with message if no step name is provided
+    if (!stepName) {
+      stepStatsSummary.classList.add('d-none');
+      chartContainer.classList.add('d-none');
+      stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Select a step to view statistics</td></tr>';
+      return;
+    }
     
     try {
-      if (!stepName) {
-        stepStatsSummary.classList.add('d-none');
-        return;
-      }
+      // Get date range from URL parameters or fallback to app state
+      const params = new URLSearchParams(window.location.search);
+      const timePreset = params.get('timePreset') || app.state.globalDateRange.timePreset;
+      const startDate = params.get('startDate') || app.state.globalDateRange.startDate;
+      const endDate = params.get('endDate') || app.state.globalDateRange.endDate;
+      
+      const dateRange = {
+        timePreset,
+        startDate,
+        endDate
+      };
       
       // Fetch time series data for the step
-      const data = await api.loadStepTimeSeries(pipeline, stepName, app.state.globalDateRange);
+      const data = await api.loadStepTimeSeries(pipeline, stepName, dateRange);
       
       // Check if we have the new response format with stats
       const hasStats = data && data.stats;
@@ -588,9 +650,12 @@ const ui = {
       if (!instances || !instances.length) {
         stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">No instances found</td></tr>';
         stepStatsSummary.classList.add('d-none');
-        document.getElementById('step-time-series-chart-container').classList.add('d-none');
+        chartContainer.classList.add('d-none');
         return;
       }
+      
+      // Show chart container since we have data
+      chartContainer.classList.remove('d-none');
       
       // Display statistics if available
       if (hasStats) {
@@ -610,11 +675,7 @@ const ui = {
       }
       
       // Process data for chart
-      const timeRange = {
-        startDate: app.state.globalDateRange.startDate,
-        endDate: app.state.globalDateRange.endDate
-      };
-      const chartData = utils.processTimeSeriesDataForChart(instances, timeRange);
+      const chartData = utils.processTimeSeriesDataForChart(instances, dateRange);
       
       // Draw the chart
       charts.drawStepTimeSeriesChart(chartData);
@@ -648,8 +709,8 @@ const ui = {
     } catch (error) {
       console.error('Error loading step stats:', error);
       stepStatsTable.innerHTML = '<tr><td colspan="4" class="text-center py-4">Error loading stats</td></tr>';
-      document.getElementById('step-stats-summary').classList.add('d-none');
-      document.getElementById('step-time-series-chart-container').classList.add('d-none');
+      stepStatsSummary.classList.add('d-none');
+      chartContainer.classList.add('d-none');
     }
   },
 
@@ -664,16 +725,27 @@ const ui = {
       // Flag to track if changes are programmatic
       let isProgrammaticChange = false;
       
+      // Get date values from URL or use defaults
+      const params = new URLSearchParams(window.location.search);
+      const startDate = params.get('startDate') ? new Date(params.get('startDate')) : new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const endDate = params.get('endDate') ? new Date(params.get('endDate')) : new Date();
+      
       // Initialize global date pickers with Flatpickr
       const globalStartDatePicker = flatpickr("#global-start-date", {
         enableTime: true,
         dateFormat: "Y-m-d H:i:S",
         time_24hr: true,
-        defaultDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
+        defaultDate: startDate,
         onChange: function(selectedDates, dateStr) {
           // Only change to Custom if the user manually selected a date
           if (!isProgrammaticChange && dateStr !== "") {
             document.getElementById('global-time-preset-select').value = "custom";
+            
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('timePreset', 'custom');
+            url.searchParams.set('startDate', dateStr);
+            window.history.replaceState({}, '', url);
           }
         }
       });
@@ -682,19 +754,26 @@ const ui = {
         enableTime: true,
         dateFormat: "Y-m-d H:i:S",
         time_24hr: true,
-        defaultDate: new Date(), // now
+        defaultDate: endDate,
         onChange: function(selectedDates, dateStr) {
           // Only change to Custom if the user manually selected a date
           if (!isProgrammaticChange && dateStr !== "") {
             document.getElementById('global-time-preset-select').value = "custom";
+            
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('timePreset', 'custom');
+            url.searchParams.set('endDate', dateStr);
+            window.history.replaceState({}, '', url);
           }
         }
       });
       
       console.log('Date pickers initialized:', globalStartDatePicker, globalEndDatePicker);
       
-      // Set default value to 24 hours (1440 minutes)
-      document.getElementById('global-time-preset-select').value = "1440";
+      // Get preset from URL or use default
+      const timePreset = params.get('timePreset') || "1440";
+      document.getElementById('global-time-preset-select').value = timePreset;
       
       // Trigger the change event to set up the initial state
       const event = new Event('change');
@@ -710,8 +789,12 @@ const ui = {
   initTimePresets() {
     const presetSelect = document.getElementById('global-time-preset-select');
     
-    // Set default value to 24 hours (1440 minutes)
-    presetSelect.value = "1440";
+    // Get preset from URL or use default
+    const params = new URLSearchParams(window.location.search);
+    const timePreset = params.get('timePreset') || "1440"; // Default to 24 hours
+    
+    // Set value to the one from URL or default
+    presetSelect.value = timePreset;
     
     // Trigger the change event to set up the initial state
     const event = new Event('change');
@@ -728,10 +811,19 @@ const ui = {
       document.getElementById('global-start-date').value = '';
       document.getElementById('global-end-date').value = '';
       
-      // Store the preset value in state
+      // Store the preset value in URL parameters and state
+      const url = new URL(window.location);
+      url.searchParams.set('timePreset', this.value);
+      url.searchParams.delete('startDate');
+      url.searchParams.delete('endDate');
+      
+      // Save in app state as fallback
       app.state.globalDateRange.timePreset = this.value;
       app.state.globalDateRange.startDate = null;
       app.state.globalDateRange.endDate = null;
+      
+      // Update URL without navigation
+      window.history.replaceState({}, '', url);
     });
   }
 }; 
