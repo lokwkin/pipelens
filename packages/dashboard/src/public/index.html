@@ -145,7 +145,32 @@
             
             <!-- Steps Table -->
             <div class="section-header">
-              <h3 id="steps-count">Steps: 0</h3>
+              <h3 id="steps-count">Total Steps: 0</h3>
+              
+              <!-- Step Filters -->
+              <div class="step-filters mb-3">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      <input type="text" id="step-filter-search" class="form-control" placeholder="Search steps...">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <select id="step-filter-status" class="form-select">
+                      <option value="">All statuses</option>
+                      <option value="completed">Completed</option>
+                      <option value="error">Error</option>
+                      <option value="running">Running</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 text-end">
+                    <button id="step-filter-reset" class="btn btn-outline-secondary btn-sm">
+                      <i class="fas fa-times"></i> Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div class="table-responsive">

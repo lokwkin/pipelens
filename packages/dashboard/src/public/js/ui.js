@@ -229,350 +229,431 @@ const ui = {
       
       // Update steps count
       const stepsCount = steps ? steps.length : 0;
-      document.getElementById('steps-count').textContent = `Steps: ${stepsCount}`;
+      document.getElementById('steps-count').textContent = `Total Steps: ${stepsCount}`;
       
-      // Load steps
-      if (steps && Array.isArray(steps)) {
-        stepsTable.innerHTML = '';
-        
-        steps.forEach((step, index) => {
-          const startTime = utils.formatDateTime(step.time.startTs);
-          const endTime = utils.formatDateTime(step.time.endTs);
-          const duration = utils.formatDuration(step.time.timeUsageMs);
-          
-          let status = 'Completed';
-          let statusClass = 'status-success';
-          
-          if (step.error) {
-            status = 'Error';
-            statusClass = 'status-error';
-          } else if (step.time.endTs === 0) {
-            status = 'Running';
-            statusClass = 'status-running';
-          }
-          
-          // Create unique IDs for each row and details section
-          const rowId = `step-row-${index}`;
-          const detailsId = `step-details-${index}`;
-          
-          // Main row
-          const row = document.createElement('tr');
-          row.id = rowId;
-          row.setAttribute('data-target', detailsId);
-          row.innerHTML = `
-            <td>${step.key}</td>
-            <td><a href="#" class="step-name-link">${step.name}</a></td>
-            <td>${startTime}</td>
-            <td>${endTime}</td>
-            <td>${duration}</td>
-            <td class="${statusClass}">${status}</td>
-            <td class="text-end">
-              <i class="fas fa-chevron-down expand-icon"></i>
-            </td>
-          `;
-          stepsTable.appendChild(row);
-          
-          // Details row
-          const detailsRow = document.createElement('tr');
-          detailsRow.id = detailsId;
-          detailsRow.className = 'details-row';
-          
-          // Check if this row was expanded before refresh
-          const wasExpanded = app.state.expandedRows.has(detailsId);
-          detailsRow.style.display = wasExpanded ? 'table-row' : 'none';
-          
-          // Update expand icon based on expanded state
-          if (wasExpanded) {
-            row.querySelector('.expand-icon').classList.remove('fa-chevron-down');
-            row.querySelector('.expand-icon').classList.add('fa-chevron-up');
-          }
-          
-          // Create the details cell
-          const detailsCell = document.createElement('td');
-          detailsCell.colSpan = 7;
-          
-          let detailsContent = '<div class="step-details">';
-          
-          // Record section
-          const recordJson = JSON.stringify(step.record || {}, null, 2);
-          detailsContent += `
-            <div class="detail-section">
-              <div class="detail-header">
-                <h4>Record:</h4>
-                <div class="detail-actions">
-                  <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
-                    <i class="fa fa-expand"></i>
-                  </button>
-                  <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
-                    <i class="fa fa-copy"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="detail-content">
-                <textarea readonly rows="10">${recordJson}</textarea>
-              </div>
-            </div>
-          `;
-          
-          // Result section (if available)
-          if (step.result !== undefined) {
-            const resultJson = JSON.stringify(step.result, null, 2);
-            detailsContent += `
-              <div class="detail-section">
-                <div class="detail-header">
-                  <h4>Result:</h4>
-                  <div class="detail-actions">
-                    <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
-                      <i class="fa fa-expand"></i>
-                    </button>
-                    <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
-                      <i class="fa fa-copy"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="detail-content">
-                  <textarea readonly rows="10">${resultJson}</textarea>
-                </div>
-              </div>
-            `;
-          }
-          
-          // Error section (if available)
-          if (step.error) {
-            detailsContent += `
-              <div class="detail-section">
-                <div class="detail-header">
-                  <h4>Error:</h4>
-                  <div class="detail-actions">
-                    <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
-                      <i class="fa fa-expand"></i>
-                    </button>
-                    <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
-                      <i class="fa fa-copy"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="detail-content">
-                  <textarea readonly rows="10">${step.error}</textarea>
-                </div>
-              </div>
-            `;
-          }
-          
-          detailsContent += '</div>';
-          detailsCell.innerHTML = detailsContent;
-          detailsRow.appendChild(detailsCell);
-          stepsTable.appendChild(detailsRow);
-          
-          // Add step name link functionality
-          const stepNameLink = row.querySelector('.step-name-link');
-          stepNameLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Get pipeline from URL
-            const currentUrl = new URL(window.location);
-            const pipeline = currentUrl.searchParams.get('pipeline');
-            
-            if (!pipeline) {
-              console.error('No pipeline selected');
-              return;
-            }
-            
-            // Prepare URL for navigation to step stats view
-            const url = new URL(window.location);
-            url.searchParams.set('view', 'step-stats-view');
-            url.searchParams.set('stepName', step.name);
-            url.searchParams.delete('runId');
-            url.searchParams.delete('stepKey');
-            
-            // Use pushState to navigate to the step stats view
-            window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
-            
-            // Show the step stats view
-            this.showView('step-stats-view');
-          });
-
-          // Add event listeners for view buttons
-          detailsRow.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-              e.stopPropagation(); // Prevent row expansion when clicking view
-              const content = decodeURIComponent(this.getAttribute('data-content'));
-              const title = this.closest('.detail-section').querySelector('h4').textContent;
-              
-              // Calculate popup dimensions (80% of screen size)
-              const width = Math.min(1200, Math.floor(window.innerWidth * 0.8));
-              const height = Math.min(900, Math.floor(window.innerHeight * 0.8));
-              
-              // Calculate center position relative to the browser window
-              const left = Math.floor(window.screenX + (window.innerWidth - width) / 2);
-              const top = Math.floor(window.screenY + (window.innerHeight - height) / 2);
-              
-              // Open popup window with calculated dimensions and position
-              const popup = window.open('', '_blank', 
-                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
-              );
-              
-              popup.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <title>${title}</title>
-                  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                  <style>
-                    body {
-                      margin: 0;
-                      padding: 20px;
-                      font-family: 'JetBrains Mono', monospace;
-                      background: #f5f7fa;
-                      height: 100vh;
-                      box-sizing: border-box;
-                    }
-                    .container {
-                      position: relative;
-                      height: calc(100vh - 40px);
-                    }
-                    pre {
-                      background: white;
-                      padding: 20px;
-                      border-radius: 4px;
-                      border: 1px solid #dde2e7;
-                      overflow: auto;
-                      margin: 0;
-                      font-size: 12px;
-                      line-height: 1.5;
-                      white-space: pre-wrap;
-                      word-wrap: break-word;
-                      height: 100%;
-                      box-sizing: border-box;
-                    }
-                    .copy-btn {
-                      position: absolute;
-                      top: 10px;
-                      right: 10px;
-                      background: white;
-                      border: 1px solid #dde2e7;
-                      border-radius: 4px;
-                      padding: 8px 12px;
-                      font-size: 14px;
-                      color: #2c6e9b;
-                      cursor: pointer;
-                      display: flex;
-                      align-items: center;
-                      gap: 6px;
-                      transition: all 0.2s ease;
-                      z-index: 1;
-                    }
-                    .copy-btn:hover {
-                      background: #f5f7fa;
-                      border-color: #2c6e9b;
-                    }
-                    .copy-btn i {
-                      font-size: 14px;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <div class="container">
-                    <button class="copy-btn" onclick="copyContent()">
-                      <i class="fa fa-copy"></i>
-                      Copy
-                    </button>
-                    <pre>${content}</pre>
-                  </div>
-                  <script>
-                    function copyContent() {
-                      const content = document.querySelector('pre').textContent;
-                      navigator.clipboard.writeText(content).then(() => {
-                        const btn = document.querySelector('.copy-btn');
-                        const originalHtml = btn.innerHTML;
-                        btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
-                        setTimeout(() => {
-                          btn.innerHTML = originalHtml;
-                        }, 2000);
-                      }).catch(err => {
-                        console.error('Failed to copy text:', err);
-                      });
-                    }
-                  </script>
-                </body>
-                </html>
-              `);
-              popup.document.close();
-            });
-          });
-
-          // Add event listeners for copy buttons
-          detailsRow.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-              e.stopPropagation(); // Prevent row expansion when clicking copy
-              const content = decodeURIComponent(this.getAttribute('data-content'));
-              navigator.clipboard.writeText(content).then(() => {
-                // Show temporary success message
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fa fa-check"></i>';
-                setTimeout(() => {
-                  this.innerHTML = originalText;
-                }, 2000);
-              }).catch(err => {
-                console.error('Failed to copy text: ', err);
-              });
-            });
-          });
-        });
-        
-        // Make rows clickable to expand/collapse
-        document.querySelectorAll('#steps-table tbody tr:not(.details-row)').forEach(row => {
-          row.addEventListener('click', function(e) {
-            // Don't trigger if clicking on the step name link
-            if (e.target.closest('.step-name-link')) {
-              return;
-            }
-            
-            const targetId = this.getAttribute('data-target');
-            const detailsRow = document.getElementById(targetId);
-            const isExpanded = detailsRow.style.display !== 'none';
-            const expandIcon = this.querySelector('.expand-icon');
-            
-            // Update expanded state in the app state object (keeping UI interaction state in memory)
-            if (isExpanded) {
-              app.state.expandedRows.delete(targetId);
-              expandIcon.classList.remove('fa-chevron-up');
-              expandIcon.classList.add('fa-chevron-down');
-            } else {
-              app.state.expandedRows.add(targetId);
-              expandIcon.classList.remove('fa-chevron-down');
-              expandIcon.classList.add('fa-chevron-up');
-            }
-            
-            detailsRow.style.display = isExpanded ? 'none' : 'table-row';
-          });
-        });
-        
-        // Add event listeners for all copy buttons
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent row expansion when clicking copy
-            const content = decodeURIComponent(this.getAttribute('data-content'));
-            navigator.clipboard.writeText(content).then(() => {
-              // Show temporary success message
-              const originalText = this.innerHTML;
-              this.innerHTML = '<i class="fa fa-check"></i>';
-              setTimeout(() => {
-                this.innerHTML = originalText;
-              }, 2000);
-            }).catch(err => {
-              console.error('Failed to copy text: ', err);
-            });
-          });
-        });
-      } else {
-        stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">No steps found</td></tr>';
+      // Store the steps in app state for filtering
+      app.state.currentRunSteps = steps;
+      
+      // Only set up filter event listeners once
+      if (!isAutoRefresh) {
+        this.setupStepFilters();
       }
+      
+      // Apply any current filters
+      this.applyStepFilters();
     } catch (error) {
       console.error('Error loading run details:', error);
       stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">Error loading run details</td></tr>';
     }
+  },
+
+  /**
+   * Set up event listeners for step filters
+   */
+  setupStepFilters() {
+    const searchInput = document.getElementById('step-filter-search');
+    const statusFilter = document.getElementById('step-filter-status');
+    const resetButton = document.getElementById('step-filter-reset');
+    
+    // Save filter state in app state
+    if (!app.state.stepFilters) {
+      app.state.stepFilters = {
+        search: '',
+        status: ''
+      };
+    }
+    
+    // Set initial values from state
+    searchInput.value = app.state.stepFilters.search;
+    statusFilter.value = app.state.stepFilters.status;
+    
+    // Set up event listeners for filters
+    searchInput.addEventListener('input', () => {
+      app.state.stepFilters.search = searchInput.value;
+      this.applyStepFilters();
+    });
+    
+    statusFilter.addEventListener('change', () => {
+      app.state.stepFilters.status = statusFilter.value;
+      this.applyStepFilters();
+    });
+    
+    // Reset filters
+    resetButton.addEventListener('click', () => {
+      searchInput.value = '';
+      statusFilter.value = '';
+      
+      app.state.stepFilters = {
+        search: '',
+        status: ''
+      };
+      
+      this.applyStepFilters();
+    });
+  },
+  
+  /**
+   * Apply filters to the steps list
+   */
+  applyStepFilters() {
+    const stepsTable = document.getElementById('steps-table').querySelector('tbody');
+    const steps = app.state.currentRunSteps;
+    
+    if (!steps || !Array.isArray(steps)) {
+      return;
+    }
+    
+    // Clear the table first
+    stepsTable.innerHTML = '';
+    
+    // Get filter values
+    const search = app.state.stepFilters.search.toLowerCase();
+    const status = app.state.stepFilters.status;
+    
+    // Filter steps
+    const filteredSteps = steps.filter(step => {
+      // Search filter
+      if (search && !step.key.toLowerCase().includes(search) && 
+          !step.name.toLowerCase().includes(search)) {
+        return false;
+      }
+      
+      // Status filter
+      if (status) {
+        const stepStatus = step.error ? 'error' : 
+                          (step.time.endTs === 0 ? 'running' : 'completed');
+        if (stepStatus !== status) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    // Update filtered count
+    document.getElementById('steps-count').textContent = 
+      `Total Steps: ${filteredSteps.length}${filteredSteps.length !== steps.length ? ` (filtered from ${steps.length})` : ''}`;
+    
+    // Show filtered steps or empty message
+    if (filteredSteps.length === 0) {
+      stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">No steps match the current filters</td></tr>';
+      return;
+    }
+    
+    // Render filtered steps
+    filteredSteps.forEach((step, index) => {
+      const startTime = utils.formatDateTime(step.time.startTs);
+      const endTime = utils.formatDateTime(step.time.endTs);
+      const duration = utils.formatDuration(step.time.timeUsageMs);
+      
+      let status = 'Completed';
+      let statusClass = 'status-success';
+      
+      if (step.error) {
+        status = 'Error';
+        statusClass = 'status-error';
+      } else if (step.time.endTs === 0) {
+        status = 'Running';
+        statusClass = 'status-running';
+      }
+      
+      // Create unique IDs for each row and details section
+      const rowId = `step-row-${index}`;
+      const detailsId = `step-details-${index}`;
+      
+      // Main row
+      const row = document.createElement('tr');
+      row.id = rowId;
+      row.setAttribute('data-target', detailsId);
+      row.innerHTML = `
+        <td>${step.key}</td>
+        <td><a href="#" class="step-name-link">${step.name}</a></td>
+        <td>${startTime}</td>
+        <td>${endTime}</td>
+        <td>${duration}</td>
+        <td class="${statusClass}">${status}</td>
+        <td class="text-end">
+          <i class="fas fa-chevron-down expand-icon"></i>
+        </td>
+      `;
+      stepsTable.appendChild(row);
+      
+      // Details row
+      const detailsRow = document.createElement('tr');
+      detailsRow.id = detailsId;
+      detailsRow.className = 'details-row';
+      
+      // Check if this row was expanded before refresh
+      const wasExpanded = app.state.expandedRows.has(detailsId);
+      detailsRow.style.display = wasExpanded ? 'table-row' : 'none';
+      
+      // Update expand icon based on expanded state
+      if (wasExpanded) {
+        row.querySelector('.expand-icon').classList.remove('fa-chevron-down');
+        row.querySelector('.expand-icon').classList.add('fa-chevron-up');
+      }
+      
+      // Create the details cell
+      const detailsCell = document.createElement('td');
+      detailsCell.colSpan = 7;
+      
+      let detailsContent = '<div class="step-details">';
+      
+      // Record section
+      const recordJson = JSON.stringify(step.record || {}, null, 2);
+      detailsContent += `
+        <div class="detail-section">
+          <div class="detail-header">
+            <h4>Record:</h4>
+            <div class="detail-actions">
+              <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
+                <i class="fa fa-expand"></i>
+              </button>
+              <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
+                <i class="fa fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="detail-content">
+            <textarea readonly rows="10">${recordJson}</textarea>
+          </div>
+        </div>
+      `;
+      
+      // Result section (if available)
+      if (step.result !== undefined) {
+        const resultJson = JSON.stringify(step.result, null, 2);
+        detailsContent += `
+          <div class="detail-section">
+            <div class="detail-header">
+              <h4>Result:</h4>
+              <div class="detail-actions">
+                <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
+                  <i class="fa fa-expand"></i>
+                </button>
+                <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            <div class="detail-content">
+              <textarea readonly rows="10">${resultJson}</textarea>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Error section (if available)
+      if (step.error) {
+        detailsContent += `
+          <div class="detail-section">
+            <div class="detail-header">
+              <h4>Error:</h4>
+              <div class="detail-actions">
+                <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
+                  <i class="fa fa-expand"></i>
+                </button>
+                <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            <div class="detail-content">
+              <textarea readonly rows="10">${step.error}</textarea>
+            </div>
+          </div>
+        `;
+      }
+      
+      detailsContent += '</div>';
+      detailsCell.innerHTML = detailsContent;
+      detailsRow.appendChild(detailsCell);
+      stepsTable.appendChild(detailsRow);
+      
+      // Add step name link functionality
+      const stepNameLink = row.querySelector('.step-name-link');
+      stepNameLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Get pipeline from URL
+        const currentUrl = new URL(window.location);
+        const pipeline = currentUrl.searchParams.get('pipeline');
+        
+        if (!pipeline) {
+          console.error('No pipeline selected');
+          return;
+        }
+        
+        // Prepare URL for navigation to step stats view
+        const url = new URL(window.location);
+        url.searchParams.set('view', 'step-stats-view');
+        url.searchParams.set('stepName', step.name);
+        url.searchParams.delete('runId');
+        url.searchParams.delete('stepKey');
+        
+        // Use pushState to navigate to the step stats view
+        window.history.pushState({view: 'step-stats-view', stepName: step.name}, '', url);
+        
+        // Show the step stats view
+        this.showView('step-stats-view');
+      });
+
+      // Add event listeners for view buttons
+      detailsRow.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation(); // Prevent row expansion when clicking view
+          const content = decodeURIComponent(this.getAttribute('data-content'));
+          const title = this.closest('.detail-section').querySelector('h4').textContent;
+          
+          // Calculate popup dimensions (80% of screen size)
+          const width = Math.min(1200, Math.floor(window.innerWidth * 0.8));
+          const height = Math.min(900, Math.floor(window.innerHeight * 0.8));
+          
+          // Calculate center position relative to the browser window
+          const left = Math.floor(window.screenX + (window.innerWidth - width) / 2);
+          const top = Math.floor(window.screenY + (window.innerHeight - height) / 2);
+          
+          // Open popup window with calculated dimensions and position
+          const popup = window.open('', '_blank', 
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+          );
+          
+          popup.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${title}</title>
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+              <style>
+                body {
+                  margin: 0;
+                  padding: 20px;
+                  font-family: 'JetBrains Mono', monospace;
+                  background: #f5f7fa;
+                  height: 100vh;
+                  box-sizing: border-box;
+                }
+                .container {
+                  position: relative;
+                  height: calc(100vh - 40px);
+                }
+                pre {
+                  background: white;
+                  padding: 20px;
+                  border-radius: 4px;
+                  border: 1px solid #dde2e7;
+                  overflow: auto;
+                  margin: 0;
+                  font-size: 12px;
+                  line-height: 1.5;
+                  white-space: pre-wrap;
+                  word-wrap: break-word;
+                  height: 100%;
+                  box-sizing: border-box;
+                }
+                .copy-btn {
+                  position: absolute;
+                  top: 10px;
+                  right: 10px;
+                  background: white;
+                  border: 1px solid #dde2e7;
+                  border-radius: 4px;
+                  padding: 8px 12px;
+                  font-size: 14px;
+                  color: #2c6e9b;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  transition: all 0.2s ease;
+                  z-index: 1;
+                }
+                .copy-btn:hover {
+                  background: #f5f7fa;
+                  border-color: #2c6e9b;
+                }
+                .copy-btn i {
+                  font-size: 14px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <button class="copy-btn" onclick="copyContent()">
+                  <i class="fa fa-copy"></i>
+                  Copy
+                </button>
+                <pre>${content}</pre>
+              </div>
+              <script>
+                function copyContent() {
+                  const content = document.querySelector('pre').textContent;
+                  navigator.clipboard.writeText(content).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+                    setTimeout(() => {
+                      btn.innerHTML = originalHtml;
+                    }, 2000);
+                  }).catch(err => {
+                    console.error('Failed to copy text:', err);
+                  });
+                }
+              </script>
+            </body>
+            </html>
+          `);
+          popup.document.close();
+        });
+      });
+
+      // Add event listeners for copy buttons
+      detailsRow.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation(); // Prevent row expansion when clicking copy
+          const content = decodeURIComponent(this.getAttribute('data-content'));
+          navigator.clipboard.writeText(content).then(() => {
+            // Show temporary success message
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-check"></i>';
+            setTimeout(() => {
+              this.innerHTML = originalText;
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy text: ', err);
+          });
+        });
+      });
+    });
+    
+    // Make rows clickable to expand/collapse
+    document.querySelectorAll('#steps-table tbody tr:not(.details-row)').forEach(row => {
+      row.addEventListener('click', function(e) {
+        // Don't trigger if clicking on the step name link
+        if (e.target.closest('.step-name-link')) {
+          return;
+        }
+        
+        const targetId = this.getAttribute('data-target');
+        const detailsRow = document.getElementById(targetId);
+        const isExpanded = detailsRow.style.display !== 'none';
+        const expandIcon = this.querySelector('.expand-icon');
+        
+        // Update expanded state in the app state object (keeping UI interaction state in memory)
+        if (isExpanded) {
+          app.state.expandedRows.delete(targetId);
+          expandIcon.classList.remove('fa-chevron-up');
+          expandIcon.classList.add('fa-chevron-down');
+        } else {
+          app.state.expandedRows.add(targetId);
+          expandIcon.classList.remove('fa-chevron-down');
+          expandIcon.classList.add('fa-chevron-up');
+        }
+        
+        detailsRow.style.display = isExpanded ? 'none' : 'table-row';
+      });
+    });
   },
 
   /**
