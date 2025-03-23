@@ -409,7 +409,7 @@ const ui = {
       // Status filter
       if (status) {
         const stepStatus = step.error ? 'error' : 
-                          (step.time.endTs === 0 ? 'running' : 'completed');
+                          (!step.time.endTs || step.time.endTs === 0 ? 'running' : 'completed');
         if (stepStatus !== status) {
           return false;
         }
@@ -440,7 +440,7 @@ const ui = {
       if (step.error) {
         status = 'Error';
         statusClass = 'status-error';
-      } else if (step.time.endTs === 0) {
+      } else if (!step.time.endTs || step.time.endTs === 0) {
         status = 'Running';
         statusClass = 'status-running';
       }

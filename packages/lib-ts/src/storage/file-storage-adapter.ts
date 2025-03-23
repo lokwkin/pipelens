@@ -237,7 +237,7 @@ export class FileStorageAdapter implements StorageAdapter {
             .filter((file) => file.endsWith('.json'))
             .map(async (file) => {
               const stepData = await this.readJsonFile(path.join(stepsDir, file)).catch((error) => {
-                console.error('Error reading step file:', file, error);
+                console.error('Error reading step file:', file);
                 return null;
               });
               return stepData as StepMeta;
@@ -357,6 +357,11 @@ export class FileStorageAdapter implements StorageAdapter {
     const timeseriesPath = path.join(pipelineTimeseriesDir, `${step.name}.json`);
 
     // Create a timeseries entry
+    if (!step.time.timeUsageMs) {
+      console.warn(`Step ${step.key} has no timeUsageMs, skipping timeseries update`);
+      return;
+    }
+
     const entry = {
       timestamp: step.time.startTs,
       runId,
