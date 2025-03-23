@@ -1187,17 +1187,30 @@ const ui = {
       paginationContainer.classList.remove('d-none');
 
       prevButton.onclick = function() {
+        // Save current scroll position
+        const scrollPosition = window.scrollY;
+        
         app.state.stepsPagination.page--;
-        ui.loadStepTimeSeries(pipeline, stepName);
+        ui.loadStepTimeSeries(pipeline, stepName).then(() => {
+          // Restore scroll position after data loads
+          window.scrollTo(0, scrollPosition);
+        });
       };
 
       nextButton.onclick = function() {
+        // Save current scroll position
+        const scrollPosition = window.scrollY;
+        
         app.state.stepsPagination.page++;
-        ui.loadStepTimeSeries(pipeline, stepName);
+        ui.loadStepTimeSeries(pipeline, stepName).then(() => {
+          // Restore scroll position after data loads
+          window.scrollTo(0, scrollPosition);
+        });
       };
 
       pageSizeSelect.value = app.state.stepsPagination.pageSize;
       pageSizeSelect.onchange = function() {
+        // When changing page size, we want to go back to the top
         app.state.stepsPagination.pageSize = parseInt(pageSizeSelect.value, 10);
         app.state.stepsPagination.page = 1; // Reset to page 1 when changing page size
         ui.loadStepTimeSeries(pipeline, stepName);
