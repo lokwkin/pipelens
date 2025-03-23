@@ -21,15 +21,19 @@ fi
 echo "Updating root package.json to version $NEW_VERSION"
 npm version $NEW_VERSION --no-git-tag-version
 
+# Capture the actual version number from package.json
+ACTUAL_VERSION=$(node -p "require('./package.json').version")
+echo "New version number: $ACTUAL_VERSION"
+
 # Update lib-ts package
-echo "Updating lib-ts package to version $NEW_VERSION"
+echo "Updating lib-ts package to version $ACTUAL_VERSION"
 cd "$ROOT_DIR/packages/lib-ts"
-npm version $NEW_VERSION --no-git-tag-version
+npm version $ACTUAL_VERSION --no-git-tag-version
 
 # Update dashboard package
-echo "Updating dashboard package to version $NEW_VERSION"
+echo "Updating dashboard package to version $ACTUAL_VERSION"
 cd "$ROOT_DIR/packages/dashboard"
-npm version $NEW_VERSION --no-git-tag-version
+npm version $ACTUAL_VERSION --no-git-tag-version
 
 # Return to root directory
 cd "$ROOT_DIR"
@@ -37,13 +41,13 @@ cd "$ROOT_DIR"
 # Commit changes to git
 echo "Committing version update to git..."
 git add .
-git commit -m "$NEW_VERSION"
+git commit -m "v$ACTUAL_VERSION"
 
 # Create git tag
-echo "Creating git tag v$NEW_VERSION..."
-git tag -a "v$NEW_VERSION" -m "Version $NEW_VERSION"
+echo "Creating git tag v$ACTUAL_VERSION..."
+git tag -a "v$ACTUAL_VERSION" -m "Version $ACTUAL_VERSION"
 
 echo "Version update complete!"
-echo "Root and all packages are now at version $NEW_VERSION"
-echo "Changes committed to git with message: v$NEW_VERSION"
-echo "Created git tag: v$NEW_VERSION" 
+echo "Root and all packages are now at version $ACTUAL_VERSION"
+echo "Changes committed to git with message: v$ACTUAL_VERSION"
+echo "Created git tag: v$ACTUAL_VERSION" 
