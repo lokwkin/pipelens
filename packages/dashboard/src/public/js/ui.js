@@ -477,23 +477,23 @@ const ui = {
       
       let detailsContent = '<div class="step-details">';
       
-      // Record section
-      const recordJson = JSON.stringify(step.record || {}, null, 2);
+      // Records section
+      const recordsJson = JSON.stringify(step.records || {}, null, 2);
       detailsContent += `
         <div class="detail-section">
           <div class="detail-header">
-            <h4>Record:</h4>
+            <h4>Records:</h4>
             <div class="detail-actions">
-              <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
+              <button class="view-btn" data-content="${encodeURIComponent(recordsJson)}">
                 <i class="fa fa-expand"></i>
               </button>
-              <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
+              <button class="copy-btn" data-content="${encodeURIComponent(recordsJson)}">
                 <i class="fa fa-copy"></i>
               </button>
             </div>
           </div>
           <div class="detail-content">
-            <textarea readonly rows="10">${recordJson}</textarea>
+            <textarea readonly rows="10">${recordsJson}</textarea>
           </div>
         </div>
       `;
@@ -954,23 +954,23 @@ const ui = {
           if (step) {
             let detailsContent = '<div class="step-details">';
             
-            // Record section
-            const recordJson = JSON.stringify(step.record || {}, null, 2);
+            // Records section
+            const recordsJson = JSON.stringify(step.records || {}, null, 2);
             detailsContent += `
               <div class="detail-section">
                 <div class="detail-header">
-                  <h4>Record:</h4>
+                  <h4>Records:</h4>
                   <div class="detail-actions">
-                    <button class="view-btn" data-content="${encodeURIComponent(recordJson)}">
+                    <button class="view-btn" data-content="${encodeURIComponent(recordsJson)}">
                       <i class="fa fa-expand"></i>
                     </button>
-                    <button class="copy-btn" data-content="${encodeURIComponent(recordJson)}">
+                    <button class="copy-btn" data-content="${encodeURIComponent(recordsJson)}">
                       <i class="fa fa-copy"></i>
                     </button>
                   </div>
                 </div>
                 <div class="detail-content">
-                  <textarea readonly rows="10">${recordJson}</textarea>
+                  <textarea readonly rows="10">${recordsJson}</textarea>
                 </div>
               </div>
             `;
