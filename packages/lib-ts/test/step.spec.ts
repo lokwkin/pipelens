@@ -47,7 +47,20 @@ describe('Step', () => {
       });
 
       const meta = step.outputFlattened()[1]; // Get the inner step meta
+      expect(meta.time.timeUsageMs).toBeDefined(); // Check that timeUsageMs is defined for completed steps
       expect(meta.time.timeUsageMs).toBeGreaterThanOrEqual(15);
+    });
+
+    it('should have undefined endTs and timeUsageMs for running steps', async () => {
+      const step = new Step('test-step');
+      
+      // Get the step meta before completing it
+      const meta = step.getStepMeta();
+      
+      // Verify that endTs and timeUsageMs are undefined for a running step
+      expect(meta.time.startTs).toBeDefined();
+      expect(meta.time.endTs).toBeUndefined();
+      expect(meta.time.timeUsageMs).toBeUndefined();
     });
   });
 
@@ -158,6 +171,31 @@ describe('Step', () => {
       expect(flattened[1].name).toBe('child1');
       expect(flattened[2].name).toBe('grandchild');
       expect(flattened[3].name).toBe('child2');
+    });
+
+    it('should handle running steps in output methods', async () => {
+      const parentStep = new Step('parent');
+      
+      // Create a child step but don't await it yet
+      const childPromise = parentStep.step('child', async (st) => {
+        // This will be a running step when we check the outputs
+        await new Promise(resolve => setTimeout(resolve, 50));
+        return 'result';
+      });
+      
+      // Get outputs before child step completes
+      const hierarchy = parentStep.outputHierarchy();
+      const flattened = parentStep.outputFlattened();
+      
+      // Check that the child step has undefined endTs and timeUsageMs
+      expect(hierarchy.substeps[0].time.endTs).toBeUndefined();
+      expect(hierarchy.substeps[0].time.timeUsageMs).toBeUndefined();
+      
+      expect(flattened[1].time.endTs).toBeUndefined();
+      expect(flattened[1].time.timeUsageMs).toBeUndefined();
+      
+      // Wait for the child step to complete
+      await childPromise;
     });
   });
 });

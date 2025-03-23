@@ -10,8 +10,8 @@ import {
 
 export type TimeMeta = {
   startTs: number;
-  endTs: number;
-  timeUsageMs: number;
+  endTs?: number;
+  timeUsageMs?: number;
 };
 
 export type StepMeta = {
@@ -65,8 +65,8 @@ export class Step {
     this.records = {};
     this.time = {
       startTs: Date.now(),
-      endTs: Date.now(),
-      timeUsageMs: 0,
+      endTs: undefined,
+      timeUsageMs: undefined,
     };
     // 1. if expicitly specified by parent, use it.
     // 2. otherwise, deduce it from the parent's key + own's name
@@ -266,7 +266,7 @@ export class Step {
     return flattned.map((step) => ({
       key: step.key,
       startTs: step.time.startTs - minStartTs,
-      endTs: step.time.endTs - minStartTs,
+      endTs: step.time.endTs ? step.time.endTs - minStartTs : undefined,
     }));
   }
   /**

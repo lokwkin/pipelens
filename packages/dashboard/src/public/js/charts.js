@@ -231,9 +231,13 @@ const charts = {
     // Compute the minimum start date, used as the overall start date for the Gantt chart
     const ganttStartTs = steps.map(step => step.time.startTs).reduce((a, b) => Math.min(a, b));
 
+    // If no endTs, this is a still running step. It should span until the latest endTs of all steps
+    const maxEndTs = steps.filter(step => step.time.endTs).map(step => step.time.endTs).reduce((a, b) => Math.max(a, b)) || 0;  
+
     const rows = steps.map(step => {
       // Create start and end dates
       const relativeStartTs = step.time.startTs - ganttStartTs;
+      const relativeEndTs = step.time.endTs ? step.time.endTs - ganttStartTs : maxEndTs - ganttStartTs;
       
       // Handle steps that are still running or failed
       let endDate;
@@ -261,13 +265,42 @@ const charts = {
         step.key, // Task Name
         resource, // Resource (used for coloring)
         new Date(relativeStartTs),
-        null,
-        step.time.timeUsageMs, // Duration
+        new Date(relativeEndTs),
+        null, // step.time.timeUsageMs, // Duration
         percentComplete,
         null // Dependencies (we're not showing dependencies)
       ];
     });
     
+
+    // Work around to adjust the palette following the steps ordering 
+    // This is because the palette is applied in the order of the resources that comes in automatically.
+
+    const paletteChoices = {
+      Success: {
+        color: '#2e7d32', // Success - dark green
+        dark: '#1b5e20', // Darker shade
+        light: '#e8f5e9' // Light shade for hover
+      },
+      Error: {
+        color: '#d32f2f', // Error - red
+        dark: '#b71c1c',
+        light: '#ffebee'
+      },
+      Running: {
+        color: '#ed6c02', // Running - orange
+        dark: '#e65100',
+        light: '#fff3e0'
+      }
+    };
+    const palette = [];
+    for (const row of rows) {
+      if (!palette.find(p => p.color === paletteChoices[row[2]].color)) {
+        palette.push(paletteChoices[row[2]]);
+      }
+    }
+    console.log(palette);
+
     data.addRows(rows);
     
     // Set chart options
@@ -280,23 +313,7 @@ const charts = {
         labelMaxWidth: 500,
         criticalPathEnabled: false,
         percentEnabled: false,
-        palette: [
-          {
-            color: '#2e7d32', // Success - dark green
-            dark: '#1b5e20', // Darker shade
-            light: '#e8f5e9' // Light shade for hover
-          },
-          {
-            color: '#d32f2f', // Error - red
-            dark: '#b71c1c',
-            light: '#ffebee'
-          },
-          {
-            color: '#ed6c02', // Running - orange
-            dark: '#e65100',
-            light: '#fff3e0'
-          }
-        ]
+        palette: palette,
       },
     };
     

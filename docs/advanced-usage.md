@@ -103,7 +103,7 @@ import { Pipeline, FileStorageAdapter } from 'steps-track';
 // Create a pipeline with file storage
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new FileStorageAdapter('runs'),
+  storageAdapter: new FileStorageAdapter('./.steps-track'),
 });
 
 // Run your pipeline
@@ -277,7 +277,7 @@ You can analyze performance across multiple runs:
 import { Pipeline, FileStorageAdapter } from 'steps-track';
 
 // Create a storage adapter to read previous runs
-const storage = new FileStorageAdapter('runs');
+const storage = new FileStorageAdapter('./.steps-track');
 
 // Get statistics for a specific step across multiple runs
 const stats = await storage.getStepStats('my-pipeline.data-processing');

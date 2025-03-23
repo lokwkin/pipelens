@@ -17,7 +17,7 @@ const parsePage = (page: string) => {
 async function main() {
   const pipeline = new Pipeline('pipeline', {
     autoSave: true,
-    storageAdapter: new FileStorageAdapter('runs'),
+    storageAdapter: new FileStorageAdapter('./.steps-track'),
   });
   pipeline.on('step-record', (stepKey, key, data) => {
     console.log(`[${stepKey}] Record: ${key} = ${data}`);

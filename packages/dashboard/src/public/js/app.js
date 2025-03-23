@@ -364,13 +364,6 @@ const app = {
   startAutoRefresh() {
     this.stopAutoRefresh(); // Clear any existing refresh
     
-    // Get current view from URL
-    const params = new URLSearchParams(window.location.search);
-    const view = params.get('view') || 'runs-view';
-    const runId = params.get('runId');
-    const pipeline = params.get('pipeline');
-    const stepName = params.get('stepName');
-    
     // Set auto-refresh state
     this.state.autoRefresh = true;
     
@@ -379,6 +372,13 @@ const app = {
       // Toggle the refresh indicator
       const refreshIndicator = document.querySelector('.refresh-indicator');
       refreshIndicator.classList.toggle('active');
+      
+      // Get current view and parameters from URL at each refresh cycle
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view') || 'runs-view';
+      const runId = params.get('runId');
+      const pipeline = params.get('pipeline');
+      const stepName = params.get('stepName');
       
       // Refresh data based on current view
       if (view === 'runs-view' && pipeline) {

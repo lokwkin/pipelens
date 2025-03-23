@@ -10,7 +10,7 @@ export type GanttChartArgs = {
 export type TimeSpan = {
   key: string;
   startTs: number;
-  endTs: number;
+  endTs?: number;
 };
 
 export type GraphItem = {
@@ -42,19 +42,19 @@ export async function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?:
     ...(args ?? {}),
   };
 
-  const maxEndTs = Math.max(...timeSpans.map((span) => span.endTs));
+  const maxEndTs = Math.max(...timeSpans.map((span) => span.endTs || 0));
 
   const chartData = {
     type: 'horizontalBar',
     data: {
       labels: timeSpans.map(
-        (span) => `${span.key} - ${(span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000)}${unit}`,
+        (span) => `${span.key} - ${span.endTs ? (span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000) : 'N/A'}${unit}`,
       ),
       datasets: [
         {
           data: timeSpans.map((span) => [
             span.startTs / (unit === 'ms' ? 1 : 1000),
-            span.endTs / (unit === 'ms' ? 1 : 1000),
+            span.endTs ?? maxEndTs / (unit === 'ms' ? 1 : 1000),
           ]),
         },
       ],
