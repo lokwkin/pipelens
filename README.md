@@ -63,6 +63,7 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Update README with visualizations and dashboard usage
 - [ ] Use memory-store instead of storing nested steps class
+- [ ] More robust file locking
 - [ ] Enhance StepsTrack Monitoring Portal
   - [X] Improve overall UIUX and fix UI defects
   - [ ] Fix in-progress steps

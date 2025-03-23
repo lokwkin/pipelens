@@ -82,6 +82,11 @@ const ui = {
     
     if (currentRunId !== runId) {
       app.state.expandedRows = new Set(); // Keep this in memory state as specified
+      
+      // Restart auto-refresh if enabled to pick up the new runId
+      if (app.state.autoRefresh) {
+        app.stopAutoRefresh();
+      }
     }
     
     // Switch to run detail view
@@ -97,6 +102,11 @@ const ui = {
     
     // Load run details (not an auto-refresh)
     this.loadRunDetails(runId, false);
+    
+    // Restart auto-refresh if it was enabled
+    if (app.state.autoRefresh) {
+      app.startAutoRefresh();
+    }
   },
 
   /**
