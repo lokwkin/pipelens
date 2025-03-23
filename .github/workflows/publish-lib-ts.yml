@@ -7,7 +7,12 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 jobs:
+  # Add a job to trigger and wait for tests to complete
+  test:
+    uses: ./.github/workflows/test.yml
+    
   build-and-publish:
+    needs: test  # Wait for tests to complete successfully
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
