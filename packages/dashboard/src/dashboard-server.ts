@@ -9,7 +9,7 @@ export class DashboardServer {
 
   constructor(options: { port?: number; storageAdapter?: StorageAdapter }) {
     this.port = options.port || 3000;
-    this.storageAdapter = options.storageAdapter || new FileStorageAdapter('runs');
+    this.storageAdapter = options.storageAdapter || new FileStorageAdapter('./.steps-track');
     this.app = express();
 
     // Serve static files
