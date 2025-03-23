@@ -22,13 +22,18 @@ const api = {
    * Loads runs for a specific pipeline
    * @param {string} pipeline - Pipeline name
    * @param {Object} dateRange - Date range for filtering
-   * @returns {Promise<Array>} Array of run objects
+   * @param {Object} pagination - Pagination options
+   * @returns {Promise<Object>} Object containing runs array and pagination metadata
    */
-  async loadRuns(pipeline, dateRange) {
+  async loadRuns(pipeline, dateRange, pagination = { page: 1, pageSize: 10 }) {
     try {
       // Build query parameters
       let url = `/api/pipelines/${pipeline}/runs`;
       const params = new URLSearchParams();
+      
+      // Add pagination parameters
+      params.append('page', pagination.page);
+      params.append('pageSize', pagination.pageSize);
       
       if (dateRange.timePreset !== "custom") {
         // For preset selections, calculate the start date
@@ -49,15 +54,37 @@ const api = {
         }
       }
       
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      url += `?${params.toString()}`;
       
       const response = await fetch(url);
-      return await response.json();
+      const data = await response.json();
+      
+      // Check if response is the new paginated format
+      if (data.items && data.pagination) {
+        return data; // Return the paginated response directly
+      } else {
+        // For backwards compatibility, wrap the response in a paginated format
+        return {
+          items: data,
+          pagination: {
+            page: 1,
+            pageSize: data.length,
+            totalItems: data.length,
+            totalPages: 1
+          }
+        };
+      }
     } catch (error) {
       console.error('Error loading runs:', error);
-      return [];
+      return {
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: pagination.pageSize,
+          totalItems: 0,
+          totalPages: 0
+        }
+      };
     }
   },
 
@@ -113,13 +140,18 @@ const api = {
    * @param {string} pipeline - Pipeline name
    * @param {string} stepName - Step name
    * @param {Object} dateRange - Date range for filtering
+   * @param {Object} pagination - Pagination options
    * @returns {Promise<Object>} Time series data
    */
-  async loadStepTimeSeries(pipeline, stepName, dateRange) {
+  async loadStepTimeSeries(pipeline, stepName, dateRange, pagination = { page: 1, pageSize: 10 }) {
     try {
       // Build query parameters
       let url = `/api/pipelines/${pipeline}/steps/${stepName}/time-series`;
       const params = new URLSearchParams();
+      
+      // Add pagination parameters
+      params.append('page', pagination.page);
+      params.append('pageSize', pagination.pageSize);
       
       if (dateRange.timePreset !== "custom") {
         // For preset selections, calculate the start date
@@ -140,15 +172,45 @@ const api = {
         }
       }
       
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      url += `?${params.toString()}`;
       
       const response = await fetch(url);
-      return await response.json();
+      const data = await response.json();
+      
+      // Check if the response includes pagination info
+      if (!data.pagination) {
+        // For backward compatibility, add pagination metadata
+        return {
+          ...data,
+          pagination: {
+            page: 1,
+            pageSize: data.timeSeries ? data.timeSeries.length : 0,
+            totalItems: data.timeSeries ? data.timeSeries.length : 0,
+            totalPages: 1
+          }
+        };
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error loading step stats:', error);
-      return null;
+      return {
+        timeSeries: [],
+        stats: {
+          maxDuration: 0,
+          minDuration: 0,
+          avgDuration: 0,
+          totalExecutions: 0,
+          errorCount: 0,
+          successCount: 0,
+        },
+        pagination: {
+          page: 1,
+          pageSize: pagination.pageSize,
+          totalItems: 0,
+          totalPages: 0
+        }
+      };
     }
   }
 }; 

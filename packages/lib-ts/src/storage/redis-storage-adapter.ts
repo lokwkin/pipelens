@@ -100,14 +100,17 @@ export class RedisStorageAdapter implements StorageAdapter {
         // Sort by start time (newest first)
         runs.sort((a, b) => b.startTime - a.startTime);
 
-        // Apply pagination
-        if (options.offset !== undefined) {
+        // Apply pagination - now handled by the API endpoint for more efficient results
+        if (options.offset !== undefined && options.limit !== undefined) {
+          runs = runs.slice(options.offset, options.offset + options.limit);
+        } else if (options.offset !== undefined) {
           runs = runs.slice(options.offset);
-        }
-
-        if (options.limit !== undefined) {
+        } else if (options.limit !== undefined) {
           runs = runs.slice(0, options.limit);
         }
+      } else {
+        // Default sorting by start time (newest first)
+        runs.sort((a, b) => b.startTime - a.startTime);
       }
 
       return runs;

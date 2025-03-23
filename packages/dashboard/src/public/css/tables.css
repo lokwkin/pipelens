@@ -224,4 +224,27 @@ tr[data-target] .expand-icon.fa-chevron-up {
 .step-filters .btn-outline-secondary {
   padding: 0.25rem 0.5rem;
   font-size: var(--font-size-xs);
+}
+
+/* Pagination */
+#runs-pagination {
+  font-size: var(--font-size-xs);
+}
+
+#runs-pagination .pagination-info {
+  color: var(--text-secondary);
+}
+
+#runs-pagination .btn-group .btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#runs-pagination .btn-group .btn:disabled {
+  opacity: 0.5;
+}
+
+#pagination-page-size {
+  min-width: 120px;
 } 

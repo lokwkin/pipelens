@@ -138,8 +138,25 @@ const ui = {
    */
   async loadRuns(pipeline) {
     const runsTable = document.getElementById('runs-table').querySelector('tbody');
+    const paginationRange = document.getElementById('pagination-range');
+    const prevButton = document.getElementById('pagination-prev');
+    const nextButton = document.getElementById('pagination-next');
+    const pageSizeSelect = document.getElementById('pagination-page-size');
+    const paginationContainer = document.getElementById('runs-pagination');
+    
+    // Initialize pagination state if it doesn't exist
+    if (!app.state.pagination) {
+      app.state.pagination = {
+        page: 1,
+        pageSize: 10
+      };
+    }
     
     try {
+      // Show loading state
+      runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">Loading runs...</td></tr>';
+      paginationContainer.classList.add('d-none');
+      
       // Get date range from URL parameters
       const params = new URLSearchParams(window.location.search);
       const timePreset = params.get('timePreset') || app.state.globalDateRange.timePreset;
@@ -152,13 +169,45 @@ const ui = {
         endDate
       };
       
-      const runs = await api.loadRuns(pipeline, dateRange);
+      // Set page size from select or default
+      const pageSize = parseInt(pageSizeSelect.value, 10) || app.state.pagination.pageSize;
+      app.state.pagination.pageSize = pageSize;
+      
+      // Fetch data with pagination
+      const response = await api.loadRuns(pipeline, dateRange, app.state.pagination);
+      const runs = response.items;
+      const pagination = response.pagination;
+      
+      // Update app state with the pagination info from the response
+      app.state.pagination = {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        totalItems: pagination.totalItems,
+        totalPages: pagination.totalPages
+      };
       
       if (!runs?.length) {
         runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">No runs found</td></tr>';
+        paginationContainer.classList.add('d-none');
         return;
       }
 
+      // Show pagination container
+      paginationContainer.classList.remove('d-none');
+      
+      // Update pagination info
+      const start = (pagination.page - 1) * pagination.pageSize + 1;
+      const end = Math.min(pagination.page * pagination.pageSize, pagination.totalItems);
+      paginationRange.textContent = `Showing ${start}-${end} of ${pagination.totalItems} runs`;
+      
+      // Enable/disable pagination buttons
+      prevButton.disabled = pagination.page <= 1;
+      nextButton.disabled = pagination.page >= pagination.totalPages;
+      
+      // Set the page size select value
+      pageSizeSelect.value = pagination.pageSize.toString();
+      
+      // Render table rows
       runsTable.innerHTML = '';
       runs.forEach(run => {
         const startTime = utils.formatDateTime(run.startTime);
@@ -190,9 +239,38 @@ const ui = {
         
         runsTable.appendChild(row);
       });
+      
+      // Set up pagination event handlers (only once)
+      if (!app.state.paginationEventsInitialized) {
+        // Previous page button
+        prevButton.addEventListener('click', () => {
+          if (app.state.pagination.page > 1) {
+            app.state.pagination.page--;
+            this.loadRuns(pipeline);
+          }
+        });
+        
+        // Next page button
+        nextButton.addEventListener('click', () => {
+          if (app.state.pagination.page < app.state.pagination.totalPages) {
+            app.state.pagination.page++;
+            this.loadRuns(pipeline);
+          }
+        });
+        
+        // Page size select
+        pageSizeSelect.addEventListener('change', () => {
+          app.state.pagination.pageSize = parseInt(pageSizeSelect.value, 10);
+          app.state.pagination.page = 1; // Reset to first page when changing page size
+          this.loadRuns(pipeline);
+        });
+        
+        app.state.paginationEventsInitialized = true;
+      }
     } catch (error) {
       console.error('Error loading runs:', error);
       runsTable.innerHTML = '<tr><td colspan="6" class="text-center py-4">Error loading runs</td></tr>';
+      paginationContainer.classList.add('d-none');
     }
   },
 
@@ -617,6 +695,8 @@ const ui = {
             // Show temporary success message
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fa fa-check"></i>';
+            
+            // Restore original icon after 2 seconds
             setTimeout(() => {
               this.innerHTML = originalText;
             }, 2000);
@@ -699,16 +779,32 @@ const ui = {
     const stepStatsTable = document.getElementById('step-stats-table').querySelector('tbody');
     const stepStatsSummary = document.getElementById('step-stats-summary');
     const chartContainer = document.getElementById('step-time-series-chart-container');
+    const paginationContainer = document.getElementById('steps-pagination');
+    const paginationRange = document.getElementById('steps-pagination-range');
+    const prevButton = document.getElementById('steps-pagination-prev');
+    const nextButton = document.getElementById('steps-pagination-next');
+    const pageSizeSelect = document.getElementById('steps-pagination-page-size');
+    
+    // Keep step title hidden regardless of step selection
+    const stepStatsTitle = document.getElementById('step-stats-title');
+    stepStatsTitle.classList.add('d-none');
     
     // Early return with message if no step name is provided
     if (!stepName) {
       stepStatsSummary.classList.add('d-none');
       chartContainer.classList.add('d-none');
+      paginationContainer.classList.add('d-none');
       stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Select a step to view statistics</td></tr>';
       return;
     }
     
     try {
+      // Show loading state immediately
+      stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div> Loading step statistics...</td></tr>';
+      stepStatsSummary.classList.add('d-none');
+      chartContainer.classList.add('d-none');
+      paginationContainer.classList.add('d-none');
+      
       // Get date range from URL parameters or fallback to app state
       const params = new URLSearchParams(window.location.search);
       const timePreset = params.get('timePreset') || app.state.globalDateRange.timePreset;
@@ -721,17 +817,42 @@ const ui = {
         endDate
       };
       
-      // Fetch time series data for the step
-      const data = await api.loadStepTimeSeries(pipeline, stepName, dateRange);
+      // Initialize pagination state if it doesn't exist
+      if (!app.state.stepsPagination) {
+        app.state.stepsPagination = {
+          page: 1,
+          pageSize: 10
+        };
+      }
       
-      // Check if we have the new response format with stats
+      // Reset any expanded rows when changing steps
+      app.state.stepsExpandedRows = new Set();
+      
+      // Use existing pageSize from app.state.stepsPagination
+      // Removed reference to pageSizeSelect to fix the ReferenceError
+      
+      // Fetch time series data for the step with pagination
+      const data = await api.loadStepTimeSeries(pipeline, stepName, dateRange, app.state.stepsPagination);
+      
+      // Update app state with the pagination info from the response
+      if (data.pagination) {
+        app.state.stepsPagination = {
+          page: data.pagination.page,
+          pageSize: data.pagination.pageSize,
+          totalItems: data.pagination.totalItems,
+          totalPages: data.pagination.totalPages
+        };
+      }
+      
+      // Check if we have the response format with stats
       const hasStats = data && data.stats;
-      const instances = hasStats ? data.timeSeries : data;
+      const instances = data.timeSeries || [];
       
       if (!instances || !instances.length) {
-        stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">No instances found</td></tr>';
+        stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">No instances found for this step</td></tr>';
         stepStatsSummary.classList.add('d-none');
         chartContainer.classList.add('d-none');
+        paginationContainer.classList.add('d-none');
         return;
       }
       
@@ -760,6 +881,25 @@ const ui = {
       
       // Draw the chart
       charts.drawStepTimeSeriesChart(chartData);
+      
+      // Show pagination container
+      if (data.pagination) {
+        paginationContainer.classList.remove('d-none');
+        
+        // Update pagination info - using document.getElementById directly to avoid reference error
+        const start = (data.pagination.page - 1) * data.pagination.pageSize + 1;
+        const end = Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.totalItems);
+        document.getElementById('steps-pagination-range').textContent = `Showing ${start}-${end} of ${data.pagination.totalItems} instances`;
+        
+        // Enable/disable pagination buttons
+        prevButton.disabled = data.pagination.page <= 1;
+        nextButton.disabled = data.pagination.page >= data.pagination.totalPages;
+        
+        // Set the page size select value
+        pageSizeSelect.value = data.pagination.pageSize.toString();
+      } else {
+        paginationContainer.classList.add('d-none');
+      }
       
       // Populate the table with instances
       stepStatsTable.innerHTML = '';
@@ -1033,13 +1173,41 @@ const ui = {
           const icon = row.querySelector('.expand-icon');
           icon.classList.toggle('fa-chevron-down', isVisible);
           icon.classList.toggle('fa-chevron-up', !isVisible);
+          
+          // Track expanded state in app state
+          if (isVisible) {
+            app.state.stepsExpandedRows.delete(detailsId);
+          } else {
+            app.state.stepsExpandedRows.add(detailsId);
+          }
         });
       });
+
+      // Setup pagination controls
+      paginationContainer.classList.remove('d-none');
+
+      prevButton.onclick = function() {
+        app.state.stepsPagination.page--;
+        ui.loadStepTimeSeries(pipeline, stepName);
+      };
+
+      nextButton.onclick = function() {
+        app.state.stepsPagination.page++;
+        ui.loadStepTimeSeries(pipeline, stepName);
+      };
+
+      pageSizeSelect.value = app.state.stepsPagination.pageSize;
+      pageSizeSelect.onchange = function() {
+        app.state.stepsPagination.pageSize = parseInt(pageSizeSelect.value, 10);
+        app.state.stepsPagination.page = 1; // Reset to page 1 when changing page size
+        ui.loadStepTimeSeries(pipeline, stepName);
+      };
     } catch (error) {
-      console.error('Error loading step stats:', error);
-      stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Error loading stats</td></tr>';
+      console.error('Error loading step time series:', error);
+      stepStatsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Error loading step statistics</td></tr>';
       stepStatsSummary.classList.add('d-none');
       chartContainer.classList.add('d-none');
+      paginationContainer.classList.add('d-none');
     }
   },
 
