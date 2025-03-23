@@ -75,7 +75,7 @@
           <!-- Date Range Controls -->
           <div class="d-flex align-items-center">
             <label for="global-time-preset-select" class="me-2 mb-0">Range:</label>
-            <select id="global-time-preset-select" class="form-select form-select-sm me-3" style="width: auto;">
+            <select id="global-time-preset-select" class="form-select form-select-sm me-3" style="width: auto; min-width: 140px; padding-right: 2rem;">
               <option value="custom">Custom</option>
               <option value="5">Last 5 minutes</option>
               <option value="15">Last 15 minutes</option>
@@ -129,7 +129,7 @@
       <div id="run-detail-view" class="view">
         <div class="card">
           <div class="card-body">
-            <button id="back-to-runs" class="btn btn-outline-secondary mb-4">
+            <button id="back-to-runs" class="btn btn-outline-secondary btn-sm mb-3">
               <i class="fas fa-arrow-left me-1"></i> Back to Runs
             </button>
             
@@ -137,10 +137,40 @@
             <div class="gantt-placeholder p-4 text-center bg-light rounded mb-4">
               <h5 class="text-muted">Loading Gantt Chart...</h5>
             </div>
+            <div class="gantt-expand-container text-center mb-4 d-none">
+              <button id="gantt-expand-btn" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-chevron-down"></i><span> Show More</span>
+              </button>
+            </div>
             
             <!-- Steps Table -->
             <div class="section-header">
-              <h3 id="steps-count">Steps: 0</h3>
+              <h3 id="steps-count">Total Steps: 0</h3>
+              
+              <!-- Step Filters -->
+              <div class="step-filters mb-3">
+                <div class="row g-2 align-items-center">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      <input type="text" id="step-filter-search" class="form-control" placeholder="Search steps...">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <select id="step-filter-status" class="form-select">
+                      <option value="">All statuses</option>
+                      <option value="completed">Completed</option>
+                      <option value="error">Error</option>
+                      <option value="running">Running</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 text-end">
+                    <button id="step-filter-reset" class="btn btn-outline-secondary btn-sm">
+                      <i class="fas fa-times"></i> Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div class="table-responsive">
@@ -248,11 +278,12 @@
                     <th>Run ID</th>
                     <th>Step Key</th>
                     <th>Duration</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td colspan="4" class="text-center py-4">Select a pipeline and step to view instances</td>
+                    <td colspan="5" class="text-center py-4">Select a pipeline and step to view instances</td>
                   </tr>
                 </tbody>
               </table>

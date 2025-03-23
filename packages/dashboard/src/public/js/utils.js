@@ -23,12 +23,36 @@ const utils = {
   },
 
   /**
-   * Format duration in milliseconds to a human-readable string
+   * Format duration specifically for statistics display with at most 2 decimal places
    * @param {number} ms - Duration in milliseconds
    * @returns {string} Formatted duration string
    */
-  formatDuration(ms) {
+  formatDurationStats(ms) {
+    if (!ms) return '0ms';
+    
+    if (ms >= 3600000) { // More than 1 hour
+      return `${(ms / 3600000).toFixed(2)}h`;
+    } else if (ms >= 60000) { // More than 1 minute
+      return `${(ms / 60000).toFixed(2)}m`;
+    } else if (ms >= 1000) { // More than 1 second
+      return `${(ms / 1000).toFixed(2)}s`;
+    } else {
+      return `${Math.round(ms)}ms`;
+    }
+  },
+
+  /**
+   * Format duration in milliseconds to a human-readable string
+   * @param {number} ms - Duration in milliseconds
+   * @param {boolean} isStats - Whether this is for statistics display
+   * @returns {string} Formatted duration string
+   */
+  formatDuration(ms, isStats = false) {
     if (!ms) return 'N/A';
+    
+    if (isStats) {
+      return this.formatDurationStats(ms);
+    }
     
     const totalMs = ms % 1000;
     const seconds = Math.floor(ms / 1000) % 60;
@@ -71,18 +95,36 @@ const utils = {
     // Sort instances by timestamp
     instances.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Determine start and end times from the data or from timeRange
+    // Always determine start and end times from the timeRange parameter
     let startTime, endTime;
+    const now = new Date().getTime();
     
-    if (timeRange && timeRange.startDate) {
-      startTime = new Date(timeRange.startDate).getTime();
+    // Get start time from timeRange if provided, otherwise fall back to instances
+    if (timeRange) {
+      if (timeRange.timePreset !== "custom") {
+        // For preset selections, calculate the start date from minutes
+        const minutes = parseInt(timeRange.timePreset, 10);
+        startTime = now - (minutes * 60 * 1000);
+        endTime = now;
+      } else {
+        // For custom range, use the provided dates
+        if (timeRange.startDate) {
+          startTime = new Date(timeRange.startDate).getTime();
+        } else {
+          // Fall back to using the first instance if no start date is provided
+          startTime = new Date(instances[0].timestamp).getTime();
+        }
+        
+        if (timeRange.endDate) {
+          endTime = new Date(timeRange.endDate).getTime();
+        } else {
+          // Fall back to now if no end date is provided
+          endTime = now;
+        }
+      }
     } else {
+      // If no timeRange is provided, use instances data as fallback
       startTime = new Date(instances[0].timestamp).getTime();
-    }
-    
-    if (timeRange && timeRange.endDate) {
-      endTime = new Date(timeRange.endDate).getTime();
-    } else {
       endTime = new Date(instances[instances.length - 1].timestamp).getTime();
     }
     

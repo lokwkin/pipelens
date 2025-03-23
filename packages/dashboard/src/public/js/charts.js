@@ -48,6 +48,12 @@ const charts = {
       
       data.addRows(rows);
       
+      // Find max values for scaling the axes
+      const maxDuration = Math.max(...chartData.maxDurations);
+      const maxCount = Math.max(
+        ...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i])
+      );
+      
       // Set chart options
       const options = {
         height: 400,
@@ -62,16 +68,51 @@ const charts = {
         },
         isStacked: true,
         vAxes: {
-          0: { title: 'Duration (ms)', minValue: 0 },
-          1: { title: 'Count', minValue: 0 }
+          0: { 
+            title: 'Duration (ms)', 
+            minValue: 0,
+            // Control the number of grid lines for durations
+            gridlines: { 
+              count: 5,  // Reduced from default
+              color: '#e0e0e0' 
+            },
+            minorGridlines: { count: 0 } // Remove minor gridlines
+          },
+          1: { 
+            title: 'Count', 
+            minValue: 0,
+            // Control the number of grid lines for counts
+            gridlines: { 
+              count: 5,  // Reduced from default
+              color: '#e0e0e0' 
+            },
+            minorGridlines: { count: 0 } // Remove minor gridlines
+          }
         },
         hAxis: {
           title: 'Time',
-          format: 'HH:mm:ss'
+          format: 'HH:mm:ss',
+          gridlines: { 
+            count: 10,
+            color: '#e0e0e0' 
+          },
+          minorGridlines: { count: 0 } // Remove minor gridlines
         },
         chartArea: {
           width: '80%',
           height: '70%'
+        },
+        backgroundColor: {
+          fill: 'transparent'  // Make chart background transparent
+        },
+        // Make the grid less prominent
+        gridlineColor: '#e0e0e0',
+        focusTarget: 'category',  // When hovering, highlight entire time point
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 0.1
         }
       };
       
@@ -88,6 +129,7 @@ const charts = {
   async loadGanttChart(runId) {
     try {
       const ganttPlaceholder = document.querySelector('.gantt-placeholder');
+      const expandContainer = document.querySelector('.gantt-expand-container');
       
       // Show loading state
       ganttPlaceholder.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
@@ -98,28 +140,82 @@ const charts = {
       
       if (!steps || !steps.length) {
         ganttPlaceholder.innerHTML = '<div class="alert alert-warning">No steps data available for Gantt Chart</div>';
+        expandContainer.classList.add('d-none');
         return;
       }
       
       // Create a div for the chart
       ganttPlaceholder.innerHTML = `<div id="gantt_chart" style="width: 100%; height: 400px;"></div>`;
       
+      // Show expand button if there are more than 10 steps
+      if (steps.length > 10) {
+        expandContainer.classList.remove('d-none');
+        const expandBtn = document.getElementById('gantt-expand-btn');
+        
+        // Reset the expand button state to collapsed when loading the chart
+        expandBtn.classList.remove('expanded');
+        const icon = expandBtn.querySelector('i');
+        const textSpan = expandBtn.querySelector('span');
+        icon.className = 'fas fa-chevron-down';
+        textSpan.textContent = ' Show More';
+        
+        // Set up click handler for expand/collapse
+        expandBtn.onclick = () => {
+          // Get current expanded state
+          let willBeExpanded = !expandBtn.classList.contains('expanded');
+          
+          // Set the chart height based on whether we're expanding or collapsing
+          const chartHeight = willBeExpanded ? 
+            Math.max(400, steps.length * 30 + 50) : // Expanded height
+            400;                                    // Collapsed height
+          
+          // Update class state
+          if (willBeExpanded) {
+            expandBtn.classList.add('expanded');
+          } else {
+            expandBtn.classList.remove('expanded');
+          }
+          
+          // Set the correct icon and text based on the new state
+          const icon = expandBtn.querySelector('i');
+          const textSpan = expandBtn.querySelector('span');
+          
+          if (willBeExpanded) {
+            // Show "collapse" UI (up arrow + "Show Less")
+            icon.className = 'fas fa-chevron-up';
+            textSpan.textContent = ' Show Less';
+          } else {
+            // Show "expand" UI (down arrow + "Show More")
+            icon.className = 'fas fa-chevron-down';
+            textSpan.textContent = ' Show More';
+          }
+          
+          // Update chart height and redraw
+          document.getElementById('gantt_chart').style.height = `${chartHeight}px`;
+          this.drawGanttChart(steps, chartHeight);
+        };
+      } else {
+        expandContainer.classList.add('d-none');
+      }
+      
       // Load the Google Charts visualization library
       google.charts.load('current', {'packages':['gantt']});
       google.charts.setOnLoadCallback(() => {
-        this.drawGanttChart(steps);
+        this.drawGanttChart(steps, 400); // Initial height - always start at default height
       });
     } catch (error) {
       console.error('Error generating Gantt chart:', error);
       document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Generating Gantt Chart</div>';
+      document.querySelector('.gantt-expand-container').classList.add('d-none');
     }
   },
 
   /**
    * Draw the Gantt chart with the provided steps data
    * @param {Array} steps - Array of step objects
+   * @param {number} height - Height of the chart in pixels
    */
-  drawGanttChart(steps) {
+  drawGanttChart(steps, height = 400) {
     const data = new google.visualization.DataTable();
     
     // Add columns
@@ -176,11 +272,12 @@ const charts = {
     
     // Set chart options
     const options = {
-      height: 400,
+      height: height,
+      backgroundColor: '#e8f0fe',  // Light blue background
       gantt: {
-        trackHeight: 30,
+        trackHeight: 30,  // each row is 30px tall
         barHeight: 20,
-        labelMaxWidth: 300,
+        labelMaxWidth: 500,
         criticalPathEnabled: false,
         percentEnabled: false,
         palette: [
@@ -200,11 +297,91 @@ const charts = {
             light: '#fff3e0'
           }
         ]
-      }
+      },
     };
     
     // Create and draw the chart
     const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
     chart.draw(data, options);
+
+    google.visualization.events.addListener(chart, 'select', function() {
+      const selection = chart.getSelection();
+      
+      // Get the steps table
+      const stepsTable = document.getElementById('steps-table').querySelector('tbody');
+      const allRows = stepsTable.querySelectorAll('tr:not(.details-row)');
+      const allDetailRows = stepsTable.querySelectorAll('tr.details-row');
+      
+      if (selection.length > 0) {
+        // A row was selected
+        const selectedIndex = selection[0].row;
+        
+        // Hide all rows first
+        allRows.forEach((row, index) => {
+          row.style.display = 'none';
+          
+          // Also hide corresponding detail rows
+          const detailRow = document.getElementById(`step-details-${index}`);
+          if (detailRow) {
+            detailRow.style.display = 'none';
+          }
+        });
+        
+        // Show only the selected row
+        if (allRows[selectedIndex]) {
+          allRows[selectedIndex].style.display = 'table-row';
+          
+          // Add a "clear selection" button if it doesn't exist
+          let clearButton = document.getElementById('clear-gantt-selection');
+          if (!clearButton) {
+            clearButton = document.createElement('button');
+            clearButton.id = 'clear-gantt-selection';
+            clearButton.className = 'btn btn-sm btn-outline-secondary mt-2 mb-3';
+            clearButton.innerHTML = '<i class="fas fa-times"></i> Clear Selection';
+            
+            clearButton.addEventListener('click', function() {
+              // Show all rows again
+              allRows.forEach(row => row.style.display = 'table-row');
+              
+              // Restore details rows to their previous state (hidden by default)
+              allDetailRows.forEach(row => {
+                // Check if this row was previously expanded
+                const wasExpanded = app.state.expandedRows.has(row.id);
+                row.style.display = wasExpanded ? 'table-row' : 'none';
+              });
+              
+              // Remove the clear button
+              this.remove();
+              
+              // Clear the chart selection
+              chart.setSelection([]);
+              
+              // Force a redraw of the chart to clear visual selection state
+              chart.draw(data, options);
+            });
+            
+            // Insert before the steps table
+            const stepsCount = document.getElementById('steps-count');
+            stepsCount.parentNode.insertBefore(clearButton, stepsCount.nextSibling);
+          }
+        }
+      } else {
+        // Selection was cleared, show all rows
+        allRows.forEach(row => row.style.display = 'table-row');
+        
+        // Restore details rows to their previous state
+        allDetailRows.forEach(row => {
+          // Check if this row was previously expanded
+          const wasExpanded = app.state.expandedRows.has(row.id);
+          row.style.display = wasExpanded ? 'table-row' : 'none';
+        });
+        
+        // Remove the clear button if it exists
+        const clearButton = document.getElementById('clear-gantt-selection');
+        if (clearButton) {
+          clearButton.remove();
+        }
+      }
+    });
   }
 }; 
