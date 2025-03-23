@@ -121,6 +121,31 @@
                 </tbody>
               </table>
             </div>
+            
+            <!-- Pagination -->
+            <div id="runs-pagination" class="d-flex justify-content-between align-items-center mt-3">
+              <div class="pagination-info">
+                <span id="pagination-range"></span>
+              </div>
+              <div class="pagination-controls">
+                <div class="btn-group">
+                  <button id="pagination-prev" class="btn btn-outline-secondary btn-sm" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </button>
+                  <button id="pagination-next" class="btn btn-outline-secondary btn-sm" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="pagination-page-size">
+                <select id="pagination-page-size" class="form-select form-select-sm" style="width: auto;">
+                  <option value="10">10 per page</option>
+                  <option value="25">25 per page</option>
+                  <option value="50">50 per page</option>
+                  <option value="100">100 per page</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -287,6 +312,31 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+            
+            <!-- Step Stats Pagination -->
+            <div id="steps-pagination" class="d-flex justify-content-between align-items-center mt-3 d-none">
+              <div class="pagination-info">
+                <span id="steps-pagination-range"></span>
+              </div>
+              <div class="pagination-controls">
+                <div class="btn-group">
+                  <button id="steps-pagination-prev" class="btn btn-outline-secondary btn-sm" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </button>
+                  <button id="steps-pagination-next" class="btn btn-outline-secondary btn-sm" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="pagination-page-size">
+                <select id="steps-pagination-page-size" class="form-select form-select-sm" style="width: auto;">
+                  <option value="10">10 per page</option>
+                  <option value="25">25 per page</option>
+                  <option value="50">50 per page</option>
+                  <option value="100">100 per page</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

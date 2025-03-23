@@ -66,11 +66,11 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 - [ ] Enhance StepsTrack Monitoring Portal
   - [X] Improve overall UIUX and fix UI defects
   - [ ] Fix in-progress steps
-  - [ ] Improve json view of record & results
+  - [X] Improve json view of record & results
   - [ ] Allow importing external logs into dashboard
   - [ ] Better support for in-progress steps (tracking of step real-time status)
   - [ ] Fine tuning step execution stats graph appearances
-  - [ ] Pagination and filter on steps
+  - [X] Pagination and filter on steps
 - [ ] Python version of logger
 
 

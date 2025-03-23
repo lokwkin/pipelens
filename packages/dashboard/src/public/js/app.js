@@ -15,7 +15,8 @@ const app = {
       startDate: null,
       endDate: null,
       timePreset: "1440" // Default to last 24 hours
-    }
+    },
+    stepsPagination: null // Added for pagination state
   },
 
   /**
@@ -236,6 +237,16 @@ const app = {
       if (stepName) {
         url.searchParams.set('view', 'step-stats-view');
         url.searchParams.set('stepName', stepName);
+        
+        // Reset pagination to page 1 when changing steps
+        if (app.state.stepsPagination) {
+          app.state.stepsPagination.page = 1;
+        }
+        
+        // Clear expanded rows when changing steps
+        if (app.state.stepsExpandedRows) {
+          app.state.stepsExpandedRows.clear();
+        }
         
         if (pipeline) {
           // Load step instances when a step is selected
