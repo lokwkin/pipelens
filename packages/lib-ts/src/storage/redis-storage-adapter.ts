@@ -300,7 +300,6 @@ export class RedisStorageAdapter implements StorageAdapter {
    * Updates the timeseries data for a step
    */
   private async updateStepTimeseries(pipelineName: string, runId: string, step: StepMeta): Promise<void> {
-
     // Use pipeline name + step name for the timeseries key
     const timeseriesKey = `ts:${pipelineName}.${step.name}`;
     const timestamp = step.time.startTs;
@@ -321,7 +320,7 @@ export class RedisStorageAdapter implements StorageAdapter {
         console.warn(`Step ${step.key} has no timeUsageMs, skipping timeseries update`);
         return;
       }
-      
+
       // Add the data point
       await this.client.ts.add(timeseriesKey, timestamp, step.time.timeUsageMs);
 

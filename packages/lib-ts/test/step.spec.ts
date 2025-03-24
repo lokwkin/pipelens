@@ -53,10 +53,10 @@ describe('Step', () => {
 
     it('should have undefined endTs and timeUsageMs for running steps', async () => {
       const step = new Step('test-step');
-      
+
       // Get the step meta before completing it
       const meta = step.getStepMeta();
-      
+
       // Verify that endTs and timeUsageMs are undefined for a running step
       expect(meta.time.startTs).toBeDefined();
       expect(meta.time.endTs).toBeUndefined();
@@ -175,25 +175,25 @@ describe('Step', () => {
 
     it('should handle running steps in output methods', async () => {
       const parentStep = new Step('parent');
-      
+
       // Create a child step but don't await it yet
-      const childPromise = parentStep.step('child', async (st) => {
+      const childPromise = parentStep.step('child', async (_st) => {
         // This will be a running step when we check the outputs
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         return 'result';
       });
-      
+
       // Get outputs before child step completes
       const hierarchy = parentStep.outputHierarchy();
       const flattened = parentStep.outputFlattened();
-      
+
       // Check that the child step has undefined endTs and timeUsageMs
       expect(hierarchy.substeps[0].time.endTs).toBeUndefined();
       expect(hierarchy.substeps[0].time.timeUsageMs).toBeUndefined();
-      
+
       expect(flattened[1].time.endTs).toBeUndefined();
       expect(flattened[1].time.timeUsageMs).toBeUndefined();
-      
+
       // Wait for the child step to complete
       await childPromise;
     });

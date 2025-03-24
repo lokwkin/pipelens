@@ -60,16 +60,16 @@ export class DashboardServer {
         // Convert pagination parameters
         const currentPage = page ? parseInt(page as string, 10) : 1;
         const itemsPerPage = pageSize ? parseInt(pageSize as string, 10) : 10;
-        
+
         // Get all runs that match the filters (without pagination)
         const allRuns = await this.storageAdapter.listRuns(pipelineName, options);
-        
+
         // Apply pagination
         const totalItems = allRuns.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
         const offset = (currentPage - 1) * itemsPerPage;
         const paginatedRuns = allRuns.slice(offset, offset + itemsPerPage);
-        
+
         // Return paginated response
         res.json({
           items: paginatedRuns,
@@ -77,20 +77,20 @@ export class DashboardServer {
             page: currentPage,
             pageSize: itemsPerPage,
             totalItems,
-            totalPages
-          }
+            totalPages,
+          },
         });
       } catch (error) {
         console.error('Error listing runs:', error);
-        res.status(500).json({ 
+        res.status(500).json({
           items: [],
           pagination: {
             page: 1,
             pageSize: 10,
             totalItems: 0,
-            totalPages: 0
+            totalPages: 0,
           },
-          error: 'Failed to list runs' 
+          error: 'Failed to list runs',
         });
       }
     });
@@ -183,12 +183,12 @@ export class DashboardServer {
             page: currentPage,
             pageSize: itemsPerPage,
             totalItems,
-            totalPages
-          }
+            totalPages,
+          },
         });
       } catch (error) {
         console.error('Error getting step time series:', error);
-        res.status(500).json({ 
+        res.status(500).json({
           error: 'Failed to get step time series',
           timeSeries: [],
           stats: {
@@ -203,8 +203,8 @@ export class DashboardServer {
             page: 1,
             pageSize: 10,
             totalItems: 0,
-            totalPages: 0
-          }
+            totalPages: 0,
+          },
         });
       }
     });
