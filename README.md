@@ -14,7 +14,7 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 Features includes:
 - 👣 **[Tracking Pipeline Steps](#tracking-pipeline-steps)**: Define steps in pipeline to track intermediates data, execution time and results.
 - 🎛️ **[Using Dashboard](#using-dashboard)**: Monitor and analyze pipeline executions through an interactive web interface
-- ⚙️ **[Advanced Usage**](#advanced-usages)**:
+- ⚙️ **[Advanced Usages](#advanced-usages)**: 
   - Event Emitting: Listen to step events for real-time monitoring and custom handling
   - Decorators: Easy integration with ES6 decorators.
 
