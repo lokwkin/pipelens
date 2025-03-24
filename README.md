@@ -19,18 +19,16 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
   - 📡 **Event Emitting**: Listen to step events for real-time monitoring and custom handling
   - 🎨 **Decorators**: Easy integration with ES6 decorators.
 
-## Installation
+### Installation
 
 ```bash
 npm install --save steps-track
 ```
 
-## Usage
-
 ### Tracking Pipeline Steps
 
 #### Steps Defining
-g
+
 Instantiate your pipelien and define the steps in your pipeline. It can support sequential / parallel and nested substeps.
 
 ```typescript
@@ -143,11 +141,11 @@ const stepsHierarchy = pipeline.outputHierarchy();
 ```
 
 
-### Using the Dashboard
+### Using StepsTrack Dashboard
 
 StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
 
-#### Setup
+#### Pipeline Setup
 
 ```typescript
 // Set up persistent storage for the dashboard
@@ -166,32 +164,35 @@ docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-das
 #### Examine Steps Details 
 
 Detailed steps in a pipeline run. All intermediates records and step results can be examine here.
+
 <img src="./docs/dashboard-inspect-results.gif" width="70%">
 
 #### Real-time Execution Monitoring
 
 Pipeline Run Lists
+
 <img src="./docs/dashboard-run-history.gif" width="70%">
 
 Pipeline Run Details
+
 <img src="./docs/dashboard-real-time-steps.gif" width="70%">
 
-#### Visualization of Pipeline Time Usage
+### Visualization of Pipeline Time Usage
 
 Gantt Chart for visualizing the time usages of each steps in a pipeline run.
 <img src="./docs/dashboard-gantt.gif" width="70%">
 
-#### Step Execution Stats
+### Step Execution Stats
 
 Step Execution Stats aggregated from past run histories for performance analyzing.
+
 <img src="./docs/dashboard-stats.gif" width="70%">
 
-### Advanced Usages
+## Advanced Usages
 
-For more detailed information, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration.
 
-```
-
+For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 ## Roadmap
 - [X] Decorator support for easier integration.
