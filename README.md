@@ -11,13 +11,14 @@ StepsTrack was initially developed to debug and track an agentic *Retrieval-Augm
 
 To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happened underlying in each request and identify bottlenecks upon each pipeline run. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
 
+Features includes:
+- 👣 **[Tracking Pipeline Steps](#tracking-pipeline-steps)**: Define steps in pipeline to track intermediates data, execution time and results.
+- 🎛️ **[Using Dashboard](#using-dashboard)**: Monitor and analyze pipeline executions through an interactive web interface
+- ⚙️ **[Advanced Usage**](#advanced-usages)**:
+  - Event Emitting: Listen to step events for real-time monitoring and custom handling
+  - Decorators: Easy integration with ES6 decorators.
 
-## Usage
-- 👣 **Tracking Pipeline Steps**: Define steps in pipeline to track intermediates data, execution time and results.
-- 🎛️ **Dashboard**: Monitor and analyze pipeline executions through an interactive web interface
-- ⚙️ **Advanced Usage**:
-  - 📡 **Event Emitting**: Listen to step events for real-time monitoring and custom handling
-  - 🎨 **Decorators**: Easy integration with ES6 decorators.
+## Tracking Pipeline Steps
 
 ### Installation
 
@@ -25,9 +26,7 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 npm install --save steps-track
 ```
 
-### Tracking Pipeline Steps
-
-#### Steps Defining
+### Steps Defining
 
 Instantiate your pipelien and define the steps in your pipeline. It can support sequential / parallel and nested substeps.
 
@@ -62,7 +61,7 @@ await pipeline.track(async (st: Step) => {
 });
 ```
 
-#### Generating Visualizations
+### Generating Visualizations
 
 After running your pipeline, generate visualizations to analyze execution flow:
 
@@ -141,11 +140,11 @@ const stepsHierarchy = pipeline.outputHierarchy();
 ```
 
 
-### Using StepsTrack Dashboard
+## Using Dashboard
 
 StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
 
-#### Pipeline Setup
+### Pipeline Setup
 
 ```typescript
 // Set up persistent storage for the dashboard
@@ -161,19 +160,19 @@ To start the dashboard:
 docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
 ```
 
-#### Examine Steps Details 
+### Examine Steps Details 
 
 Detailed steps in a pipeline run. All intermediates records and step results can be examine here.
 
 <img src="./docs/dashboard-inspect-results.gif" width="70%">
 
-#### Real-time Execution Monitoring
+### Real-time Execution Monitoring
 
-Pipeline Run Lists
+Real-time pipeline run status monitoring
 
 <img src="./docs/dashboard-run-history.gif" width="70%">
 
-Pipeline Run Details
+Real-time steps status updates monitoring
 
 <img src="./docs/dashboard-real-time-steps.gif" width="70%">
 
