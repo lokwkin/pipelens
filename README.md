@@ -13,8 +13,7 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 
 
 ## Usage
-- 👣 **Pipeline Steps Tracking**: Define steps in pipeline to track intermediates data, execution time and results.
-- 📈 **Simple Visualization**: Generate basic Gantt charts and Execution Graphs
+- 👣 **Tracking Pipeline Steps**: Define steps in pipeline to track intermediates data, execution time and results.
 - 🎛️ **Dashboard**: Monitor and analyze pipeline executions through an interactive web interface
 - ⚙️ **Advanced Usage**:
   - 📡 **Event Emitting**: Listen to step events for real-time monitoring and custom handling
@@ -26,10 +25,12 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 npm install --save steps-track
 ```
 
-## Usage Guide
+## Usage
 
-### 1. Tracking Pipeline Steps
+### Tracking Pipeline Steps
 
+#### Steps Defining
+g
 Instantiate your pipelien and define the steps in your pipeline. It can support sequential / parallel and nested substeps.
 
 ```typescript
@@ -63,7 +64,7 @@ await pipeline.track(async (st: Step) => {
 });
 ```
 
-### 2. Generating Visualizations
+#### Generating Visualizations
 
 After running your pipeline, generate visualizations to analyze execution flow:
 
@@ -82,10 +83,10 @@ const stepsHierarchy = pipeline.outputHierarchy();
 ```
 
 #### Sample Gantt Chart
-<img src="./docs/gantt-chart.png" width="70%">
+<img src="./docs/gantt-chart.png" width="50%">
 
 #### Sample Execution Graph
-<img src="./docs/execution-graph.png" width="70%">
+<img src="./docs/execution-graph.png" width="50%">
 
 #### Sample Hierarchy Output
 ```json
@@ -108,13 +109,13 @@ const stepsHierarchy = pipeline.outputHierarchy();
         {
             "name": "parsing",
             "key": "document-pipeline.parsing",
-            "time": { "startTs": 1739357985711, "endTs": 1739357990192, "timeUsageMs": 4481 },
+            "time": { ... },
             "records": {},
             "substeps": [
                 {
                     "name": "page_1",
                     "key": "document-pipeline.parsing.page_1",
-                    "time": { "startTs": 1739357987214, "endTs": 1739357990192, "timeUsageMs": 2978 },
+                    "time": { ... },
                     "records": {},
                     "result": "page_1_content",
                     "substeps": []
@@ -122,8 +123,7 @@ const stepsHierarchy = pipeline.outputHierarchy();
                 {
                     "name": "page_2",
                     "key": "document-pipeline.parsing.page_2",
-                    "time": {
-                        "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
+                    "time": { ... },
                     "records": {},
                     "result": "page_2_content",
                     "substeps": []
@@ -133,7 +133,7 @@ const stepsHierarchy = pipeline.outputHierarchy();
         {
             "name": "sample-error",
             "key": "document-pipeline.sample-error",
-            "time": { "startTs": 1739357990192, "endTs": 1739357990192, "timeUsageMs": 0},
+            "time": { ... },
             "records": {},
             "error": "Sample Error",
             "substeps": []
@@ -143,13 +143,11 @@ const stepsHierarchy = pipeline.outputHierarchy();
 ```
 
 
-### 3. Using the Dashboard
+### Using the Dashboard
 
-StepsTrack includes a dashboard for monitoring and analyzing pipeline executions. It provides:
-- Detailed pipeline steps records and result inspection
-- Real-time pipeline execution monitoring
-- Gantt charts visualization of pipeline time usage.
-- Steps execution statistics from multiple pipeline runs
+StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
+
+#### Setup
 
 ```typescript
 // Set up persistent storage for the dashboard
@@ -159,56 +157,36 @@ const pipeline = new Pipeline('my-pipeline', {
 });
 
 ```
-
 To start the dashboard:
 
 ```bash
 docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
 ```
 
-#### Detailed pipeline steps records and result inspection
+#### Examine Steps Details 
+
+Detailed steps in a pipeline run. All intermediates records and step results can be examine here.
 <img src="./docs/dashboard-inspect-results.gif" width="70%">
 
-#### Real-time pipeline execution monitoring
+#### Real-time Execution Monitoring
+
+Pipeline Run Lists
 <img src="./docs/dashboard-run-history.gif" width="70%">
+
+Pipeline Run Details
 <img src="./docs/dashboard-real-time-steps.gif" width="70%">
 
-#### Gantt charts visualization of pipeline time usage.
+#### Visualization of Pipeline Time Usage
+
+Gantt Chart for visualizing the time usages of each steps in a pipeline run.
 <img src="./docs/dashboard-gantt.gif" width="70%">
 
-#### Steps execution stats from multiple pipeline runs
+#### Step Execution Stats
+
+Step Execution Stats aggregated from past run histories for performance analyzing.
 <img src="./docs/dashboard-stats.gif" width="70%">
 
-### 4. Event Emitting and Advanced Usage
-
-#### Event Handling
-
-```typescript
-const pipeline = new Pipeline('my-pipeline');
-
-// Listen for step events
-pipeline.on('step-start', (stepKey, stepMeta) => {
-  console.log(`Step started: ${stepKey}`);
-});
-
-pipeline.on('step-record', (stepKey, key, data, stepMeta) => {
-  console.log(`Step ${stepKey} recorded ${key}`);
-});
-
-pipeline.on('step-success', (stepKey, result, stepMeta) => {
-  console.log(`Step ${stepKey} succeeded`);
-});
-
-pipeline.on('step-error', (stepKey, error, stepMeta) => {
-  console.log(`Step ${stepKey} failed: ${error.message}`);
-});
-
-pipeline.on('step-complete', (stepKey, stepMeta) => {
-  console.log(`Step ${stepKey} completed in ${stepMeta.time.timeUsageMs}ms`);
-});
-```
-
-#### Advance Usages
+### Advanced Usages
 
 For more detailed information, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
