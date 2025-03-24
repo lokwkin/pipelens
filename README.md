@@ -14,7 +14,7 @@ To address these challenges, I created StepsTrack as a profiling and debugging t
 Features includes:
 - 👣 **[Tracking Pipeline Steps](#tracking-pipeline-steps)**: Define steps in pipeline to track intermediates data, execution time and results.
 - 🎛️ **[Using Dashboard](#using-dashboard)**: Monitor and analyze pipeline executions through an interactive web interface
-- ⚙️ **[Advanced Usages](#advanced-usages)**: 
+- ⚙️ **[Advanced Usage**](#advanced-usages)**: 
   - Event Emitting: Listen to step events for real-time monitoring and custom handling
   - Decorators: Easy integration with ES6 decorators.
 
@@ -86,6 +86,9 @@ const stepsHierarchy = pipeline.outputHierarchy();
 <img src="./docs/execution-graph.png" width="50%">
 
 #### Sample Hierarchy Output
+<details>
+<summary>json</summary>
+
 ```json
 {
     "name": "document-parse",
@@ -106,13 +109,13 @@ const stepsHierarchy = pipeline.outputHierarchy();
         {
             "name": "parsing",
             "key": "document-pipeline.parsing",
-            "time": { ... },
+            "time": { "startTs": 1739357985711, "endTs": 1739357990192, "timeUsageMs": 4481 },
             "records": {},
             "substeps": [
                 {
                     "name": "page_1",
                     "key": "document-pipeline.parsing.page_1",
-                    "time": { ... },
+                    "time": { "startTs": 1739357987214, "endTs": 1739357990192, "timeUsageMs": 2978 },
                     "records": {},
                     "result": "page_1_content",
                     "substeps": []
@@ -120,7 +123,8 @@ const stepsHierarchy = pipeline.outputHierarchy();
                 {
                     "name": "page_2",
                     "key": "document-pipeline.parsing.page_2",
-                    "time": { ... },
+                    "time": {
+                        "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
                     "records": {},
                     "result": "page_2_content",
                     "substeps": []
@@ -130,7 +134,7 @@ const stepsHierarchy = pipeline.outputHierarchy();
         {
             "name": "sample-error",
             "key": "document-pipeline.sample-error",
-            "time": { ... },
+            "time": { "startTs": 1739357990192, "endTs": 1739357990192, "timeUsageMs": 0},
             "records": {},
             "error": "Sample Error",
             "substeps": []
@@ -138,6 +142,8 @@ const stepsHierarchy = pipeline.outputHierarchy();
     ]
 }
 ```
+
+</details>
 
 
 ## Using Dashboard
