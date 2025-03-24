@@ -60,18 +60,18 @@ For more detailed information, check out the [Basic Usage](./docs/basic-usage.md
 - [X] Implement real-time execution monitoring.
 - [X] Independent Monitoring Portal deployment & Dockerization
 - [X] Obselete chart.js generation, use GoogleChart / QuickChart instead
+- [X] Enhance StepsTrack Monitoring Portal
+  - [X] Improve overall UIUX and fix UI defects
+  - [X] Fix in-progress steps
+  - [X] Improve json view of record & results
+  - [X] Better support for in-progress steps (tracking of step real-time status)
+  - [X] Fine tuning step execution stats graph appearances
+  - [X] Pagination and filter on steps
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Update README with visualizations and dashboard usage
 - [ ] Use memory-store instead of storing nested steps class
 - [ ] More robust file locking for FileStorageAdapter
-- [ ] Enhance StepsTrack Monitoring Portal
-  - [X] Improve overall UIUX and fix UI defects
-  - [X] Fix in-progress steps
-  - [X] Improve json view of record & results
-  - [ ] Allow importing external logs into dashboard
-  - [X] Better support for in-progress steps (tracking of step real-time status)
-  - [S] Fine tuning step execution stats graph appearances
-  - [X] Pagination and filter on steps
+- [ ] Allow importing external logs into dashboard
 - [ ] Python version of logger
 
 
