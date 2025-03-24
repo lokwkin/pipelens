@@ -237,7 +237,7 @@ export class FileStorageAdapter implements StorageAdapter {
             .filter((file) => file.endsWith('.json'))
             .map(async (file) => {
               const stepData = await this.readJsonFile(path.join(stepsDir, file)).catch((error) => {
-                console.error('Error reading step file:', file);
+                console.error('Error reading step file:', file, error.message);
                 return null;
               });
               return stepData as StepMeta;

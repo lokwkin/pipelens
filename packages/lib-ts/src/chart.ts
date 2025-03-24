@@ -48,7 +48,8 @@ export async function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?:
     type: 'horizontalBar',
     data: {
       labels: timeSpans.map(
-        (span) => `${span.key} - ${span.endTs ? (span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000) : 'N/A'}${unit}`,
+        (span) =>
+          `${span.key} - ${span.endTs ? (span.endTs - span.startTs) / (unit === 'ms' ? 1 : 1000) : 'N/A'}${unit}`,
       ),
       datasets: [
         {
