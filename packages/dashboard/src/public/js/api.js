@@ -30,12 +30,12 @@ const api = {
       // Build query parameters
       let url = `/api/pipelines/${pipeline}/runs`;
       const params = new URLSearchParams();
-      
+
       // Add pagination parameters
       params.append('page', pagination.page);
       params.append('pageSize', pagination.pageSize);
-      
-      if (dateRange.timePreset !== "custom") {
+
+      if (dateRange.timePreset !== 'custom') {
         // For preset selections, calculate the start date
         const minutes = parseInt(dateRange.timePreset, 10);
         const now = new Date();
@@ -47,18 +47,18 @@ const api = {
           const startDate = new Date(dateRange.startDate).toISOString();
           params.append('startDate', startDate);
         }
-        
+
         if (dateRange.endDate) {
           const endDate = new Date(dateRange.endDate).toISOString();
           params.append('endDate', endDate);
         }
       }
-      
+
       url += `?${params.toString()}`;
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
+
       // Check if response is the new paginated format
       if (data.items && data.pagination) {
         return data; // Return the paginated response directly
@@ -70,8 +70,8 @@ const api = {
             page: 1,
             pageSize: data.length,
             totalItems: data.length,
-            totalPages: 1
-          }
+            totalPages: 1,
+          },
         };
       }
     } catch (error) {
@@ -82,8 +82,8 @@ const api = {
           page: 1,
           pageSize: pagination.pageSize,
           totalItems: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       };
     }
   },
@@ -148,12 +148,12 @@ const api = {
       // Build query parameters
       let url = `/api/pipelines/${pipeline}/steps/${stepName}/time-series`;
       const params = new URLSearchParams();
-      
+
       // Add pagination parameters
       params.append('page', pagination.page);
       params.append('pageSize', pagination.pageSize);
-      
-      if (dateRange.timePreset !== "custom") {
+
+      if (dateRange.timePreset !== 'custom') {
         // For preset selections, calculate the start date
         const minutes = parseInt(dateRange.timePreset, 10);
         const now = new Date();
@@ -165,18 +165,18 @@ const api = {
           const startDate = new Date(dateRange.startDate).toISOString();
           params.append('startDate', startDate);
         }
-        
+
         if (dateRange.endDate) {
           const endDate = new Date(dateRange.endDate).toISOString();
           params.append('endDate', endDate);
         }
       }
-      
+
       url += `?${params.toString()}`;
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
+
       // Check if the response includes pagination info
       if (!data.pagination) {
         // For backward compatibility, add pagination metadata
@@ -186,11 +186,11 @@ const api = {
             page: 1,
             pageSize: data.timeSeries ? data.timeSeries.length : 0,
             totalItems: data.timeSeries ? data.timeSeries.length : 0,
-            totalPages: 1
-          }
+            totalPages: 1,
+          },
         };
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error loading step stats:', error);
@@ -208,9 +208,9 @@ const api = {
           page: 1,
           pageSize: pagination.pageSize,
           totalItems: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       };
     }
-  }
-}; 
+  },
+};
