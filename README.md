@@ -168,9 +168,10 @@ const stepsHierarchy = pipeline.outputHierarchy();
 
 ### Advanced Usages
 
-StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration.
+StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
-For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+
+
 
 
 ## Using Dashboard
