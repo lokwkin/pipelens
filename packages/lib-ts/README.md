@@ -1,13 +1,11 @@
 # steps-track/lib-ts
 
-Typescript library implemenation for **steps-track**. See [GitHub repository](https://github.com/lokwkin/steps-track#readme) for project introduction and usage description.
+Typescript library implemenation for **steps-track**. 
 
 ## Installation
 
 ```bash
 npm install steps-track
-# or
-yarn add steps-track
 ```
 
 ## Quick Start
@@ -29,8 +27,11 @@ await pipeline.track(async (st: Step) => {
   });
 });
 
-// Generate visualizations
-const ganttChartUrl = await pipeline.ganttQuickchart();
-const ganttChartHtml = await pipeline.ganttGoogleChartHtml();
-const executionGraphUrl = pipeline.executionGraphQuickchart();
+// Export output
+const exported = pipeline.outputSteps();
+
+// Gantt Chart Visualization
+const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
 ```
+
+See [GitHub repository](https://github.com/lokwkin/steps-track#readme) for repository introduction and usage description.

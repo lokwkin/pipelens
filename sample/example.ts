@@ -78,7 +78,7 @@ async function main() {
   const stepsHierarchy = pipeline.outputHierarchy();
   const stepsFlattened = pipeline.outputFlattened();
 
-  const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs); // gantt chart URL by quickchart.io
+  const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
   const ganttChartHtml = pipeline.ganttGoogleChartHtml(ganttArgs);
 
   fs.writeFileSync('gantt.png', ganttChartBuffer);

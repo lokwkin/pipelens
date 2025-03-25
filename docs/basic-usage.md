@@ -1,6 +1,6 @@
 # Basic Usage of StepsTrack
 
-StepsTrack is a lightweight TypeScript library for tracking, profiling, and visualizing hierarchical intermediate steps in pipeline-based applications. This guide will help you get started with integrating StepsTrack into your project.
+This guide will help you get started with integrating StepsTrack into your project.
 
 ## Installation
 
@@ -103,13 +103,11 @@ await st.step('data-processing', async (st: Step) => {
 After running your pipeline, you can generate visualizations:
 
 ```typescript
-// Generate a Gantt chart URL using quickchart.io
-const ganttChartUrl = pipeline.ganttQuickchart();
-console.log('Gantt Chart:', ganttChartUrl);
+// Generate a Gantt chart Buffer using quickchart.io
+const ganttChartBuffer = pipeline.ganttQuickchart();
 
-// Generate an execution graph URL
-const executionGraphUrl = pipeline.executionGraphQuickchart();
-console.log('Execution Graph:', executionGraphUrl);
+// Generate a Gantt Chart HTML using google chart
+const ganttChartGoogle = pipeline.ganttGoogleChartHtml();
 
 // Get the hierarchical output of all steps
 const stepsHierarchy = pipeline.outputHierarchy();
