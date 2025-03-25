@@ -10,24 +10,24 @@ const charts = {
   drawStepTimeSeriesChart(chartData) {
     const chartContainer = document.getElementById('step-time-series-chart-container');
     const chartElement = document.getElementById('step-time-series-chart');
-    
+
     // If no data or empty data, hide the chart container and return
     if (!chartData || chartData.timePoints.length === 0) {
       chartContainer.classList.add('d-none');
       return;
     }
-    
+
     // Show the chart container
     chartContainer.classList.remove('d-none');
-    
+
     // Load Google Charts
-    google.charts.load('current', {'packages':['corechart']});
+    google.charts.load('current', { packages: ['corechart'] });
     google.charts.setOnLoadCallback(drawChart);
-    
+
     function drawChart() {
       // Create data table
       const data = new google.visualization.DataTable();
-      
+
       // Add columns
       data.addColumn('datetime', 'Time');
       data.addColumn('number', 'Max Duration (ms)');
@@ -35,7 +35,7 @@ const charts = {
       data.addColumn('number', 'Min Duration (ms)');
       data.addColumn('number', 'Success Count');
       data.addColumn('number', 'Error Count');
-      
+
       // Add rows
       const rows = chartData.timePoints.map((time, index) => [
         time,
@@ -43,17 +43,15 @@ const charts = {
         chartData.avgDurations[index],
         chartData.minDurations[index],
         chartData.successCounts[index],
-        chartData.errorCounts[index]
+        chartData.errorCounts[index],
       ]);
-      
+
       data.addRows(rows);
-      
+
       // Find max values for scaling the axes
       const maxDuration = Math.max(...chartData.maxDurations);
-      const maxCount = Math.max(
-        ...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i])
-      );
-      
+      const maxCount = Math.max(...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i]));
+
       // Set chart options
       const options = {
         height: 400,
@@ -64,58 +62,58 @@ const charts = {
           1: { color: '#2c6e9b', lineWidth: 2 }, // Avg Duration (blue)
           2: { color: '#2e7d32', lineWidth: 2 }, // Min Duration (green)
           3: { type: 'bars', color: '#2e7d32', targetAxisIndex: 1 }, // Success Count (green)
-          4: { type: 'bars', color: '#d32f2f', targetAxisIndex: 1 }  // Error Count (red)
+          4: { type: 'bars', color: '#d32f2f', targetAxisIndex: 1 }, // Error Count (red)
         },
         isStacked: true,
         vAxes: {
-          0: { 
-            title: 'Duration (ms)', 
+          0: {
+            title: 'Duration (ms)',
             minValue: 0,
             // Control the number of grid lines for durations
-            gridlines: { 
-              count: 5,  // Reduced from default
-              color: '#e0e0e0' 
+            gridlines: {
+              count: 5, // Reduced from default
+              color: '#e0e0e0',
             },
-            minorGridlines: { count: 0 } // Remove minor gridlines
+            minorGridlines: { count: 0 }, // Remove minor gridlines
           },
-          1: { 
-            title: 'Count', 
+          1: {
+            title: 'Count',
             minValue: 0,
             // Control the number of grid lines for counts
-            gridlines: { 
-              count: 5,  // Reduced from default
-              color: '#e0e0e0' 
+            gridlines: {
+              count: 5, // Reduced from default
+              color: '#e0e0e0',
             },
-            minorGridlines: { count: 0 } // Remove minor gridlines
-          }
+            minorGridlines: { count: 0 }, // Remove minor gridlines
+          },
         },
         hAxis: {
           title: 'Time',
           format: 'HH:mm:ss',
-          gridlines: { 
+          gridlines: {
             count: 10,
-            color: '#e0e0e0' 
+            color: '#e0e0e0',
           },
-          minorGridlines: { count: 0 } // Remove minor gridlines
+          minorGridlines: { count: 0 }, // Remove minor gridlines
         },
         chartArea: {
           width: '80%',
-          height: '70%'
+          height: '70%',
         },
         backgroundColor: {
-          fill: 'transparent'  // Make chart background transparent
+          fill: 'transparent', // Make chart background transparent
         },
         // Make the grid less prominent
         gridlineColor: '#e0e0e0',
-        focusTarget: 'category',  // When hovering, highlight entire time point
+        focusTarget: 'category', // When hovering, highlight entire time point
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
           keepInBounds: true,
-          maxZoomIn: 0.1
-        }
+          maxZoomIn: 0.1,
+        },
       };
-      
+
       // Create and draw the chart
       const chart = new google.visualization.ComboChart(chartElement);
       chart.draw(data, options);
@@ -130,56 +128,57 @@ const charts = {
     try {
       const ganttPlaceholder = document.querySelector('.gantt-placeholder');
       const expandContainer = document.querySelector('.gantt-expand-container');
-      
+
       // Show loading state
-      ganttPlaceholder.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
-      
+      ganttPlaceholder.innerHTML =
+        '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
+
       // Fetch the steps data for the run
       const response = await fetch(`/api/runs/${runId}/steps`);
       const steps = await response.json();
-      
+
       if (!steps || !steps.length) {
         ganttPlaceholder.innerHTML = '<div class="alert alert-warning">No steps data available for Gantt Chart</div>';
         expandContainer.classList.add('d-none');
         return;
       }
-      
+
       // Create a div for the chart
       ganttPlaceholder.innerHTML = `<div id="gantt_chart" style="width: 100%; height: 400px;"></div>`;
-      
+
       // Show expand button if there are more than 10 steps
       if (steps.length > 10) {
         expandContainer.classList.remove('d-none');
         const expandBtn = document.getElementById('gantt-expand-btn');
-        
+
         // Reset the expand button state to collapsed when loading the chart
         expandBtn.classList.remove('expanded');
         const icon = expandBtn.querySelector('i');
         const textSpan = expandBtn.querySelector('span');
         icon.className = 'fas fa-chevron-down';
         textSpan.textContent = ' Show More';
-        
+
         // Set up click handler for expand/collapse
         expandBtn.onclick = () => {
           // Get current expanded state
           let willBeExpanded = !expandBtn.classList.contains('expanded');
-          
+
           // Set the chart height based on whether we're expanding or collapsing
-          const chartHeight = willBeExpanded ? 
-            Math.max(400, steps.length * 30 + 50) : // Expanded height
-            400;                                    // Collapsed height
-          
+          const chartHeight = willBeExpanded
+            ? Math.max(400, steps.length * 30 + 50) // Expanded height
+            : 400; // Collapsed height
+
           // Update class state
           if (willBeExpanded) {
             expandBtn.classList.add('expanded');
           } else {
             expandBtn.classList.remove('expanded');
           }
-          
+
           // Set the correct icon and text based on the new state
           const icon = expandBtn.querySelector('i');
           const textSpan = expandBtn.querySelector('span');
-          
+
           if (willBeExpanded) {
             // Show "collapse" UI (up arrow + "Show Less")
             icon.className = 'fas fa-chevron-up';
@@ -189,7 +188,7 @@ const charts = {
             icon.className = 'fas fa-chevron-down';
             textSpan.textContent = ' Show More';
           }
-          
+
           // Update chart height and redraw
           document.getElementById('gantt_chart').style.height = `${chartHeight}px`;
           this.drawGanttChart(steps, chartHeight);
@@ -197,15 +196,16 @@ const charts = {
       } else {
         expandContainer.classList.add('d-none');
       }
-      
+
       // Load the Google Charts visualization library
-      google.charts.load('current', {'packages':['gantt']});
+      google.charts.load('current', { packages: ['gantt'] });
       google.charts.setOnLoadCallback(() => {
         this.drawGanttChart(steps, 400); // Initial height - always start at default height
       });
     } catch (error) {
       console.error('Error generating Gantt chart:', error);
-      document.querySelector('.gantt-placeholder').innerHTML = '<div class="alert alert-danger">Error Generating Gantt Chart</div>';
+      document.querySelector('.gantt-placeholder').innerHTML =
+        '<div class="alert alert-danger">Error Generating Gantt Chart</div>';
       document.querySelector('.gantt-expand-container').classList.add('d-none');
     }
   },
@@ -217,7 +217,7 @@ const charts = {
    */
   drawGanttChart(steps, height = 400) {
     const data = new google.visualization.DataTable();
-    
+
     // Add columns
     data.addColumn('string', 'Task ID');
     data.addColumn('string', 'Task Name');
@@ -227,22 +227,26 @@ const charts = {
     data.addColumn('number', 'Duration');
     data.addColumn('number', 'Percent Complete');
     data.addColumn('string', 'Dependencies');
-    
+
     // Compute the minimum start date, used as the overall start date for the Gantt chart
-    const ganttStartTs = steps.map(step => step.time.startTs).reduce((a, b) => Math.min(a, b));
+    const ganttStartTs = steps.map((step) => step.time.startTs).reduce((a, b) => Math.min(a, b));
 
     // If no endTs, this is a still running step. It should span until the latest endTs of all steps
-    const maxEndTs = steps.filter(step => step.time.endTs).map(step => step.time.endTs).reduce((a, b) => Math.max(a, b)) || 0;  
+    const maxEndTs =
+      steps
+        .filter((step) => step.time.endTs)
+        .map((step) => step.time.endTs)
+        .reduce((a, b) => Math.max(a, b)) || 0;
 
-    const rows = steps.map(step => {
+    const rows = steps.map((step) => {
       // Create start and end dates
       const relativeStartTs = step.time.startTs - ganttStartTs;
       const relativeEndTs = step.time.endTs ? step.time.endTs - ganttStartTs : maxEndTs - ganttStartTs;
-      
+
       // Handle steps that are still running or failed
       let endDate;
       let percentComplete;
-      
+
       if (step.time.endTs && step.time.endTs > 0) {
         endDate = new Date(step.time.endTs);
         percentComplete = 100; // Completed
@@ -251,7 +255,7 @@ const charts = {
         endDate = new Date();
         percentComplete = 50; // In progress
       }
-      
+
       // Determine color based on status
       let resource = 'Success';
       if (step.error) {
@@ -259,7 +263,7 @@ const charts = {
       } else if (!step.time.endTs || step.time.endTs === 0) {
         resource = 'Running';
       }
-      
+
       return [
         step.key, // Task ID
         step.key, // Task Name
@@ -268,47 +272,46 @@ const charts = {
         new Date(relativeEndTs),
         null, // step.time.timeUsageMs, // Duration
         percentComplete,
-        null // Dependencies (we're not showing dependencies)
+        null, // Dependencies (we're not showing dependencies)
       ];
     });
-    
 
-    // Work around to adjust the palette following the steps ordering 
+    // Work around to adjust the palette following the steps ordering
     // This is because the palette is applied in the order of the resources that comes in automatically.
 
     const paletteChoices = {
       Success: {
         color: '#2e7d32', // Success - dark green
         dark: '#1b5e20', // Darker shade
-        light: '#e8f5e9' // Light shade for hover
+        light: '#e8f5e9', // Light shade for hover
       },
       Error: {
         color: '#d32f2f', // Error - red
         dark: '#b71c1c',
-        light: '#ffebee'
+        light: '#ffebee',
       },
       Running: {
         color: '#ed6c02', // Running - orange
         dark: '#e65100',
-        light: '#fff3e0'
-      }
+        light: '#fff3e0',
+      },
     };
     const palette = [];
     for (const row of rows) {
-      if (!palette.find(p => p.color === paletteChoices[row[2]].color)) {
+      if (!palette.find((p) => p.color === paletteChoices[row[2]].color)) {
         palette.push(paletteChoices[row[2]]);
       }
     }
     console.log(palette);
 
     data.addRows(rows);
-    
+
     // Set chart options
     const options = {
       height: height,
-      backgroundColor: '#e8f0fe',  // Light blue background
+      backgroundColor: '#e8f0fe', // Light blue background
       gantt: {
-        trackHeight: 30,  // each row is 30px tall
+        trackHeight: 30, // each row is 30px tall
         barHeight: 20,
         labelMaxWidth: 500,
         criticalPathEnabled: false,
@@ -316,38 +319,38 @@ const charts = {
         palette: palette,
       },
     };
-    
+
     // Create and draw the chart
     const chart = new google.visualization.Gantt(document.getElementById('gantt_chart'));
     chart.draw(data, options);
 
-    google.visualization.events.addListener(chart, 'select', function() {
+    google.visualization.events.addListener(chart, 'select', function () {
       const selection = chart.getSelection();
-      
+
       // Get the steps table
       const stepsTable = document.getElementById('steps-table').querySelector('tbody');
       const allRows = stepsTable.querySelectorAll('tr:not(.details-row)');
       const allDetailRows = stepsTable.querySelectorAll('tr.details-row');
-      
+
       if (selection.length > 0) {
         // A row was selected
         const selectedIndex = selection[0].row;
-        
+
         // Hide all rows first
         allRows.forEach((row, index) => {
           row.style.display = 'none';
-          
+
           // Also hide corresponding detail rows
           const detailRow = document.getElementById(`step-details-${index}`);
           if (detailRow) {
             detailRow.style.display = 'none';
           }
         });
-        
+
         // Show only the selected row
         if (allRows[selectedIndex]) {
           allRows[selectedIndex].style.display = 'table-row';
-          
+
           // Add a "clear selection" button if it doesn't exist
           let clearButton = document.getElementById('clear-gantt-selection');
           if (!clearButton) {
@@ -355,28 +358,28 @@ const charts = {
             clearButton.id = 'clear-gantt-selection';
             clearButton.className = 'btn btn-sm btn-outline-secondary mt-2 mb-3';
             clearButton.innerHTML = '<i class="fas fa-times"></i> Clear Selection';
-            
-            clearButton.addEventListener('click', function() {
+
+            clearButton.addEventListener('click', function () {
               // Show all rows again
-              allRows.forEach(row => row.style.display = 'table-row');
-              
+              allRows.forEach((row) => (row.style.display = 'table-row'));
+
               // Restore details rows to their previous state (hidden by default)
-              allDetailRows.forEach(row => {
+              allDetailRows.forEach((row) => {
                 // Check if this row was previously expanded
                 const wasExpanded = app.state.expandedRows.has(row.id);
                 row.style.display = wasExpanded ? 'table-row' : 'none';
               });
-              
+
               // Remove the clear button
               this.remove();
-              
+
               // Clear the chart selection
               chart.setSelection([]);
-              
+
               // Force a redraw of the chart to clear visual selection state
               chart.draw(data, options);
             });
-            
+
             // Insert before the steps table
             const stepsCount = document.getElementById('steps-count');
             stepsCount.parentNode.insertBefore(clearButton, stepsCount.nextSibling);
@@ -384,15 +387,15 @@ const charts = {
         }
       } else {
         // Selection was cleared, show all rows
-        allRows.forEach(row => row.style.display = 'table-row');
-        
+        allRows.forEach((row) => (row.style.display = 'table-row'));
+
         // Restore details rows to their previous state
-        allDetailRows.forEach(row => {
+        allDetailRows.forEach((row) => {
           // Check if this row was previously expanded
           const wasExpanded = app.state.expandedRows.has(row.id);
           row.style.display = wasExpanded ? 'table-row' : 'none';
         });
-        
+
         // Remove the clear button if it exists
         const clearButton = document.getElementById('clear-gantt-selection');
         if (clearButton) {
@@ -400,5 +403,5 @@ const charts = {
         }
       }
     });
-  }
-}; 
+  },
+};

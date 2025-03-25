@@ -55,7 +55,7 @@ export async function generateGanttChartQuickchart(timeSpans: TimeSpan[], args?:
         {
           data: timeSpans.map((span) => [
             span.startTs / (unit === 'ms' ? 1 : 1000),
-            span.endTs ?? maxEndTs / (unit === 'ms' ? 1 : 1000),
+            (span.endTs ?? maxEndTs) / (unit === 'ms' ? 1 : 1000),
           ]),
         },
       ],
