@@ -26,13 +26,13 @@ This repository is a **monorepo** containing following packages:
 
 ## Features
 
-#### [Tracking Pipeline Steps](#tracking-pipeline-steps)
+#### [1. Tracking Pipeline Steps](#tracking-pipeline-steps)
 - **Tracking**: Define steps in pipeline to track intermediates data, results and execution time
 - **Visualizing**: Exporting the details and generating visualizations
 - **Event Emitting**: Listen to step events for real-time monitoring and custom handling
 - **ES6 Decorators**: Easy integration with ES6 decorators
 
-#### [Using Dashboard](#using-dashboard)
+#### [2. Using Dashboard](#using-dashboard)
 Monitor and analyze pipeline executions through an interactive web interface
 - Detailed Steps Insepection
 - Real-time Execution Monitoring
@@ -49,7 +49,7 @@ Monitor and analyze pipeline executions through an interactive web interface
 npm install --save steps-track
 ```
 
-### Tracking Pipeline Steps
+## Tracking Pipeline Steps
 
 Create a pipeline and track steps with nested, sequential, or parallel logic:
 
