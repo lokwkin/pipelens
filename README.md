@@ -4,21 +4,40 @@
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
 [![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
 
-StepsTrack is a lightweight and very simple TypeScript library for ***tracking, profiling, and visualizing*** hierarchical intermediate steps in a ***pipeline-based application***. It helps break down complex logic flows into smaller steps, records intermediate execution time and data, and visualizes the execution in human-readable graphs to help debugging and optimizing. It best works in pipeline functions that consist of complex logic execution flows and multiple concurrent async functions.
+StepsTrack is a tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis in a monitoring dashboard. It is originally developed as a go-to tool to inspect and analyze runtime data of an agentic RAG pipeline.
 
-### Background
-StepsTrack was initially developed to debug and track an agentic *Retrieval-Augmented Generation (RAG) pipeline* in production where monitoring and optimization are crucial. Chain-ing multiple LLM agents with custom logic and dynamic data inputs often led to unstable results and long response times, especially in production environments where multiple requests are running concurrently.
+<details>
+<summary>Background of StepsTrack</summary>
 
-To address these challenges, I created StepsTrack as a profiling and debugging tool so I could trace what had happened underlying in each request and identify bottlenecks upon each pipeline run. I found it very handy and useful and am sharing with anyone tackling similar challenges in their pipelines.
+> StepsTrack is a lightweight inspection and debugging tool originally built to monitor an agentic Retrieval-Augmented Generation (RAG) pipeline running in a production environment—where visibility, performance, and stability are critical.
+> 
+> When chaining multiple LLM agents with custom logic and dynamic inputs, non-deterministic nature of LLM outputs of each steps often lead to dynamic route of logics and behaviors. I needed a inspection tool but the existing tools didn’t provide the granularity I needed to trace what happened inside each step of the pipeline.
+> 
+> So I built StepsTrack to do just that: trace, inspect, and understand every step of each request. It helped me quickly spot bottlenecks, unexpected behaviors and performance drags, and address them effectively.
+> 
+> I'm open-sourcing it in the hope that it helps others building and operating complex LLM pipelines.
+>
+> Contributions welcome!
+</details>
 
-Features includes:
-- 👣 **[Tracking Pipeline Steps](#tracking-pipeline-steps)**: Define steps in pipeline to track intermediates data, execution time and results.
-- 🎛️ **[Using Dashboard](#using-dashboard)**: Monitor and analyze pipeline executions through an interactive web interface
-- ⚙️ **[Advanced Usage**](#advanced-usages)**: 
-  - Event Emitting: Listen to step events for real-time monitoring and custom handling
-  - Decorators: Easy integration with ES6 decorators.
+## Features
 
-## Tracking Pipeline Steps
+#### [Tracking Pipeline Steps](#tracking-pipeline-steps)
+- **Tracking**: Define steps in pipeline to track intermediates data, results and execution time
+- **Visualizing**: Exporting the details and generating visualizations
+- **Event Emitting**: Listen to step events for real-time monitoring and custom handling
+- **ES6 Decorators**: Easy integration with ES6 decorators
+
+#### [Using Dashboard](#using-dashboard)
+Monitor and analyze pipeline executions through an interactive web interface
+- Detailed Steps Insepection
+- Real-time Execution Monitoring
+- Gantt Chart Visualization for pipeline
+- Step Execution Stats
+
+*Note: StepsTrack is designed for any pipeline-based / multi-steps logic, especially agentic LLM pipelines*
+
+## Getting Started
 
 ### Installation
 
@@ -26,9 +45,9 @@ Features includes:
 npm install --save steps-track
 ```
 
-### Steps Defining
+### Tracking Pipeline Steps
 
-Instantiate your pipelien and define the steps in your pipeline. It can support sequential / parallel and nested substeps.
+Create a pipeline and track steps with nested, sequential, or parallel logic:
 
 ```typescript
 import { Pipeline, Step } from 'steps-track';
@@ -61,9 +80,9 @@ await pipeline.track(async (st: Step) => {
 });
 ```
 
-### Generating Visualizations
+### Exporting and Visualizing Executions
 
-After running your pipeline, generate visualizations to analyze execution flow:
+Generate visual outputs to understand and analyze execution flow:
 
 ```typescript
 // Generate a Gantt chart URL using quickchart.io
@@ -79,13 +98,16 @@ const executionGraphUrl = pipeline.executionGraphQuickchart();
 const stepsHierarchy = pipeline.outputHierarchy();
 ```
 
-#### Sample Gantt Chart
+**Sample Gantt Chart**
+
 <img src="./docs/gantt-chart.png" width="50%">
 
-#### Sample Execution Graph
+**Sample Execution Graph**
+
 <img src="./docs/execution-graph.png" width="50%">
 
-#### Sample Hierarchy Output
+**Sample Hierarchy Output**
+
 <details>
 <summary>json</summary>
 
@@ -142,62 +164,62 @@ const stepsHierarchy = pipeline.outputHierarchy();
     ]
 }
 ```
-
 </details>
+
+### Advanced Usages
+
+StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration.
+
+For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
 ## Using Dashboard
 
 StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
 
-### Pipeline Setup
+### Initial Configuration
+
+During pipeline initialization, define how you would want to store logs as persistent data, to be able to read by the dashboard later on. Currently supported storing in file-system or Redis. See [Advanced Usage](./docs/advanced-usage.md) for more details.
 
 ```typescript
 // Set up persistent storage for the dashboard
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new FileStorageAdapter('./steps-data')
+  storageAdapter: new FileStorageAdapter('/path/to/data')
 });
-
 ```
-To start the dashboard:
+### Starting up Dashboard
 
 ```bash
+# The image loads data from "/app/steps-data" by default.
 docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
 ```
 
-### Examine Steps Details 
+### Detailed Steps Insepection
 
-Detailed steps in a pipeline run. All intermediates records and step results can be examine here.
+Details of a pipeline run. From here you can examine all the steps running in the pipeline, their auto-captured data and results as well as the time usage information.
 
-<img src="./docs/dashboard-inspect-results.gif" width="70%">
+<img src="./docs/dashboard-inspect-results.gif" width="60%">
 
 ### Real-time Execution Monitoring
 
-Real-time pipeline run status monitoring
+The dashboard includes auto-refreshing option, allowing you to monitor real-time pipeline runs.
 
-<img src="./docs/dashboard-run-history.gif" width="70%">
+<img src="./docs/dashboard-run-history.gif" width="60%">
 
-Real-time steps status updates monitoring
+<img src="./docs/dashboard-real-time-steps.gif" width="60%">
 
-<img src="./docs/dashboard-real-time-steps.gif" width="70%">
+### Gantt Chart Visualization for pipeline
 
-### Visualization of Pipeline Time Usage
+Gantt Chart for visualizing the time usages of each steps in a pipeline run. You can see real-time progress of the pipeline, highlighted by status of running / success / failed.
 
-Gantt Chart for visualizing the time usages of each steps in a pipeline run.
-<img src="./docs/dashboard-gantt.gif" width="70%">
+<img src="./docs/dashboard-gantt.gif" width="60%">
 
 ### Step Execution Stats
 
-Step Execution Stats aggregated from past run histories for performance analyzing.
+Step Execution Stats. Aggregated from past run histories with basic statistical information for performance analyzing.
 
-<img src="./docs/dashboard-stats.gif" width="70%">
-
-## Advanced Usages
-
-StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration.
-
-For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+<img src="./docs/dashboard-stats.gif" width="60%">
 
 ## Roadmap
 - [X] Decorator support for easier integration.
@@ -212,7 +234,7 @@ For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Use memory-store instead of storing nested steps class
 - [ ] More robust file locking for FileStorageAdapter
-- [ ] Python version of logger
+- [ ] Python version of steps tracker
 
 
 ## License
