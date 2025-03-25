@@ -6,8 +6,6 @@
 
 StepsTrack is a tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis in a monitoring dashboard. It is originally developed as a go-to tool to inspect and analyze runtime data of an agentic RAG pipeline.
 
-This repository is a monorepo containing a [Typescript library](./packages/lib-ts) that provides basic tracker and chart generation function for your pipeline, and a (dockerized) [Dashboard](./packages/dashboard) as a visualizer for analyzing the tracked data.
-
 <details>
 <summary>Background of StepsTrack</summary>
 
@@ -21,6 +19,10 @@ This repository is a monorepo containing a [Typescript library](./packages/lib-t
 >
 > Contributions welcome!
 </details>
+
+This repository is a **monorepo** containing following packages:
+- [Typescript library](./packages/lib-ts) that provides basic tracker and chart generation function for your pipeline
+- [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
 ## Features
 
