@@ -1,6 +1,6 @@
 # steps-track/lib-ts
 
-Typescript library implemenation for **steps-track**. 
+This is the Typescript library implemenation for **steps-track**
 
 ## Installation
 
