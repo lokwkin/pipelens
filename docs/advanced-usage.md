@@ -111,7 +111,7 @@ await pipeline.track(async (st) => {
   // Your pipeline code
 });
 
-// The pipeline data is automatically saved to the 'runs' directory
+// The pipeline data is automatically saved to the './.steps-track' directory
 ```
 
 ### Redis Storage
@@ -170,10 +170,10 @@ const executionGraphUrl = pipeline.executionGraphQuickchart({
 ```
 
 #### Sample Execution Graph
-<img src="./sample/execution-graph.png" width="70%">
+<img src="./execution-graph.png" width="70%">
 
 #### Sample Gantt Chart
-<img src="./sample/gantt-chart.png" width="70%">
+<img src="./gantt-chart.png" width="70%">
 
 ## Integration with Real-World Pipelines
 
@@ -267,25 +267,6 @@ async function processData(data: any[]) {
     });
   });
 }
-```
-
-## Performance Analysis
-
-You can analyze performance across multiple runs:
-
-```typescript
-import { Pipeline, FileStorageAdapter } from 'steps-track';
-
-// Create a storage adapter to read previous runs
-const storage = new FileStorageAdapter('./.steps-track');
-
-// Get statistics for a specific step across multiple runs
-const stats = await storage.getStepStats('my-pipeline.data-processing');
-console.log(`Average time: ${stats.avgTimeMs}ms`);
-console.log(`Min time: ${stats.minTimeMs}ms`);
-console.log(`Max time: ${stats.maxTimeMs}ms`);
-console.log(`Median time: ${stats.medianTimeMs}ms`);
-console.log(`90th percentile: ${stats.p90TimeMs}ms`);
 ```
 
 For more information, refer to the [StepsTrack GitHub repository](https://github.com/lokwkin/steps-track). 
