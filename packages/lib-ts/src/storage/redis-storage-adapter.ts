@@ -131,7 +131,7 @@ export class RedisStorageAdapter implements StorageAdapter {
     const runMeta: RunMeta = {
       runId,
       pipeline: pipelineName,
-      startTime: Date.now(),
+      startTime: pipeline.getTimeMeta().startTs,
       endTime: 0,
       duration: 0,
       status: 'running',
@@ -156,11 +156,11 @@ export class RedisStorageAdapter implements StorageAdapter {
     const runMeta = (await this.client.json.get(`run:${runId}:meta`)) as RunMeta;
 
     // Update run metadata
-    const endTime = Date.now();
+    const endTime = pipeline.getTimeMeta().endTs;
     const updatedMeta: RunMeta = {
       ...runMeta,
       endTime,
-      duration: endTime - runMeta.startTime,
+      duration: endTime ? endTime - runMeta.startTime : undefined,
       status,
     };
 

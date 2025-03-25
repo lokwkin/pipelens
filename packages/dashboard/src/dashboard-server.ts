@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
-import { StorageAdapter, FileStorageAdapter } from 'steps-track';
+import * as fs from 'fs';
+import { StorageAdapter, FileStorageAdapter, StepMeta, Pipeline } from 'steps-track';
 
 export class DashboardServer {
   private app: express.Application;
@@ -275,5 +276,21 @@ export class DashboardServer {
     this.app.listen(this.port, () => {
       console.log(`Dashboard server running at http://localhost:${this.port}`);
     });
+  }
+
+  public importFromLogFile(runId: string, filePath: string): void {
+    const data = fs.readFileSync(filePath, 'utf8');
+    const jsonData = JSON.parse(data);
+    if (!Array.isArray(jsonData)) {
+      throw new Error('Invalid log file: log is not an array');
+    }
+    const steps = jsonData as StepMeta[];
+    for (const step of steps) {
+      this.storageAdapter.finishStep(runId, step);
+    }
+    this.storageAdapter.finishRun(
+      steps[0] as any as Pipeline, // Assume the first step is always the pipeline (root)
+      steps[0].time.endTs ? (steps[0].error ? 'failed' : 'completed') : 'running',
+    );
   }
 }

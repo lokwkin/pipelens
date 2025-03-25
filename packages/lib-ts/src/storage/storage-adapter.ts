@@ -13,8 +13,8 @@ export type RunMeta = {
   runId: string;
   pipeline: string;
   startTime: number;
-  endTime: number;
-  duration: number;
+  endTime?: number;
+  duration?: number;
   status: 'completed' | 'failed' | 'running';
 };
 
