@@ -6,6 +6,8 @@
 
 StepsTrack is a tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis in a monitoring dashboard. It is originally developed as a go-to tool to inspect and analyze runtime data of an agentic RAG pipeline.
 
+This repository is a monorepo containing a [Typescript library](./packages/lib-ts) that provides basic tracker and chart generation function for your pipeline, and a (dockerized) [Dashboard](./packages/dashboard) as a visualizer for analyzing the tracked data.
+
 <details>
 <summary>Background of StepsTrack</summary>
 
@@ -85,8 +87,8 @@ await pipeline.track(async (st: Step) => {
 Generate visual outputs to understand and analyze execution flow:
 
 ```typescript
-// Generate a Gantt chart URL using quickchart.io
-const ganttChartUrl = await pipeline.ganttQuickchart();
+// Generate a Gantt chart Buffer using quickchart.io
+const ganttChartBuffer = await pipeline.ganttQuickchart();
 
 // Generate a Gantt chart HTML file with Google Charts
 const ganttChartHtml = await pipeline.ganttGoogleChartHtml();
