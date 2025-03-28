@@ -91,6 +91,10 @@ export class Step {
     }
   }
 
+  public async track<T = any>(callable: (st: Step) => Promise<T>): Promise<T> {
+    return await this.run(callable);
+  }
+
   public getName(): string {
     return this.name;
   }

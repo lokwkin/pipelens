@@ -52,8 +52,4 @@ export class Pipeline extends Step {
   public getRunId(): string {
     return this.runId;
   }
-
-  public async track<T = any>(callable: (st: Step) => Promise<T>): Promise<T> {
-    return await this.run(callable);
-  }
 }
