@@ -188,15 +188,17 @@ During pipeline initialization, define how you would want to store logs as persi
 
 ```typescript
 // Set up persistent storage for the dashboard
+const storageAdapter = new FileStorageAdapter('/path/to/data');  
+await storageAdapter.connect();
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new FileStorageAdapter('/path/to/data')
+  storageAdapter: storageAdapter,
 });
 ```
 ### Starting up Dashboard
 
 ```bash
-# The image loads data from "/app/steps-data" by default.
+# The image loads data from "/app/.steps-track" by default.
 docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
 ```
 
