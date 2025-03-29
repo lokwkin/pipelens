@@ -28,7 +28,7 @@ await pipeline.track(async (st: Step) => {
 });
 
 // Export output
-const exported = pipeline.outputSteps();
+const exported = pipeline.outputPipelineLogs();
 
 // Gantt Chart Visualization
 const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);

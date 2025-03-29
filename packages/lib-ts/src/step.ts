@@ -219,13 +219,6 @@ export class Step {
     ];
   }
 
-  /**
-   * Same as `outputFlattened()`
-   */
-  public outputSteps(): StepMeta[] {
-    return this.outputFlattened();
-  }
-
   public getRecords(): Record<string, any> {
     return this.records;
   }

@@ -1,7 +1,13 @@
-import { Step, StepMeta } from './step';
+import { Step, StepMeta, TimeMeta } from './step';
 import { v4 as uuidv4 } from 'uuid';
 import { StorageAdapter } from './storage/storage-adapter';
 
+export interface PipelineLog {
+  runId: string;
+  name: string;
+  timeMeta: TimeMeta;
+  steps: StepMeta[];
+}
 export class Pipeline extends Step {
   private runId: string;
   private autoSave: boolean;
@@ -29,7 +35,7 @@ export class Pipeline extends Step {
       this.on('step-start', async (key: string, stepMeta?: StepMeta) => {
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.initiateRun(this);
+          await this.storageAdapter?.initiateRun(this.outputPipelineLog());
         }
         if (!stepMeta) {
           return;
@@ -43,7 +49,7 @@ export class Pipeline extends Step {
         await this.storageAdapter?.finishStep(this.runId, stepMeta);
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.finishRun(this, stepMeta.error ? 'failed' : 'completed');
+          await this.storageAdapter?.finishRun(this.outputPipelineLog(), stepMeta.error ? 'failed' : 'completed');
         }
       });
     }
@@ -51,5 +57,14 @@ export class Pipeline extends Step {
 
   public getRunId(): string {
     return this.runId;
+  }
+
+  public outputPipelineLog(): PipelineLog {
+    return {
+      runId: this.getRunId(),
+      name: this.getName(),
+      timeMeta: this.getTimeMeta(),
+      steps: this.outputFlattened(),
+    };
   }
 }

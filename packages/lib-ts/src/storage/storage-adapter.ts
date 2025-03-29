@@ -1,4 +1,4 @@
-import { Pipeline } from '../pipeline';
+import { PipelineLog } from '../pipeline';
 import { StepMeta } from '../step';
 
 export type FilterOptions = {
@@ -36,10 +36,10 @@ export interface StorageAdapter {
   listRuns(pipelineName: string, options?: FilterOptions): Promise<RunMeta[]>;
 
   // Initiate a run, this should mark the run as running.
-  initiateRun(pipeline: Pipeline): Promise<void>;
+  initiateRun(pipelineLog: PipelineLog): Promise<void>;
 
   // Finish a run, this should mark the run as either completed or failed, and write run data to storage.
-  finishRun(pipeline: Pipeline, status: 'completed' | 'failed' | 'running'): Promise<void>;
+  finishRun(pipelineLog: PipelineLog, status: 'completed' | 'failed' | 'running'): Promise<void>;
 
   // Get the run data, this should read the run's data file.
   getRunData(runId: string): Promise<any>;
