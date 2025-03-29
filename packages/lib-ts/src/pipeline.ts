@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { StorageAdapter } from './storage/storage-adapter';
 
 export type PipelineMeta = StepMeta & {
+  logVersion: number; // version of the log format
   runId: string;
   steps: StepMeta[];
 };
@@ -60,6 +61,7 @@ export class Pipeline extends Step {
   public outputPipelineMeta(): PipelineMeta {
     return {
       ...this.getStepMeta(),
+      logVersion: 1,
       runId: this.getRunId(),
       steps: this.outputFlattened(),
     };

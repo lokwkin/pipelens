@@ -514,8 +514,8 @@ const app = {
           formData.append('stepsFiles', file);
         });
 
-        // Use the multiple files upload endpoint
-        const response = await fetch('/api/upload/multiple-steps-files', {
+        // Use the unified steps files upload endpoint
+        const response = await fetch('/api/upload/steps-files', {
           method: 'POST',
           body: formData,
         });

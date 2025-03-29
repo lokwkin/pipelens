@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import * as fs from 'fs';
-import { StorageAdapter, FileStorageAdapter, PipelineMeta } from 'steps-track';
+import { StorageAdapter, FileStorageAdapter, PipelineMeta, StepMeta } from 'steps-track';
 import { minimatch } from 'minimatch';
 import multer from 'multer';
 import { tmpdir } from 'os';
+import { v4 as uuidv4 } from 'uuid';
 
 export class DashboardServer {
   private app: express.Application;
@@ -266,69 +267,15 @@ export class DashboardServer {
       }
     });
 
-    // Add new route for uploading single step output file
-    this.app.post('/api/upload/steps-file', this.upload.single('stepsFile'), (req: Request, res: Response): void => {
-      try {
-        if (!req.file) {
-          res.status(400).json({ error: 'No file uploaded' });
-          return;
-        }
-
-        // Get runId from request or generate a new one
-        const filePath = req.file.path;
-
-        try {
-          // Process the file
-          const data = fs.readFileSync(filePath, 'utf8');
-          const jsonData = JSON.parse(data) as PipelineMeta;
-
-          this.importFromPipelineOutput(jsonData);
-
-          // Clean up temporary file
-          fs.unlinkSync(filePath);
-
-          res.json({
-            success: true,
-            message: `Successfully imported data for Run ID: ${jsonData.runId}`,
-            data: {
-              runId: jsonData.runId,
-              startTime: jsonData.time?.startTs,
-              endTime: jsonData.time?.endTs,
-              stepCount: jsonData.steps?.length || 0,
-            },
-          });
-        } catch (parseError) {
-          // Clean up temporary file
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-          }
-
-          console.error('Error processing steps file:', parseError);
-          res.status(400).json({
-            success: false,
-            error: 'Invalid JSON file',
-            message: parseError instanceof Error ? parseError.message : 'Unknown error',
-          });
-        }
-      } catch (error) {
-        console.error('Error handling file upload:', error);
-        res.status(500).json({
-          success: false,
-          error: 'Failed to process file',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    });
-
-    // Add route for uploading multiple step output files
+    // Upload endpoint for steps files (handles both single and multiple files)
     this.app.post(
-      '/api/upload/multiple-steps-files',
+      '/api/upload/steps-files',
       this.upload.array('stepsFiles', 10),
       (req: Request, res: Response): void => {
         try {
-          const files = req.files as Express.Multer.File[];
+          const files = Array.isArray(req.files) ? req.files : req.file ? [req.file] : [];
 
-          if (!files || files.length === 0) {
+          if (files.length === 0) {
             res.status(400).json({ error: 'No files uploaded' });
             return;
           }
@@ -344,18 +291,18 @@ export class DashboardServer {
               const data = fs.readFileSync(filePath, 'utf8');
               const jsonData = JSON.parse(data) as PipelineMeta;
 
-              this.importFromPipelineOutput(jsonData);
+              const importedPipelineMeta = this.importFromPipelineOutput(jsonData);
 
               // Add success result
               results.push({
                 filename: file.originalname,
                 success: true,
-                message: `Successfully imported data for Run ID: ${jsonData.runId}`,
+                message: `Successfully imported data from file ${file.originalname} (Run ID: ${importedPipelineMeta.runId}, total steps: ${importedPipelineMeta.steps?.length || 0})`,
                 data: {
-                  runId: jsonData.runId,
-                  startTime: jsonData.time?.startTs,
-                  endTime: jsonData.time?.endTs,
-                  stepCount: jsonData.steps?.length || 0,
+                  runId: importedPipelineMeta.runId,
+                  startTime: importedPipelineMeta.time?.startTs,
+                  endTime: importedPipelineMeta.time?.endTs,
+                  stepCount: importedPipelineMeta.steps?.length || 0,
                 },
               });
 
@@ -378,13 +325,13 @@ export class DashboardServer {
             }
           }
 
-          // Return all results
+          // Always return the same format for consistency
           res.json({
             success: true,
             results,
           });
         } catch (error) {
-          console.error('Error handling multiple file upload:', error);
+          console.error('Error handling file upload:', error);
           res.status(500).json({
             success: false,
             error: 'Failed to process files',
@@ -438,28 +385,39 @@ export class DashboardServer {
     });
   }
 
-  public importFromOutputFolder(runId: string, folder: string, filePattern: string = '*'): void {
-    const files = fs.readdirSync(folder);
-    for (const file of files) {
-      if (minimatch(file, filePattern)) {
-        const filePath = path.join(folder, file);
-        const data = fs.readFileSync(filePath, 'utf8');
-        const pipelineMeta = JSON.parse(data) as PipelineMeta;
-        this.importFromPipelineOutput(pipelineMeta);
+  public importFromPipelineOutput(input: any): PipelineMeta {
+    let pipelineMeta: PipelineMeta;
+    if (input['logVersion'] === undefined) {
+      // check if it is from old format
+      if (Array.isArray(input) && input[0]?.key && input[0]?.time?.startTs) {
+        // construct pipeline meta from old format
+        const steps = input as StepMeta[];
+        pipelineMeta = {
+          logVersion: 0,
+          runId: uuidv4(),
+          time: steps[0].time,
+          name: steps[0].name,
+          key: steps[0].key,
+          records: steps[0].records || (steps[0] as any)['record'], // backward compatibility
+          steps: steps.map((step) => ({ ...step, records: step.records || (step as any)['record'] })) as StepMeta[],
+        };
+      } else {
+        throw new Error('Invalid input');
       }
-    }
-  }
-
-  public importFromPipelineOutput(pipelineMeta: PipelineMeta): void {
-    // Validate inputs
-    if (!pipelineMeta.runId) {
-      throw new Error('runId is missing from input');
-    }
-    if (!pipelineMeta.time?.startTs) {
-      throw new Error('startTs is missing from input');
-    }
-    if (!pipelineMeta.steps) {
-      throw new Error('steps is missing from input');
+    } else if (input['logVersion'] === 1) {
+      pipelineMeta = input as PipelineMeta;
+      // Validate inputs
+      if (!pipelineMeta.runId) {
+        throw new Error('runId is missing from input');
+      }
+      if (!pipelineMeta.time?.startTs) {
+        throw new Error('startTs is missing from input');
+      }
+      if (!pipelineMeta.steps) {
+        throw new Error('steps is missing from input');
+      }
+    } else {
+      throw new Error('Invalid input');
     }
 
     for (const step of pipelineMeta.steps) {
@@ -469,34 +427,6 @@ export class DashboardServer {
       pipelineMeta,
       pipelineMeta.time.endTs ? (pipelineMeta.error ? 'failed' : 'completed') : 'running',
     );
-  }
-
-  // Add method to process files from a directory
-  private processFilesFromDirectory(directory: string, filePattern: string = '*'): void {
-    const files = fs.readdirSync(directory);
-    for (const file of files) {
-      if (minimatch(file, filePattern)) {
-        const filePath = path.join(directory, file);
-        const stats = fs.statSync(filePath);
-
-        if (stats.isDirectory()) {
-          // Recursively process subdirectories
-          this.processFilesFromDirectory(filePath, filePattern);
-        } else {
-          try {
-            // Process individual log file
-            const data = fs.readFileSync(filePath, 'utf8');
-            try {
-              const jsonData = JSON.parse(data) as PipelineMeta;
-              this.importFromPipelineOutput(jsonData);
-            } catch (parseError) {
-              console.error(`Error parsing JSON from ${filePath}:`, parseError);
-            }
-          } catch (error) {
-            console.error(`Error processing file ${filePath}:`, error);
-          }
-        }
-      }
-    }
+    return pipelineMeta;
   }
 }
