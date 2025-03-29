@@ -3,7 +3,7 @@ import path from 'path';
 import { promisify } from 'util';
 import { StepMeta } from '../step';
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
-import { PipelineLog } from '../pipeline';
+import { PipelineMeta } from '../pipeline';
 
 // Promisify file system operations
 const mkdir = promisify(fs.mkdir);
@@ -56,7 +56,6 @@ export class FileStorageAdapter implements StorageAdapter {
    */
   public async listPipelines(): Promise<string[]> {
     const pipelinesDir = path.join(this.basePath, 'pipelines');
-    await this.ensureDir(pipelinesDir);
 
     const files = await readdir(pipelinesDir);
     return files.map((file) => path.basename(file, '.json'));
@@ -121,14 +120,14 @@ export class FileStorageAdapter implements StorageAdapter {
   /**
    * Initiates a new run for a pipeline
    */
-  public async initiateRun(pipelineLog: PipelineLog): Promise<void> {
-    const { runId, timeMeta, name } = pipelineLog;
+  public async initiateRun(pipelineMeta: PipelineMeta): Promise<void> {
+    const { runId, time, name } = pipelineMeta;
 
     // Create run metadata
     const runMeta: RunMeta = {
       runId,
       pipeline: name,
-      startTime: timeMeta.startTs,
+      startTime: time.startTs,
       endTime: 0,
       duration: 0,
       status: 'running',
@@ -136,7 +135,6 @@ export class FileStorageAdapter implements StorageAdapter {
 
     // Create run directory
     const runDir = path.join(this.basePath, 'runs', runId);
-    await this.ensureDir(runDir);
 
     // Write run metadata
     await this.writeJsonFile(path.join(runDir, 'meta.json'), runMeta);
@@ -148,24 +146,36 @@ export class FileStorageAdapter implements StorageAdapter {
   /**
    * Finishes a run and stores all step data
    */
-  public async finishRun(pipelineLog: PipelineLog, status: 'completed' | 'failed' | 'running'): Promise<void> {
-    const { runId, timeMeta, name, steps } = pipelineLog;
+  public async finishRun(pipelineMeta: PipelineMeta): Promise<void> {
+    const { runId, time, name, steps } = pipelineMeta;
     const stepsDump = steps;
 
     const runDir = path.join(this.basePath, 'runs', runId);
 
     // Read current run metadata
     const metaPath = path.join(runDir, 'meta.json');
-    const runMeta = (await this.readJsonFile(metaPath)) as RunMeta;
 
-    // Update run metadata
-    const endTime = timeMeta.endTs;
-    const updatedMeta: RunMeta = {
-      ...runMeta,
-      endTime,
-      duration: endTime ? endTime - runMeta.startTime : undefined,
-      status,
-    };
+    let updatedMeta: RunMeta;
+    if (fs.existsSync(metaPath)) {
+      const runMeta = (await this.readJsonFile(metaPath)) as RunMeta;
+
+      // Update run metadata
+      updatedMeta = {
+        ...runMeta,
+        endTime: time.endTs,
+        duration: time.endTs ? time.endTs - runMeta.startTime : undefined,
+        status: time.endTs ? (pipelineMeta.error ? 'failed' : 'completed') : 'running',
+      };
+    } else {
+      updatedMeta = {
+        runId,
+        pipeline: name,
+        startTime: time.startTs,
+        endTime: time.endTs,
+        duration: time.endTs ? time.endTs - time.startTs : undefined,
+        status: time.endTs ? (pipelineMeta.error ? 'failed' : 'completed') : 'running',
+      };
+    }
 
     // Write updated metadata
     await this.writeJsonFile(metaPath, updatedMeta);
@@ -264,7 +274,6 @@ export class FileStorageAdapter implements StorageAdapter {
   public async initiateStep(runId: string, step: StepMeta): Promise<void> {
     const runDir = path.join(this.basePath, 'runs', runId);
     const stepsDir = path.join(runDir, 'steps');
-    await this.ensureDir(stepsDir);
 
     // Write step data to individual file
     await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
@@ -276,7 +285,6 @@ export class FileStorageAdapter implements StorageAdapter {
   public async finishStep(runId: string, step: StepMeta): Promise<void> {
     const runDir = path.join(this.basePath, 'runs', runId);
     const stepsDir = path.join(runDir, 'steps');
-    await this.ensureDir(stepsDir);
 
     // Write updated step data
     await this.writeJsonFile(path.join(stepsDir, `${step.key}.json`), step);
@@ -348,7 +356,6 @@ export class FileStorageAdapter implements StorageAdapter {
   private async updateStepTimeseries(pipelineName: string, runId: string, step: StepMeta): Promise<void> {
     const timeseriesDir = path.join(this.basePath, 'timeseries');
     const pipelineTimeseriesDir = path.join(timeseriesDir, pipelineName);
-    await this.ensureDir(pipelineTimeseriesDir);
 
     // Use pipeline name + step name for the timeseries file
     // This groups data by logical step rather than by specific step instance
@@ -396,7 +403,6 @@ export class FileStorageAdapter implements StorageAdapter {
    */
   private async updatePipelineIndex(pipelineName: string, runMeta: RunMeta): Promise<void> {
     const pipelinesDir = path.join(this.basePath, 'pipelines');
-    await this.ensureDir(pipelinesDir);
 
     const pipelinePath = path.join(pipelinesDir, `${pipelineName}.json`);
 
@@ -455,6 +461,7 @@ export class FileStorageAdapter implements StorageAdapter {
    * Writes data to a JSON file
    */
   private async writeJsonFile(filePath: string, data: any): Promise<void> {
+    await this.ensureDir(path.dirname(filePath));
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
   }
 
