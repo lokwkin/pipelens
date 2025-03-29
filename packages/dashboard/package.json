@@ -11,16 +11,20 @@
   "author": "lokwkin <lokwkin@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.21.2",
-    "steps-track": "file:../lib-ts",
-    "opener": "^1.5.2",
     "@redis/json": "^1.0.7",
     "@redis/time-series": "^1.1.0",
+    "express": "^4.21.2",
+    "minimatch": "^10.0.1",
+    "multer": "^1.4.5-lts.1",
+    "opener": "^1.5.2",
     "redis": "^4.7.0",
+    "steps-track": "file:../lib-ts",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "@types/minimatch": "^5.1.2",
+    "@types/multer": "^1.4.7",
     "@types/node": "^18.11.18",
     "@types/opener": "^1.4.3",
     "nodemon": "^2.0.20",

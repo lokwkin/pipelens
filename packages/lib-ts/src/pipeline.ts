@@ -2,6 +2,10 @@ import { Step, StepMeta } from './step';
 import { v4 as uuidv4 } from 'uuid';
 import { StorageAdapter } from './storage/storage-adapter';
 
+export type PipelineMeta = StepMeta & {
+  runId: string;
+  steps: StepMeta[];
+};
 export class Pipeline extends Step {
   private runId: string;
   private autoSave: boolean;
@@ -29,7 +33,7 @@ export class Pipeline extends Step {
       this.on('step-start', async (key: string, stepMeta?: StepMeta) => {
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.initiateRun(this);
+          await this.storageAdapter?.initiateRun(this.outputPipelineMeta());
         }
         if (!stepMeta) {
           return;
@@ -43,7 +47,7 @@ export class Pipeline extends Step {
         await this.storageAdapter?.finishStep(this.runId, stepMeta);
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.finishRun(this, stepMeta.error ? 'failed' : 'completed');
+          await this.storageAdapter?.finishRun(this.outputPipelineMeta(), stepMeta.error ? 'failed' : 'completed');
         }
       });
     }
@@ -53,7 +57,11 @@ export class Pipeline extends Step {
     return this.runId;
   }
 
-  public async track<T = any>(callable: (st: Step) => Promise<T>): Promise<T> {
-    return await this.run(callable);
+  public outputPipelineMeta(): PipelineMeta {
+    return {
+      ...this.getStepMeta(),
+      runId: this.getRunId(),
+      steps: this.outputFlattened(),
+    };
   }
 }

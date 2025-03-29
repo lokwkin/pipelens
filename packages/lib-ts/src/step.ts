@@ -23,6 +23,10 @@ export type StepMeta = {
   error?: string;
 };
 
+export type NestedStepMeta = StepMeta & {
+  substeps: NestedStepMeta[];
+};
+
 export type StepEvents = 'step-start' | 'step-success' | 'step-error' | 'step-record' | 'step-complete';
 
 export type StepGanttArg = GanttChartArgs & {
@@ -85,6 +89,10 @@ export class Step {
     if (this.eventEmitter.listeners('error')?.length === 0) {
       this.eventEmitter.on('error', () => {});
     }
+  }
+
+  public async track<T = any>(callable: (st: Step) => Promise<T>): Promise<T> {
+    return await this.run(callable);
   }
 
   public getName(): string {
@@ -172,9 +180,16 @@ export class Step {
   }
 
   /**
+   * @deprecated Use `outputNested()` instead.
+   */
+  public outputHierarchy(): NestedStepMeta {
+    return this.outputNested();
+  }
+
+  /**
    * This method output a nested array of step meta, including it own meta and its substeps' meta.
    */
-  public outputHierarchy(): StepMeta & { substeps: StepMeta[] } {
+  public outputNested(): NestedStepMeta {
     return {
       name: this.name,
       key: this.key,
@@ -182,7 +197,7 @@ export class Step {
       records: this.records,
       result: this.result,
       error: this.error ? this.error.message || this.error.toString() || this.error.name : undefined,
-      substeps: this.steps.map((step) => step.outputHierarchy()),
+      substeps: this.steps.map((step) => step.outputNested()),
     };
   }
 
@@ -202,13 +217,6 @@ export class Step {
       },
       ...substeps,
     ];
-  }
-
-  /**
-   * Same as `outputFlattened()`
-   */
-  public outputSteps(): StepMeta[] {
-    return this.outputFlattened();
   }
 
   public getRecords(): Record<string, any> {
@@ -295,5 +303,10 @@ export class Step {
    */
   public static ganttGoogleChartHtml(steps: StepMeta[], args?: StepGanttArg): string {
     return generateGanttChartGoogle(Step.getGanttSpans(steps, args?.filter), args);
+  }
+
+  public static flattenNestedStepMetas(root: NestedStepMeta): StepMeta[] {
+    const substeps = root.substeps.map((step) => Step.flattenNestedStepMetas(step)).flat();
+    return [root, ...substeps];
   }
 }

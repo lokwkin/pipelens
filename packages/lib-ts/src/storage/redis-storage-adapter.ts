@@ -1,6 +1,6 @@
 import { StepMeta } from '../step';
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
-import { Pipeline } from '../pipeline';
+import { PipelineMeta } from '../pipeline';
 import { createClient, RedisClientType, TimeSeriesDuplicatePolicies } from 'redis';
 import '@redis/json';
 import '@redis/time-series';
@@ -123,15 +123,14 @@ export class RedisStorageAdapter implements StorageAdapter {
   /**
    * Initiates a new run for a pipeline
    */
-  public async initiateRun(pipeline: Pipeline): Promise<void> {
-    const runId = pipeline.getRunId();
-    const pipelineName = pipeline.getName();
+  public async initiateRun(pipelineMeta: PipelineMeta): Promise<void> {
+    const { runId, time, name } = pipelineMeta;
 
     // Create run metadata
     const runMeta: RunMeta = {
       runId,
-      pipeline: pipelineName,
-      startTime: Date.now(),
+      pipeline: name,
+      startTime: time.startTs,
       endTime: 0,
       duration: 0,
       status: 'running',
@@ -141,26 +140,24 @@ export class RedisStorageAdapter implements StorageAdapter {
     await this.client.json.set(`run:${runId}:meta`, '$', runMeta);
 
     // Update pipeline runs index
-    await this.updatePipelineIndex(pipelineName, runMeta);
+    await this.updatePipelineIndex(name, runMeta);
   }
 
   /**
    * Finishes a run and stores all step data
    */
-  public async finishRun(pipeline: Pipeline, status: 'completed' | 'failed' | 'running'): Promise<void> {
-    const runId = pipeline.getRunId();
-    const pipelineName = pipeline.getName();
-    const stepsDump = pipeline.outputFlattened();
+  public async finishRun(pipelineMeta: PipelineMeta, status: 'completed' | 'failed' | 'running'): Promise<void> {
+    const { runId, time, name, steps } = pipelineMeta;
 
     // Read current run metadata
     const runMeta = (await this.client.json.get(`run:${runId}:meta`)) as RunMeta;
 
     // Update run metadata
-    const endTime = Date.now();
+    const endTime = time.endTs;
     const updatedMeta: RunMeta = {
       ...runMeta,
       endTime,
-      duration: endTime - runMeta.startTime,
+      duration: endTime ? endTime - runMeta.startTime : undefined,
       status,
     };
 
@@ -168,10 +165,10 @@ export class RedisStorageAdapter implements StorageAdapter {
     await this.client.json.set(`run:${runId}:meta`, '$', updatedMeta);
 
     // Write steps data
-    await this.client.json.set(`run:${runId}:steps`, '$', stepsDump);
+    await this.client.json.set(`run:${runId}:steps`, '$', steps);
 
     // Update pipeline runs index
-    await this.updatePipelineIndex(pipelineName, updatedMeta);
+    await this.updatePipelineIndex(name, updatedMeta);
   }
 
   /**

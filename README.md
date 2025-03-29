@@ -99,7 +99,7 @@ const ganttChartHtml = await pipeline.ganttGoogleChartHtml();
 const executionGraphUrl = pipeline.executionGraphQuickchart();
 
 // Get the hierarchical output of all steps
-const stepsHierarchy = pipeline.outputHierarchy();
+const stepsHierarchy = pipeline.outputNested();
 ```
 
 **Sample Gantt Chart**
@@ -235,7 +235,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Convert into mono-repo and split dashboard as independent dockerized module
 - [X] Use GoogleChart / QuickChart instead of local chart.js generation
 - [X] Enhance StepsTrack Monitoring Dashboard UI/UX
-- [ ] Allow importing external logs into dashboard
+- [X] Allow importing external logs into dashboard
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Use memory-store instead of storing nested steps class
 - [ ] More robust file locking for FileStorageAdapter

@@ -20,7 +20,7 @@ describe('WithStep Decorator', () => {
     const result = await instance.testMethod(parentStep);
 
     expect(result).toBe('success');
-    const output = parentStep.outputHierarchy();
+    const output = parentStep.outputNested();
     expect(output.substeps[0].name).toBe('test-step');
     expect(output.substeps[0].result).toBe('success');
   });
@@ -71,7 +71,7 @@ describe('WithStep Decorator', () => {
     const result = await instance.testMethod('hello', 42, parentStep);
 
     expect(result).toBe('hello-42');
-    const output = parentStep.outputHierarchy();
+    const output = parentStep.outputNested();
     expect(output.substeps[0].name).toBe('test-step');
     expect(output.substeps[0].result).toBe('hello-42');
   });
@@ -87,7 +87,7 @@ describe('WithStep Decorator', () => {
     const instance = new TestClass();
     await expect(instance.testMethod(parentStep)).rejects.toThrow('test error');
 
-    const output = parentStep.outputHierarchy();
+    const output = parentStep.outputNested();
     expect(output.substeps[0].name).toBe('test-step');
     expect(output.substeps[0].error).toBe('test error');
   });
@@ -104,7 +104,7 @@ describe('WithStep Decorator', () => {
     const instance = new TestClass();
     await instance.testMethod(parentStep);
 
-    const output = parentStep.outputHierarchy();
+    const output = parentStep.outputNested();
     expect(output.substeps[0].records['test-key']).toBe('test-value');
   });
 });

@@ -132,6 +132,108 @@ body {
   font-weight: 500;
 }
 
+/* Import File Upload Styles */
+.border-dashed {
+  border-style: dashed !important;
+  border-width: 2px !important;
+  border-color: #ccc !important;
+}
+
+.drop-area {
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  min-height: 200px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.drop-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(44, 110, 155, 0.05);
+  z-index: -1;
+  transform: scale(0.97);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.drop-area:hover::before {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.drop-area.highlight {
+  background-color: #e8f4ff;
+  border-color: var(--primary) !important;
+  transform: scale(1.01);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.drop-area i {
+  color: #adb5bd;
+  transition: all 0.3s ease;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.drop-area.highlight i {
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.drop-area:hover {
+  background-color: #eff3f7;
+}
+
+.drop-area input[type="file"] {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.drop-area .btn-primary {
+  transition: all 0.2s ease;
+}
+
+.drop-area .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.file-item-row {
+  transition: all 0.3s ease;
+}
+
+.file-item-row.success {
+  background-color: rgba(46, 125, 50, 0.1);
+}
+
+.file-item-row.error {
+  background-color: rgba(211, 47, 47, 0.1);
+}
+
+.file-item-remove {
+  cursor: pointer;
+  color: #dc3545;
+}
+
+.file-item-remove:hover {
+  color: #bd2130;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .sidebar {

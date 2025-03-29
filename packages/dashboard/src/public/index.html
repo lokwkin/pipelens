@@ -42,6 +42,9 @@
         <a href="#" class="nav-link" data-view="step-stats-view">
           <i class="fas fa-list-ul"></i> Step Execution Stats
         </a>
+        <a href="#" class="nav-link" data-view="import-view">
+          <i class="fas fa-file-import"></i> Import Logs
+        </a>
       </nav>
       
       <!-- Auto-refresh Controls -->
@@ -358,6 +361,70 @@
               
               <h4 class="mb-3">Step Details</h4>
               <pre id="step-analysis-details" class="bg-light p-3 rounded"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import View -->
+      <div id="import-view" class="view">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="mb-4">Import Pipeline Log Files</h3>
+            
+            <div class="import-container mb-4">
+              <div id="drop-area" class="drop-area p-5 text-center border border-dashed rounded mb-3">
+                <i class="fas fa-file-upload fa-3x mb-3 text-muted"></i>
+                <h5>Drag & Drop Files Here</h5>
+                <p class="text-muted">or</p>
+                <label for="file-input" class="btn btn-primary">
+                  Browse Files
+                  <input type="file" id="file-input" multiple class="d-none">
+                </label>
+                <p class="text-muted mt-2">
+                  <small>Supports multiple JSON pipeline log files</small>
+                </p>
+              </div>
+              
+              <div id="file-list" class="mt-4 d-none">
+                <h5>Files to Import</h5>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>File Name</th>
+                        <th>Size</th>
+                        <th>Status</th>
+                        <th width="30"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="file-list-body">
+                    </tbody>
+                  </table>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                  <button id="import-files-btn" class="btn btn-primary">
+                    <i class="fas fa-upload me-1"></i> Import Files
+                  </button>
+                </div>
+              </div>
+              
+              <div id="import-results" class="mt-4 d-none">
+                <h5>Import Results</h5>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>File Name</th>
+                        <th>Status</th>
+                        <th>Message</th>
+                      </tr>
+                    </thead>
+                    <tbody id="import-results-body">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>

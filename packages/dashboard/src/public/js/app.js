@@ -149,6 +149,10 @@ const app = {
           if (!stepName) {
             url.searchParams.delete('stepName');
           }
+        } else if (viewId === 'import-view') {
+          url.searchParams.delete('runId');
+          url.searchParams.delete('stepKey');
+          url.searchParams.delete('stepName');
         }
 
         window.history.pushState({ view: viewId }, '', url);
@@ -345,7 +349,7 @@ const app = {
     refreshIndicator.classList.toggle('active', this.state.autoRefresh);
 
     // Handle browser back/forward buttons
-    window.addEventListener('popstate', (event) => {
+    window.addEventListener('popstate', (_event) => {
       // Read URL parameters
       const params = new URLSearchParams(window.location.search);
       const view = params.get('view') || 'runs-view';
@@ -359,6 +363,209 @@ const app = {
 
       // Use the handleInitialView method for consistent navigation
       app.handleInitialView(view, runId, stepKey, stepName, pipeline);
+    });
+
+    // Initialize file import functionality
+    this.initImportUI();
+  },
+
+  /**
+   * Initialize the file import UI elements
+   */
+  initImportUI() {
+    // Get DOM elements
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const fileListBody = document.getElementById('file-list-body');
+    const fileListContainer = document.getElementById('file-list');
+    const importFilesBtn = document.getElementById('import-files-btn');
+    const importResultsContainer = document.getElementById('import-results');
+    const importResultsBody = document.getElementById('import-results-body');
+
+    // Files array to store selected files
+    let selectedFiles = [];
+
+    // Simple drag and drop implementation
+    dropArea.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropArea.classList.add('highlight');
+    });
+
+    dropArea.addEventListener('dragleave', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropArea.classList.remove('highlight');
+    });
+
+    dropArea.addEventListener('drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropArea.classList.remove('highlight');
+
+      if (e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+
+    // Allow clicking anywhere in drop area to trigger file input
+    dropArea.addEventListener('click', function (e) {
+      // Don't trigger if they clicked on the actual button
+      if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+        fileInput.click();
+      }
+    });
+
+    // Handle file selection via browse button
+    fileInput.addEventListener('change', function () {
+      if (this.files.length > 0) {
+        handleFiles(this.files);
+      }
+    });
+
+    // Process selected files
+    function handleFiles(files) {
+      // Convert FileList to array and filter to ensure we only process JSON files
+      const newFiles = Array.from(files).filter((_file) => {
+        // Check if file is a JSON file
+        // return file.name.toLowerCase().endsWith('.json');
+        return true;
+      });
+
+      // if (newFiles.length === 0) {
+      //   alert('Please select JSON files only.');
+      //   return;
+      // }
+
+      // Add new files to selectedFiles array
+      selectedFiles = [...selectedFiles, ...newFiles];
+
+      // Update the file list UI
+      updateFileList();
+    }
+
+    // Update the file list display
+    function updateFileList() {
+      // Show the file list container if files are selected
+      if (selectedFiles.length > 0) {
+        fileListContainer.classList.remove('d-none');
+      } else {
+        fileListContainer.classList.add('d-none');
+      }
+
+      // Clear the current file list
+      fileListBody.innerHTML = '';
+
+      // Add each file to the list
+      selectedFiles.forEach((file, index) => {
+        const fileSize = formatFileSize(file.size);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${file.name}</td>
+          <td>${fileSize}</td>
+          <td>Ready</td>
+          <td>
+            <span class="file-item-remove" data-index="${index}">
+              <i class="fas fa-times"></i>
+            </span>
+          </td>
+        `;
+        fileListBody.appendChild(row);
+      });
+
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.file-item-remove').forEach((btn) => {
+        btn.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'), 10);
+          selectedFiles.splice(index, 1);
+          updateFileList();
+        });
+      });
+    }
+
+    // Format file size for display
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
+      return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Handle the import button click
+    importFilesBtn.addEventListener('click', async function () {
+      if (selectedFiles.length === 0) return;
+
+      // Show import results container
+      importResultsContainer.classList.remove('d-none');
+      importResultsBody.innerHTML = '';
+
+      // Set all files to uploading status
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const fileRow = fileListBody.children[i];
+        fileRow.querySelector('td:nth-child(3)').textContent = 'Uploading...';
+      }
+
+      try {
+        // Create form data with all selected files
+        const formData = new FormData();
+        selectedFiles.forEach((file) => {
+          formData.append('stepsFiles', file);
+        });
+
+        // Use the multiple files upload endpoint
+        const response = await fetch('/api/upload/multiple-steps-files', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+        console.log('Upload response:', result);
+
+        if (result.success && result.results) {
+          // Process each file result
+          result.results.forEach((fileResult, index) => {
+            const fileRow = fileListBody.children[index];
+
+            if (fileResult.success) {
+              fileRow.classList.add('success');
+              fileRow.querySelector('td:nth-child(3)').textContent = 'Imported';
+            } else {
+              fileRow.classList.add('error');
+              fileRow.querySelector('td:nth-child(3)').textContent = 'Failed';
+            }
+
+            // Add to results list
+            const resultRow = document.createElement('tr');
+            resultRow.innerHTML = `
+              <td>${fileResult.filename}</td>
+              <td>${fileResult.success ? '<span class="text-success">Success</span>' : '<span class="text-danger">Failed</span>'}</td>
+              <td>${fileResult.message || fileResult.error || ''}</td>
+            `;
+            importResultsBody.appendChild(resultRow);
+          });
+        } else {
+          throw new Error(result.message || 'Unknown error');
+        }
+      } catch (error) {
+        console.error('Error during upload:', error);
+
+        // Update all files to error state
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const fileRow = fileListBody.children[i];
+          fileRow.classList.add('error');
+          fileRow.querySelector('td:nth-child(3)').textContent = 'Error';
+        }
+
+        // Add a single error message
+        const resultRow = document.createElement('tr');
+        resultRow.innerHTML = `
+          <td colspan="2"><span class="text-danger">Upload Error</span></td>
+          <td>${error.message || 'Unknown error occurred during upload'}</td>
+        `;
+        importResultsBody.appendChild(resultRow);
+      }
     });
   },
 
@@ -420,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
   app.initDashboard();
 
   // Initialize browser history navigation
-  window.addEventListener('popstate', (event) => {
+  window.addEventListener('popstate', (_event) => {
     // Read URL parameters
     const params = new URLSearchParams(window.location.search);
     const view = params.get('view') || 'runs-view';
