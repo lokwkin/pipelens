@@ -1,21 +1,54 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import path from 'path';
 import * as fs from 'fs';
-import { StorageAdapter, FileStorageAdapter, StepMeta, Pipeline } from 'steps-track';
+import { StorageAdapter, FileStorageAdapter, PipelineMeta } from 'steps-track';
+import { minimatch } from 'minimatch';
+import multer from 'multer';
+import AdmZip from 'adm-zip';
+import { tmpdir } from 'os';
 
 export class DashboardServer {
   private app: express.Application;
   private port: number;
   private storageAdapter: StorageAdapter;
+  private upload: multer.Multer;
+  private tempDir: string;
 
-  constructor(options: { port?: number; storageAdapter?: StorageAdapter }) {
+  constructor(options: { port?: number; storageAdapter?: StorageAdapter; tempDir?: string }) {
     this.port = options.port || 3000;
     this.storageAdapter = options.storageAdapter || new FileStorageAdapter('./.steps-track');
+    this.tempDir = options.tempDir || path.join(tmpdir(), 'steps-track-uploads');
     this.app = express();
+
+    // Ensure temp directory exists
+    if (!fs.existsSync(this.tempDir)) {
+      fs.mkdirSync(this.tempDir, { recursive: true });
+    }
+
+    // Configure multer for file uploads
+    const storage = multer.diskStorage({
+      destination: (
+        _req: Express.Request,
+        _file: Express.Multer.File,
+        cb: (error: Error | null, destination: string) => void,
+      ) => {
+        cb(null, this.tempDir);
+      },
+      filename: (
+        _req: Express.Request,
+        file: Express.Multer.File,
+        cb: (error: Error | null, filename: string) => void,
+      ) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+      },
+    });
+    this.upload = multer({ storage });
 
     // Serve static files
     // This works both in development and production after build
     this.app.use(express.static(path.join(__dirname, 'public')));
+    this.app.use(express.json());
 
     // Setup API routes
     this.setupRoutes();
@@ -233,6 +266,93 @@ export class DashboardServer {
         res.status(500).json({ error: 'Failed to generate step timeseries chart' });
       }
     });
+
+    // Add new route for uploading zip files with step outputs
+    this.app.post('/api/upload/steps-zip', this.upload.single('stepsZip'), (req: Request, res: Response): void => {
+      try {
+        if (!req.file) {
+          res.status(400).json({ error: 'No file uploaded' });
+          return;
+        }
+
+        // Extract zip file
+        const zipFile = req.file.path;
+        const extractDir = path.join(this.tempDir);
+
+        // Create extraction directory
+        if (!fs.existsSync(extractDir)) {
+          fs.mkdirSync(extractDir, { recursive: true });
+        }
+
+        // Extract zip contents
+        const zip = new AdmZip(zipFile);
+        zip.extractAllTo(extractDir, true);
+
+        // Process the extracted files
+        const filePattern = req.body.filePattern || '*';
+        this.processFilesFromDirectory(extractDir, filePattern);
+
+        // Clean up temporary files
+        fs.unlinkSync(zipFile);
+        fs.rmSync(extractDir, { recursive: true, force: true });
+
+        res.json({
+          success: true,
+          message: 'Steps files processed successfully',
+        });
+      } catch (error) {
+        console.error('Error processing zip file:', error);
+        res.status(500).json({
+          error: 'Failed to process zip file',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
+    // Add new route for uploading single step output file
+    this.app.post('/api/upload/steps-file', this.upload.single('stepsFile'), (req: Request, res: Response): void => {
+      try {
+        if (!req.file) {
+          res.status(400).json({ error: 'No file uploaded' });
+          return;
+        }
+
+        // Get runId from request or generate a new one
+
+        const filePath = req.file.path;
+
+        try {
+          // Process the file
+          const data = fs.readFileSync(filePath, 'utf8');
+          const jsonData = JSON.parse(data) as PipelineMeta;
+
+          this.importFromPipelineOutput(jsonData);
+
+          // Clean up temporary file
+          fs.unlinkSync(filePath);
+
+          res.json({
+            success: true,
+            message: 'Steps file processed successfully',
+          });
+        } catch (parseError) {
+          // Clean up temporary file
+          fs.unlinkSync(filePath);
+
+          console.error('Error processing steps file:', parseError);
+          res.status(400).json({
+            error: 'Invalid JSON file',
+            message: parseError instanceof Error ? parseError.message : 'Unknown error',
+          });
+        }
+      } catch (error) {
+        console.error('Error handling file upload:', error);
+        res.status(500).json({
+          error: 'Failed to process file',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
   }
 
   // Helper method to generate a timeseries chart URL
@@ -278,19 +398,65 @@ export class DashboardServer {
     });
   }
 
-  public importFromLogFile(runId: string, filePath: string): void {
-    const data = fs.readFileSync(filePath, 'utf8');
-    const jsonData = JSON.parse(data);
-    if (!Array.isArray(jsonData)) {
-      throw new Error('Invalid log file: log is not an array');
+  public importFromOutputFolder(runId: string, folder: string, filePattern: string = '*'): void {
+    const files = fs.readdirSync(folder);
+    for (const file of files) {
+      if (minimatch(file, filePattern)) {
+        const filePath = path.join(folder, file);
+        const data = fs.readFileSync(filePath, 'utf8');
+        const pipelineMeta = JSON.parse(data) as PipelineMeta;
+        this.importFromPipelineOutput(pipelineMeta);
+      }
     }
-    const steps = jsonData as StepMeta[];
-    for (const step of steps) {
-      this.storageAdapter.finishStep(runId, step);
+  }
+
+  public importFromPipelineOutput(pipelineMeta: PipelineMeta): void {
+    // Validate inputs
+    if (!pipelineMeta.runId) {
+      throw new Error('runId is missing from input');
+    }
+    if (!pipelineMeta.time?.startTs) {
+      throw new Error('startTs is missing from input');
+    }
+    if (!pipelineMeta.steps) {
+      throw new Error('steps is missing from input');
+    }
+
+    for (const step of pipelineMeta.steps) {
+      this.storageAdapter.finishStep(pipelineMeta.runId, step);
     }
     this.storageAdapter.finishRun(
-      steps[0] as any as Pipeline, // Assume the first step is always the pipeline (root)
-      steps[0].time.endTs ? (steps[0].error ? 'failed' : 'completed') : 'running',
+      pipelineMeta,
+      pipelineMeta.time.endTs ? (pipelineMeta.error ? 'failed' : 'completed') : 'running',
     );
+  }
+
+  // Add method to process files from a directory
+  private processFilesFromDirectory(directory: string, filePattern: string = '*'): void {
+    const files = fs.readdirSync(directory);
+    for (const file of files) {
+      if (minimatch(file, filePattern)) {
+        const filePath = path.join(directory, file);
+        const stats = fs.statSync(filePath);
+
+        if (stats.isDirectory()) {
+          // Recursively process subdirectories
+          this.processFilesFromDirectory(filePath, filePattern);
+        } else {
+          try {
+            // Process individual log file
+            const data = fs.readFileSync(filePath, 'utf8');
+            try {
+              const jsonData = JSON.parse(data) as PipelineMeta;
+              this.importFromPipelineOutput(jsonData);
+            } catch (parseError) {
+              console.error(`Error parsing JSON from ${filePath}:`, parseError);
+            }
+          } catch (error) {
+            console.error(`Error processing file ${filePath}:`, error);
+          }
+        }
+      }
+    }
   }
 }

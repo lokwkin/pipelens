@@ -104,7 +104,7 @@ describe('End-to-End Integration Tests', () => {
     expect(steps.length).toBe(9);
 
     // Verify the step hierarchy
-    const hierarchy = pipeline.outputHierarchy();
+    const hierarchy = pipeline.outputNested();
     expect(hierarchy.name).toBe('integration-test');
     expect(hierarchy.substeps.length).toBe(3);
 
@@ -193,7 +193,7 @@ describe('End-to-End Integration Tests', () => {
     expect(steps.length).toBe(3);
 
     // Verify the step hierarchy
-    const hierarchy = pipeline.outputHierarchy();
+    const hierarchy = pipeline.outputNested();
     expect(hierarchy.name).toBe('error-test');
     expect(hierarchy.substeps.length).toBe(2);
 

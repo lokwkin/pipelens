@@ -197,7 +197,7 @@ describe('Step', () => {
         return st;
       });
 
-      const hierarchy = step.outputHierarchy();
+      const hierarchy = step.outputNested();
 
       expect(hierarchy.name).toBe('parent');
       expect(hierarchy.substeps.length).toBe(2);
@@ -237,7 +237,7 @@ describe('Step', () => {
         });
 
         // Get outputs before child step completes
-        const hierarchy = st.outputHierarchy();
+        const hierarchy = st.outputNested();
         const flattened = st.outputFlattened();
 
         // Check the promises
