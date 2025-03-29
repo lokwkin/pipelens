@@ -122,16 +122,13 @@ For production environments, you can use Redis storage:
 import { Pipeline, RedisStorageAdapter } from 'steps-track';
 import { createClient } from 'redis';
 
-// Create a Redis client
-const redisClient = createClient({
-  url: 'redis://localhost:6379',
-});
-await redisClient.connect();
+const redisStorageAdapter = new RedisStorageAdapter({ url: 'redis://localhost:6379'});
+await redisStorageAdapter.connect();
 
 // Create a pipeline with Redis storage
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new RedisStorageAdapter(redisClient),
+  storageAdapter: redisStorageAdapter,
 });
 
 // Run your pipeline

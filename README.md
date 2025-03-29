@@ -188,9 +188,13 @@ During pipeline initialization, define how you would want to store logs as persi
 
 ```typescript
 // Set up persistent storage for the dashboard
+
+const fileStorageAdapter = new FileStorageAdapter('/path/to/data');
+await fileStorageAdapter.connect();
+
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new FileStorageAdapter('/path/to/data')
+  storageAdapter: fileStorageAdapter,
 });
 ```
 ### Starting up Dashboard
