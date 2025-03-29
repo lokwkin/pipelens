@@ -1,9 +1,7 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import * as fs from 'fs';
-import { StorageAdapter, FileStorageAdapter, PipelineMeta, StepMeta } from 'steps-track';
+import { StorageAdapter, PipelineMeta, StepMeta } from 'steps-track';
 import multer from 'multer';
-import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
 
 export class DashboardServer {
@@ -11,37 +9,14 @@ export class DashboardServer {
   private port: number;
   private storageAdapter: StorageAdapter;
   private upload: multer.Multer;
-  private tempDir: string;
 
-  constructor(options: { port?: number; storageAdapter?: StorageAdapter; tempDir?: string }) {
+  constructor(options: { storageAdapter: StorageAdapter; port?: number }) {
     this.port = options.port || 3000;
-    this.storageAdapter = options.storageAdapter || new FileStorageAdapter('./.steps-track');
-    this.tempDir = options.tempDir || path.join(tmpdir(), 'steps-track-uploads');
+    this.storageAdapter = options.storageAdapter;
     this.app = express();
 
-    // Ensure temp directory exists
-    if (!fs.existsSync(this.tempDir)) {
-      fs.mkdirSync(this.tempDir, { recursive: true });
-    }
-
-    // Configure multer for file uploads
-    const storage = multer.diskStorage({
-      destination: (
-        _req: Express.Request,
-        _file: Express.Multer.File,
-        cb: (error: Error | null, destination: string) => void,
-      ) => {
-        cb(null, this.tempDir);
-      },
-      filename: (
-        _req: Express.Request,
-        file: Express.Multer.File,
-        cb: (error: Error | null, filename: string) => void,
-      ) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
-      },
-    });
+    // Configure multer for in-memory file uploads
+    const storage = multer.memoryStorage();
     this.upload = multer({ storage });
 
     // Serve static files
@@ -283,11 +258,9 @@ export class DashboardServer {
 
           // Process each file
           for (const file of files) {
-            const filePath = file.path;
-
             try {
-              // Process the file
-              const data = fs.readFileSync(filePath, 'utf8');
+              // Process the in-memory file buffer
+              const data = file.buffer.toString('utf8');
               const jsonData = JSON.parse(data) as PipelineMeta;
 
               const importedPipelineMeta = this.importFromPipelineOutput(jsonData);
@@ -304,9 +277,6 @@ export class DashboardServer {
                   stepCount: importedPipelineMeta.steps?.length || 0,
                 },
               });
-
-              // Clean up temporary file
-              fs.unlinkSync(filePath);
             } catch (parseError) {
               // Add error result
               results.push({
@@ -314,11 +284,6 @@ export class DashboardServer {
                 success: false,
                 message: parseError instanceof Error ? parseError.message : 'Unknown error',
               });
-
-              // Clean up temporary file
-              if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-              }
 
               console.error(`Error processing file ${file.originalname}:`, parseError);
             }
