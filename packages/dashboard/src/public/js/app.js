@@ -426,7 +426,7 @@ const app = {
     // Process selected files
     function handleFiles(files) {
       // Convert FileList to array and filter to ensure we only process JSON files
-      const newFiles = Array.from(files).filter((file) => {
+      const newFiles = Array.from(files).filter((_file) => {
         // Check if file is a JSON file
         // return file.name.toLowerCase().endsWith('.json');
         return true;
