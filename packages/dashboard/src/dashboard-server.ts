@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import * as fs from 'fs';
 import { StorageAdapter, FileStorageAdapter, PipelineMeta, StepMeta } from 'steps-track';
-import { minimatch } from 'minimatch';
 import multer from 'multer';
 import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
