@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import { StorageAdapter, FileStorageAdapter, PipelineMeta } from 'steps-track';
 import { minimatch } from 'minimatch';
 import multer from 'multer';
-import AdmZip from 'adm-zip';
 import { tmpdir } from 'os';
 
 export class DashboardServer {
@@ -267,48 +266,6 @@ export class DashboardServer {
       }
     });
 
-    // Add new route for uploading zip files with step outputs
-    this.app.post('/api/upload/steps-zip', this.upload.single('stepsZip'), (req: Request, res: Response): void => {
-      try {
-        if (!req.file) {
-          res.status(400).json({ error: 'No file uploaded' });
-          return;
-        }
-
-        // Extract zip file
-        const zipFile = req.file.path;
-        const extractDir = path.join(this.tempDir);
-
-        // Create extraction directory
-        if (!fs.existsSync(extractDir)) {
-          fs.mkdirSync(extractDir, { recursive: true });
-        }
-
-        // Extract zip contents
-        const zip = new AdmZip(zipFile);
-        zip.extractAllTo(extractDir, true);
-
-        // Process the extracted files
-        const filePattern = req.body.filePattern || '*';
-        this.processFilesFromDirectory(extractDir, filePattern);
-
-        // Clean up temporary files
-        fs.unlinkSync(zipFile);
-        fs.rmSync(extractDir, { recursive: true, force: true });
-
-        res.json({
-          success: true,
-          message: 'Steps files processed successfully',
-        });
-      } catch (error) {
-        console.error('Error processing zip file:', error);
-        res.status(500).json({
-          error: 'Failed to process zip file',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    });
-
     // Add new route for uploading single step output file
     this.app.post('/api/upload/steps-file', this.upload.single('stepsFile'), (req: Request, res: Response): void => {
       try {
@@ -318,7 +275,6 @@ export class DashboardServer {
         }
 
         // Get runId from request or generate a new one
-
         const filePath = req.file.path;
 
         try {
@@ -333,14 +289,23 @@ export class DashboardServer {
 
           res.json({
             success: true,
-            message: 'Steps file processed successfully',
+            message: `Successfully imported data for Run ID: ${jsonData.runId}`,
+            data: {
+              runId: jsonData.runId,
+              startTime: jsonData.time?.startTs,
+              endTime: jsonData.time?.endTs,
+              stepCount: jsonData.steps?.length || 0,
+            },
           });
         } catch (parseError) {
           // Clean up temporary file
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
 
           console.error('Error processing steps file:', parseError);
           res.status(400).json({
+            success: false,
             error: 'Invalid JSON file',
             message: parseError instanceof Error ? parseError.message : 'Unknown error',
           });
@@ -348,11 +313,86 @@ export class DashboardServer {
       } catch (error) {
         console.error('Error handling file upload:', error);
         res.status(500).json({
+          success: false,
           error: 'Failed to process file',
           message: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     });
+
+    // Add route for uploading multiple step output files
+    this.app.post(
+      '/api/upload/multiple-steps-files',
+      this.upload.array('stepsFiles', 10),
+      (req: Request, res: Response): void => {
+        try {
+          const files = req.files as Express.Multer.File[];
+
+          if (!files || files.length === 0) {
+            res.status(400).json({ error: 'No files uploaded' });
+            return;
+          }
+
+          const results: Array<{ filename: string; success: boolean; message: string; data?: any }> = [];
+
+          // Process each file
+          for (const file of files) {
+            const filePath = file.path;
+
+            try {
+              // Process the file
+              const data = fs.readFileSync(filePath, 'utf8');
+              const jsonData = JSON.parse(data) as PipelineMeta;
+
+              this.importFromPipelineOutput(jsonData);
+
+              // Add success result
+              results.push({
+                filename: file.originalname,
+                success: true,
+                message: `Successfully imported data for Run ID: ${jsonData.runId}`,
+                data: {
+                  runId: jsonData.runId,
+                  startTime: jsonData.time?.startTs,
+                  endTime: jsonData.time?.endTs,
+                  stepCount: jsonData.steps?.length || 0,
+                },
+              });
+
+              // Clean up temporary file
+              fs.unlinkSync(filePath);
+            } catch (parseError) {
+              // Add error result
+              results.push({
+                filename: file.originalname,
+                success: false,
+                message: parseError instanceof Error ? parseError.message : 'Unknown error',
+              });
+
+              // Clean up temporary file
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+              }
+
+              console.error(`Error processing file ${file.originalname}:`, parseError);
+            }
+          }
+
+          // Return all results
+          res.json({
+            success: true,
+            results,
+          });
+        } catch (error) {
+          console.error('Error handling multiple file upload:', error);
+          res.status(500).json({
+            success: false,
+            error: 'Failed to process files',
+            message: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      },
+    );
   }
 
   // Helper method to generate a timeseries chart URL

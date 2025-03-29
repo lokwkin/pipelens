@@ -34,7 +34,9 @@ const ui = {
                 ? 'step-stats-view'
                 : viewId === 'step-analysis-view'
                   ? 'step-analysis'
-                  : viewId;
+                  : viewId === 'import-view'
+                    ? 'import'
+                    : viewId;
         url.searchParams.set('view', urlViewParam);
 
         // Update page title based on current view
@@ -43,6 +45,8 @@ const ui = {
           pageTitle.textContent = 'Pipeline Runs';
         } else if (viewId === 'step-stats-view') {
           pageTitle.textContent = 'Step Execution Stats';
+        } else if (viewId === 'import-view') {
+          pageTitle.textContent = 'Import Pipeline Files';
         }
 
         // Get state from URL parameters
@@ -69,6 +73,7 @@ const ui = {
               }
             });
           }
+          // No data loading needed for import-view
         }
 
         // Update browser history
