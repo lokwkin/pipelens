@@ -110,7 +110,7 @@ const ganttChartBuffer = pipeline.ganttQuickchart();
 const ganttChartGoogle = pipeline.ganttGoogleChartHtml();
 
 // Get the hierarchical output of all steps
-const stepsHierarchy = pipeline.outputHierarchy();
+const stepsHierarchy = pipeline.outputNested();
 console.log('Steps Hierarchy:', JSON.stringify(stepsHierarchy, null, 2));
 ```
 

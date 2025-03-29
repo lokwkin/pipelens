@@ -75,7 +75,7 @@ async function main() {
     filter: /pipeline.parsing(\.[a-zA-Z0-9-_])?/, // string[] | RegExp. if not provided, all steps will be included
   };
 
-  const stepsHierarchy = pipeline.outputHierarchy();
+  const stepsHierarchy = pipeline.outputNested();
   const stepsFlattened = pipeline.outputFlattened();
 
   const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
