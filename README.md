@@ -252,8 +252,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Use memory-store instead of storing nested steps class
-- [ ] More robust file locking for FileStorageAdapter
-- [ ] Python version of steps tracker
+- [ ] Support Python version of steps tracker
 
 
 ## License
