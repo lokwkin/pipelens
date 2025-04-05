@@ -95,15 +95,18 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 
 ## Persistent Storage
 
-StepsTrack supports persistent storage of pipeline runs. The data stored in persistent storage will also be available for read by StepsTrack Dashbaord for analytic purpose.
+StepsTrack supports persistent storage of pipeline runs. The data stored in persistent storage will also be available for read by [StepsTrack Dashbaord](../packages/dashboard) for analytic purpose.
 
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'steps-track';
 
+const storageAdapter = new FileStorageAdapter('./steps-track');
+await storageAdapter.connect();
+
 // Create a pipeline with file storage
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new FileStorageAdapter('./.steps-track'),
+  storageAdapter: storageAdapter,
 });
 
 // Run your pipeline
@@ -111,7 +114,7 @@ await pipeline.track(async (st) => {
   // Your pipeline code
 });
 
-// The pipeline data is automatically saved to the './.steps-track' directory
+// The pipeline data is automatically saved to the './steps-track' directory
 ```
 
 ### SQLite Storage (Recommended)
