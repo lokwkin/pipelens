@@ -28,13 +28,13 @@ This repository is a **monorepo** containing following packages:
 
 #### [1. Tracking Pipeline Steps](#tracking-pipeline-steps)
 - **Tracking**: Define steps in pipeline to track intermediates data, results and execution time
-- **Visualizing**: Exporting the details and generating visualizations
+- **Visualizing**: Exporting the details and generating basic visualizations including Gantt and Execution Graph
 - **Event Emitting**: Listen to step events for real-time monitoring and custom handling
 - **ES6 Decorators**: Easy integration with ES6 decorators
 
 #### [2. Using Dashboard](#using-dashboard)
 Monitor and analyze pipeline executions through an interactive web interface
-- Detailed Steps Insepection
+- Detailed Steps Data and Results Insepection
 - Real-time Execution Monitoring
 - Gantt Chart Visualization for pipeline
 - Step Execution Stats
