@@ -95,7 +95,7 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 
 ## Persistent Storage
 
-StepsTrack supports persistent storage of pipeline runs:
+StepsTrack supports persistent storage of pipeline runs. The data stored in persistent storage will also be available for read by StepsTrack Dashbaord for analytic purpose.
 
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'steps-track';
@@ -114,31 +114,37 @@ await pipeline.track(async (st) => {
 // The pipeline data is automatically saved to the './.steps-track' directory
 ```
 
-### Redis Storage
+### SQLite Storage (Recommended)
 
-For production environments, you can use Redis storage:
+For most applications, SQLite provides an excellent balance of performance, reliability, and simplicity:
 
 ```typescript
-import { Pipeline, RedisStorageAdapter } from 'steps-track';
-import { createClient } from 'redis';
+import { Pipeline, SQLiteStorageAdapter } from 'steps-track';
+import path from 'path';
 
-// Create a Redis client
-const redisClient = createClient({
-  url: 'redis://localhost:6379',
-});
-await redisClient.connect();
+// First install the optional SQLite dependencies:
+// npm install sqlite sqlite3
 
-// Create a pipeline with Redis storage
+// Create a SQLite storage adapter
+const dbPath = path.join(__dirname, 'steps-track.db');
+const storageAdapter = new SQLiteStorageAdapter(dbPath);
+await storageAdapter.connect();
+
+// Create a pipeline with SQLite storage
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: new RedisStorageAdapter(redisClient),
+  storageAdapter,
 });
 
 // Run your pipeline
 await pipeline.track(async (st) => {
   // Your pipeline code
 });
+
+// Don't forget to close the connection when done with the application
+await storageAdapter.close();
 ```
+
 
 ## Custom Visualization
 
