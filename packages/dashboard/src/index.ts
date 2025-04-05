@@ -36,8 +36,6 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   let storageAdapter: StorageAdapter;
 
-  console.log(argv);
-
   if (argv.storage === 'sqlite') {
     try {
       // We need to use dynamic import here since SQLiteStorageAdapter
