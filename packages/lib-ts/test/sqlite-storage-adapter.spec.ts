@@ -3,6 +3,7 @@ import { PipelineMeta } from '../src/pipeline';
 import path from 'path';
 import fs from 'fs';
 import { StepMeta } from '../src/step';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('SQLiteStorageAdapter', () => {
   let adapter: SQLiteStorageAdapter;
@@ -10,10 +11,13 @@ describe('SQLiteStorageAdapter', () => {
 
   // Sample pipeline and step data for testing
   const pipelineName = 'test-pipeline';
-  const runId = 'test-run-123';
+  const baseRunId = 'test-run';
   const stepKey = 'test-step';
 
-  const createPipelineMeta = (): PipelineMeta => ({
+  // Function to generate unique runIds for tests using UUID
+  const getUniqueRunId = () => `${baseRunId}-${uuidv4()}`;
+
+  const createPipelineMeta = (runId: string): PipelineMeta => ({
     name: pipelineName,
     key: pipelineName,
     runId,
@@ -94,7 +98,8 @@ describe('SQLiteStorageAdapter', () => {
 
   describe('pipeline operations', () => {
     it('should store and retrieve pipeline runs', async () => {
-      const pipelineMeta = createPipelineMeta();
+      const runId = getUniqueRunId();
+      const pipelineMeta = createPipelineMeta(runId);
 
       // Initiate a run
       await adapter.initiateRun(pipelineMeta);
@@ -106,22 +111,25 @@ describe('SQLiteStorageAdapter', () => {
       // List runs for the pipeline
       const runs = await adapter.listRuns(pipelineName);
       expect(runs.length).toBeGreaterThan(0);
-      expect(runs[0].runId).toBe(runId);
-      expect(runs[0].status).toBe('running');
+      expect(runs.some((run) => run.runId === runId)).toBe(true);
+      const run = runs.find((r) => r.runId === runId);
+      expect(run?.status).toBe('running');
 
       // Finish the run
       await adapter.finishRun(pipelineMeta, 'completed');
 
       // Verify run status updated
       const updatedRuns = await adapter.listRuns(pipelineName);
-      expect(updatedRuns[0].status).toBe('completed');
-      expect(updatedRuns[0].endTime).toBeDefined();
+      const updatedRun = updatedRuns.find((r) => r.runId === runId);
+      expect(updatedRun?.status).toBe('completed');
+      expect(updatedRun?.endTime).toBeDefined();
     });
   });
 
   describe('step operations', () => {
     it('should store and retrieve steps', async () => {
-      const pipelineMeta = createPipelineMeta();
+      const runId = getUniqueRunId();
+      const pipelineMeta = createPipelineMeta(runId);
       const stepMeta = createStepMeta();
 
       // Initiate a run first
@@ -148,7 +156,8 @@ describe('SQLiteStorageAdapter', () => {
 
   describe('timeseries operations', () => {
     it('should retrieve step execution history from steps table', async () => {
-      const pipelineMeta = createPipelineMeta();
+      const runId = getUniqueRunId();
+      const pipelineMeta = createPipelineMeta(runId);
       const stepMeta = createStepMeta();
 
       // Need to set up data first
@@ -169,15 +178,20 @@ describe('SQLiteStorageAdapter', () => {
       });
 
       expect(timeseries.length).toBeGreaterThan(0);
-      expect(timeseries[0].stepKey).toBe(stepKey);
-      expect(timeseries[0].value).toBe(stepMeta.time.timeUsageMs);
+      expect(timeseries.some((t) => t.stepKey === stepKey)).toBe(true);
+
+      // Find our specific entry
+      const timeseriesEntry = timeseries.find((t) => t.runId === runId);
+      expect(timeseriesEntry).toBeDefined();
+      expect(timeseriesEntry?.stepKey).toBe(stepKey);
+      expect(timeseriesEntry?.value).toBe(stepMeta.time.timeUsageMs);
 
       // Verify that full step metadata is accessible from timeseries entries
-      expect(timeseries[0].stepMeta).toBeDefined();
-      expect(timeseries[0].stepMeta?.name).toBe(stepKey);
-      expect(timeseries[0].stepMeta?.time.timeUsageMs).toBe(stepMeta.time.timeUsageMs);
-      expect(timeseries[0].stepMeta?.records.testData).toBe('test-value');
-      expect(timeseries[0].stepMeta?.result).toEqual({ output: 'test-output' });
+      expect(timeseriesEntry?.stepMeta).toBeDefined();
+      expect(timeseriesEntry?.stepMeta?.name).toBe(stepKey);
+      expect(timeseriesEntry?.stepMeta?.time.timeUsageMs).toBe(stepMeta.time.timeUsageMs);
+      expect(timeseriesEntry?.stepMeta?.records.testData).toBe('test-value');
+      expect(timeseriesEntry?.stepMeta?.result).toEqual({ output: 'test-output' });
     });
   });
 });
