@@ -1,4 +1,4 @@
-import { FileStorageAdapter, RedisStorageAdapter, StorageAdapter } from 'steps-track';
+import { StorageAdapter } from 'steps-track';
 import { DashboardServer } from './dashboard-server';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -15,13 +15,13 @@ const argv = yargs(hideBin(process.argv))
     alias: 'd',
     describe: 'Directory path for filesystem storage',
     type: 'string',
-    default: process.env.STORAGE_DIR || './.steps-track',
+    default: process.env.STORAGE_DIR || './steps-track',
   })
-  .option('redisUrl', {
-    alias: 'r',
-    describe: 'Redis URL for redis storage',
+  .option('sqlitePath', {
+    alias: 'p',
+    describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.STORAGE_REDIS_URL || 'redis://localhost:6379/0',
+    default: process.env.STORAGE_SQLITE_PATH || './steps-track.db',
   })
   .option('port', {
     alias: 'p',
@@ -36,26 +36,41 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   let storageAdapter: StorageAdapter;
 
-  // Initialize the appropriate storage adapter based on configuration
-  if (argv.storage === 'redis') {
-    console.log(`Using RedisStorageAdapter with URL: ${argv.redisUrl}`);
-    storageAdapter = new RedisStorageAdapter({ url: argv.redisUrl });
+  if (argv.storage === 'sqlite') {
+    try {
+      // We need to use dynamic import here since SQLiteStorageAdapter
+      // and its dependencies might not be installed
+      const { SQLiteStorageAdapter } = await import('steps-track');
+      console.log(`Using SQLiteStorageAdapter with DB Path: ${argv.sqlitePath}`);
+      storageAdapter = new SQLiteStorageAdapter(argv.sqlitePath || './steps-track.db');
+    } catch (error) {
+      console.error('Failed to load SQLiteStorageAdapter:', error);
+      console.log('Make sure you have installed sqlite dependencies:');
+      console.log('  npm install sqlite sqlite3');
+      console.log('Falling back to FileStorageAdapter');
+      console.log(`Using FileStorageAdapter with directory: ${argv.storageDir}`);
+      const { FileStorageAdapter } = await import('steps-track');
+      storageAdapter = new FileStorageAdapter(argv.storageDir);
+    }
   } else {
+    // Default to file storage
+    const { FileStorageAdapter } = await import('steps-track');
     console.log(`Using FileStorageAdapter with directory: ${argv.storageDir}`);
-    storageAdapter = new FileStorageAdapter(argv.storageDir || './.steps-track');
+    storageAdapter = new FileStorageAdapter(argv.storageDir);
   }
 
   await storageAdapter.connect();
 
   const server = new DashboardServer({
-    port: argv.port,
-    storageAdapter: storageAdapter,
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
+    storageAdapter,
   });
 
-  server.start();
+  await server.start();
 }
 
+// Run the main function
 main().catch((error) => {
-  console.error('Error starting the dashboard server:', error);
+  console.error('Error starting dashboard server:', error);
   process.exit(1);
 });

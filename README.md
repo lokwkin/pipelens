@@ -11,7 +11,7 @@ StepsTrack is a tool built to help ***tracking, visualizing and inspecting*** in
 
 > StepsTrack is a lightweight inspection and debugging tool originally built to monitor an agentic Retrieval-Augmented Generation (RAG) pipeline running in a production environment—where visibility, performance, and stability are critical.
 > 
-> When chaining multiple LLM agents with custom logic and dynamic inputs, non-deterministic nature of LLM outputs of each steps often lead to dynamic route of logics and behaviors. I needed a inspection tool but the existing tools didn’t provide the granularity I needed to trace what happened inside each step of the pipeline.
+> When chaining multiple LLM agents with custom logic and dynamic inputs, non-deterministic nature of LLM outputs of each steps often lead to dynamic route of logics and behaviors. I needed a inspection tool but the existing tools didn't provide the granularity I needed to trace what happened inside each step of the pipeline.
 > 
 > So I built StepsTrack to do just that: trace, inspect, and understand every step of each request. It helped me quickly spot bottlenecks, unexpected behaviors and performance drags, and address them effectively.
 > 
@@ -184,23 +184,29 @@ StepsTrack includes a dashboard that provides several features for monitoring an
 
 ### Initial Configuration
 
-During pipeline initialization, define how you would want to store logs as persistent data, to be able to read by the dashboard later on. Currently supported storing in file-system or Redis. See [Advanced Usage](./docs/advanced-usage.md) for more details.
+During pipeline initialization, define how you would want to store logs as persistent data, to be able to read by the dashboard later on. Currently supported storing in file-system or SQLite. See [Advanced Usage](./docs/advanced-usage.md) for more details.
 
 ```typescript
-// Set up persistent storage for the dashboard
-
-const fileStorageAdapter = new FileStorageAdapter('/path/to/data');
+// File system storage
+const fileStorageAdapter = new FileStorageAdapter('/path/to/data');  
 await fileStorageAdapter.connect();
 
+// SQLite storage (recommended for most use cases)
+// Note: SQLite dependencies are optional - first install them with:
+// npm install sqlite sqlite3
+const sqliteStorageAdapter = new SQLiteStorageAdapter('/path/to/database.db');
+await sqliteStorageAdapter.connect();
+
+// Create pipeline with the preferred storage adapter
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: fileStorageAdapter,
+  storageAdapter: sqliteStorageAdapter, // Choose your preferred adapter
 });
 ```
 ### Starting up Dashboard
 
 ```bash
-# The image loads data from "/app/steps-data" by default.
+# The image loads data from "/app/.steps-track" FileStorageAdapter by default.
 docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
 ```
 
@@ -240,6 +246,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Use GoogleChart / QuickChart instead of local chart.js generation
 - [X] Enhance StepsTrack Monitoring Dashboard UI/UX
 - [X] Allow importing external logs into dashboard
+- [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Use memory-store instead of storing nested steps class
 - [ ] More robust file locking for FileStorageAdapter
