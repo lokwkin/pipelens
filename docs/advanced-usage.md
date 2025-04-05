@@ -100,7 +100,7 @@ StepsTrack supports persistent storage of pipeline runs. The data stored in pers
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'steps-track';
 
-const storageAdapter = new FileStorageAdapter('./steps-track');
+const storageAdapter = new FileStorageAdapter('./data');
 await storageAdapter.connect();
 
 // Create a pipeline with file storage
@@ -114,7 +114,7 @@ await pipeline.track(async (st) => {
   // Your pipeline code
 });
 
-// The pipeline data is automatically saved to the './steps-track' directory
+// The pipeline data is automatically saved to the './data' directory
 ```
 
 ### SQLite Storage (Recommended)
@@ -129,8 +129,7 @@ import path from 'path';
 // npm install sqlite sqlite3
 
 // Create a SQLite storage adapter
-const dbPath = path.join(__dirname, 'steps-track.db');
-const storageAdapter = new SQLiteStorageAdapter(dbPath);
+const storageAdapter = new SQLiteStorageAdapter('./data/steps-track.db');
 await storageAdapter.connect();
 
 // Create a pipeline with SQLite storage

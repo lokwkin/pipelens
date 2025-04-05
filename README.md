@@ -207,7 +207,10 @@ const pipeline = new Pipeline('my-pipeline', {
 
 ```bash
 # The image loads data from "/app/.steps-track" FileStorageAdapter by default.
-docker run -p 3000:3000 -v /path/to/data:/app/steps-data lokwkin/steps-track-dashboard
+docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard
+
+# Use sqlite as persistent storage
+docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard --storage=sqlite
 ```
 
 ### Detailed Steps Insepection

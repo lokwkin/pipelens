@@ -8,20 +8,20 @@ const argv = yargs(hideBin(process.argv))
   .option('storage', {
     alias: 's',
     describe: 'Storage type to use',
-    choices: ['filesystem', 'redis'],
+    choices: ['filesystem', 'sqlite'],
     default: process.env.STORAGE_OPTION || 'filesystem',
   })
   .option('storageDir', {
     alias: 'd',
     describe: 'Directory path for filesystem storage',
     type: 'string',
-    default: process.env.STORAGE_DIR || './steps-track',
+    default: process.env.STORAGE_DIR || './data',
   })
   .option('sqlitePath', {
     alias: 'p',
     describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.STORAGE_SQLITE_PATH || './steps-track.db',
+    default: process.env.STORAGE_SQLITE_PATH || './data/steps-track.db',
   })
   .option('port', {
     alias: 'p',
@@ -36,13 +36,15 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   let storageAdapter: StorageAdapter;
 
+  console.log(argv);
+
   if (argv.storage === 'sqlite') {
     try {
       // We need to use dynamic import here since SQLiteStorageAdapter
       // and its dependencies might not be installed
       const { SQLiteStorageAdapter } = await import('steps-track');
       console.log(`Using SQLiteStorageAdapter with DB Path: ${argv.sqlitePath}`);
-      storageAdapter = new SQLiteStorageAdapter(argv.sqlitePath || './steps-track.db');
+      storageAdapter = new SQLiteStorageAdapter(argv.sqlitePath);
     } catch (error) {
       console.error('Failed to load SQLiteStorageAdapter:', error);
       console.log('Make sure you have installed sqlite dependencies:');

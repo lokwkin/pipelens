@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg, RedisStorageAdapter } from '../packages/lib-ts/src';
-import { FileStorageAdapter } from '../packages/lib-ts/src/storage/file-storage-adapter';
+import { Step, Pipeline, StepGanttArg, SQLiteStorageAdapter } from '../packages/lib-ts/src';
 import * as fs from 'fs';
 
 const parsePage = (page: string) => {
@@ -15,7 +14,7 @@ const parsePage = (page: string) => {
 };
 
 async function main() {
-  const storageAdapter = new RedisStorageAdapter({ url: 'redis://localhost:6379' });
+  const storageAdapter = new SQLiteStorageAdapter('./data/steps-track.db');
   await storageAdapter.connect();
   const pipeline = new Pipeline('pipeline', {
     autoSave: true,

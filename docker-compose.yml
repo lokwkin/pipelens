@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  # Dashboard with File Storage (default)
+  dashboard-file:
+    image: lokwkin/steps-track-dashboard:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      RUNS_DIR: /app/data
+      STORAGE_TYPE: file
+    restart: unless-stopped
+
+  # Dashboard with SQLite Storage
+  # Note: SQLite dependencies are installed in the docker image
+  # For local development, you'll need: npm install sqlite sqlite3
+  dashboard-sqlite:
+    image: lokwkin/steps-track-dashboard:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./data-sqlite:/app/data
+    environment:
+      STORAGE_TYPE: sqlite
+      SQLITE_PATH: /app/data/steps-track.db
+    restart: unless-stopped
