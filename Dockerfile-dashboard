@@ -5,7 +5,7 @@ FROM node:20-bullseye-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies for Canvas & ChartJS
+# Install dependencies for SQLite
 RUN apt-get update && apt-get install -y \
     procps \
     build-essential \
@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     libpango1.0-dev \
     libgif-dev \
     fonts-freefont-ttf \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package.json files
@@ -37,6 +38,11 @@ RUN npm run build
 FROM node:20-bullseye-slim AS production
 
 WORKDIR /app
+
+# Install production dependencies for SQLite
+RUN apt-get update && apt-get install -y \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package.json files for production
 COPY package*.json ./
