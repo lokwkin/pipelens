@@ -1,13 +1,31 @@
-import { SQLiteStorageAdapter } from '../src/storage/sqlite-storage-adapter';
+import { SQLStorageAdapter } from '../src/storage/sql-storage-adapter';
 import { PipelineMeta } from '../src/pipeline';
 import path from 'path';
 import fs from 'fs';
 import { StepMeta } from '../src/step';
 import { v4 as uuidv4 } from 'uuid';
+import { Knex } from 'knex';
 
-describe('SQLiteStorageAdapter', () => {
-  let adapter: SQLiteStorageAdapter;
+describe('SQLStorageAdapter', () => {
+  let adapter: SQLStorageAdapter;
   const testDbPath = path.join(__dirname, 'test-steps-track.db');
+
+  // Create SQLite Knex config
+  const createSqliteConfig = (dbPath: string): Knex.Config => ({
+    client: 'sqlite3',
+    connection: {
+      filename: dbPath,
+    },
+    useNullAsDefault: true,
+    pool: {
+      afterCreate: (conn: any, cb: (err: Error | null, connection: any) => void) => {
+        // Enable foreign keys for SQLite
+        conn.run('PRAGMA foreign_keys = ON;', (err: Error) => {
+          cb(err, conn);
+        });
+      },
+    },
+  });
 
   // Sample pipeline and step data for testing
   const pipelineName = 'test-pipeline';
@@ -63,7 +81,7 @@ describe('SQLiteStorageAdapter', () => {
   });
 
   beforeEach(async () => {
-    adapter = new SQLiteStorageAdapter(testDbPath);
+    adapter = new SQLStorageAdapter(createSqliteConfig(testDbPath));
     await adapter.connect();
   });
 
@@ -81,7 +99,7 @@ describe('SQLiteStorageAdapter', () => {
   describe('connect', () => {
     it('should connect to the database and create schema', async () => {
       // Create a new adapter instance to test connect
-      const newAdapter = new SQLiteStorageAdapter(testDbPath);
+      const newAdapter = new SQLStorageAdapter(createSqliteConfig(testDbPath));
       await newAdapter.connect();
 
       // Get a list of tables to verify schema was created

@@ -191,16 +191,26 @@ During pipeline initialization, define how you would want to store logs as persi
 const fileStorageAdapter = new FileStorageAdapter('/path/to/data');  
 await fileStorageAdapter.connect();
 
-// SQLite storage (recommended for most use cases)
+// SQL storage with SQLite (recommended for most use cases)
 // Note: SQLite dependencies are optional - first install them with:
-// npm install sqlite sqlite3
-const sqliteStorageAdapter = new SQLiteStorageAdapter('/path/to/database.db');
-await sqliteStorageAdapter.connect();
+// npm install sqlite3
+const sqliteAdapter = new SQLStorageAdapter('/path/to/database.db');
+await sqliteAdapter.connect();
+
+// SQL storage with PostgreSQL
+// Note: PostgreSQL dependencies are optional - first install them with:
+// npm install pg
+const postgresAdapter = new SQLStorageAdapter({
+  client: 'pg',
+  connection: 'postgres://user:password@localhost:5432/stepstrack',
+  pool: { min: 2, max: 10 }
+});
+await postgresAdapter.connect();
 
 // Create pipeline with the preferred storage adapter
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: sqliteStorageAdapter, // Choose your preferred adapter
+  storageAdapter: sqliteAdapter, // Choose your preferred adapter
 });
 ```
 ### Starting up Dashboard
@@ -209,8 +219,11 @@ const pipeline = new Pipeline('my-pipeline', {
 # The image loads data from "/app/.steps-track" FileStorageAdapter by default.
 docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard
 
-# Use sqlite as persistent storage
+# Use SQLite as persistent storage
 docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard --storage=sqlite
+
+# Use PostgreSQL as persistent storage
+docker run -p 3000:3000 lokwkin/steps-track-dashboard --storage=postgres --postgresUrl=postgres://user:password@host:5432/stepstrack
 ```
 
 ### Detailed Steps Insepection

@@ -117,25 +117,38 @@ await pipeline.track(async (st) => {
 // The pipeline data is automatically saved to the './data' directory
 ```
 
-### SQLite Storage (Recommended)
+### SQL Storage (Recommended)
 
-For most applications, SQLite provides an excellent balance of performance, reliability, and simplicity:
+For most applications, SQL-based storage provides an excellent balance of performance, reliability, and simplicity. You can use either SQLite for single-application deployments or PostgreSQL for scalable, multi-instance applications:
 
 ```typescript
-import { Pipeline, SQLiteStorageAdapter } from 'steps-track';
+import { Pipeline, SQLStorageAdapter } from 'steps-track';
 import path from 'path';
 
-// First install the optional SQLite dependencies:
-// npm install sqlite sqlite3
+// For SQLite:
+// First install the dependencies:
+// npm install sqlite3
 
 // Create a SQLite storage adapter
-const storageAdapter = new SQLiteStorageAdapter('./data/steps-track.db');
-await storageAdapter.connect();
+const sqliteAdapter = new SQLStorageAdapter('./data/steps-track.db');
+await sqliteAdapter.connect();
 
-// Create a pipeline with SQLite storage
+// OR for PostgreSQL:
+// First install the dependencies:
+// npm install pg
+
+// Create a PostgreSQL storage adapter
+const postgresAdapter = new SQLStorageAdapter({
+  client: 'pg',
+  connection: 'postgres://user:password@localhost:5432/stepstrack',
+  pool: { min: 2, max: 10 }
+});
+await postgresAdapter.connect();
+
+// Create a pipeline with SQL storage (choose either adapter)
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter,
+  storageAdapter: sqliteAdapter, // or postgresAdapter
 });
 
 // Run your pipeline
@@ -144,9 +157,8 @@ await pipeline.track(async (st) => {
 });
 
 // Don't forget to close the connection when done with the application
-await storageAdapter.close();
+await sqliteAdapter.close(); // or postgresAdapter.close()
 ```
-
 
 ## Custom Visualization
 
