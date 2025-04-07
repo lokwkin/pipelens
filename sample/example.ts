@@ -90,6 +90,8 @@ async function main() {
   fs.writeFileSync('gantt.html', ganttChartHtml);
 
   console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
+
+  await storageAdapter.close();
 }
 
 main();
