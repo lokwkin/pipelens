@@ -133,7 +133,7 @@ const utils = {
 
     // Calculate time interval (divide the range into 30 periods)
     const totalTimeRange = endTime - startTime;
-    const intervalMs = Math.max(totalTimeRange / 30, 1000); // At least 1 second
+    const intervalMs = Math.max(totalTimeRange / 120, 1000); // At least 1 second
 
     // Create buckets for each time interval
     const buckets = [];
