@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg, SQLiteStorageAdapter } from '../packages/lib-ts/src';
+import { Step, Pipeline, StepGanttArg, SQLStorageAdapter } from '../packages/lib-ts/src';
 import * as fs from 'fs';
 
 const parsePage = (page: string) => {
@@ -14,7 +14,11 @@ const parsePage = (page: string) => {
 };
 
 async function main() {
-  const storageAdapter = new SQLiteStorageAdapter('./data/steps-track.db');
+  const storageAdapter = new SQLStorageAdapter({
+    client: 'sqlite3',
+    connection: { filename: './data/steps-track.db' },
+    useNullAsDefault: true,
+  });
   await storageAdapter.connect();
   const pipeline = new Pipeline('pipeline', {
     autoSave: true,
@@ -86,6 +90,8 @@ async function main() {
   fs.writeFileSync('gantt.html', ganttChartHtml);
 
   console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
+
+  await storageAdapter.close();
 }
 
 main();
