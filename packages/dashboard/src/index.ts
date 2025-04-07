@@ -5,7 +5,7 @@ import { hideBin } from 'yargs/helpers';
 
 // Parse command line args
 const argv = yargs(hideBin(process.argv))
-  .option('storage', {
+  .option('storage_option', {
     alias: 'o',
     describe: 'Storage type to use',
     choices: ['filesystem', 'sqlite', 'postgres'],
@@ -14,12 +14,12 @@ const argv = yargs(hideBin(process.argv))
   .option('data_dir', {
     describe: 'Directory path for filesystem storage',
     type: 'string',
-    default: process.env.STORAGE_DIR || './data',
+    default: process.env.DATA_DIR || './data',
   })
   .option('sqlite_path', {
     describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.STORAGE_SQLITE_PATH || './data/steps-track.db',
+    default: process.env.SQLITE_PATH || './data/steps-track.db',
   })
   .option('postgres_url', {
     describe: 'PostgreSQL connection URL',
@@ -39,13 +39,13 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   let storageAdapter: StorageAdapter;
 
-  if (argv.storage === 'sqlite' || argv.storage === 'postgres') {
+  if (argv.storage_option === 'sqlite' || argv.storage_option === 'postgres') {
     try {
       // We need to use dynamic import here since SQLStorageAdapter
       // and its dependencies might not be installed
       const { SQLStorageAdapter } = await import('steps-track');
 
-      if (argv.storage === 'sqlite') {
+      if (argv.storage_option === 'sqlite') {
         console.log(`Using SQL storage adapter with SQLite at: ${argv.sqlite_path}`);
         storageAdapter = new SQLStorageAdapter({
           client: 'sqlite3',

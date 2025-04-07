@@ -220,10 +220,10 @@ const pipeline = new Pipeline('my-pipeline', {
 docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard
 
 # Use SQLite as persistent storage
-docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard --storage=sqlite
+docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db
 
 # Use PostgreSQL as persistent storage
-docker run -p 3000:3000 lokwkin/steps-track-dashboard --storage=postgres --postgresUrl=postgres://user:password@host:5432/stepstrack
+docker run -p 3000:3000 lokwkin/steps-track-dashboard -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/stepstrack
 ```
 
 ### Detailed Steps Insepection

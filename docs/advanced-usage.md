@@ -130,7 +130,18 @@ import path from 'path';
 // npm install sqlite3
 
 // Create a SQLite storage adapter
-const sqliteAdapter = new SQLStorageAdapter('./data/steps-track.db');
+const sqliteAdapter = new SQLStorageAdapter({
+  client: 'sqlite3',
+  connection: {
+    filename: './data/steps-track.db'
+  },
+  useNullAsDefault: true,
+  pool: {
+    afterCreate: (conn, cb) => {
+      conn.run('PRAGMA foreign_keys = ON;', cb);
+    }
+  }
+});
 await sqliteAdapter.connect();
 
 // OR for PostgreSQL:
