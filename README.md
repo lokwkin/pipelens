@@ -210,9 +210,6 @@ await httpTransport.flushAndStop();
 ### Starting up Dashboard
 
 ```bash
-# The image loads data from "/app/.steps-track" FileStorageAdapter by default.
-docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard
-
 # Use SQLite as persistent storage
 docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db
 

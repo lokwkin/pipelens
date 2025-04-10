@@ -88,8 +88,27 @@ export class HttpTransport implements Transport {
     try {
       while (retryCount <= this.maxRetries) {
         try {
-          // Send the batch to the server
-          await axios.post(`${this.baseUrl}ingestion/batch`, { events }, { headers: this.headers });
+          // Transform events into the format expected by the server
+          const pipelineEvents = events.filter((e) => e.type === 'initiate-run' || e.type === 'finish-run');
+          const stepEvents = events.filter((e) => e.type === 'initiate-step' || e.type === 'finish-step');
+
+          let pipeline = null;
+          if (pipelineEvents.length > 0) {
+            const lastPipelineEvent = pipelineEvents[pipelineEvents.length - 1];
+            pipeline = {
+              operation: lastPipelineEvent.type === 'initiate-run' ? 'start' : 'finish',
+              meta: lastPipelineEvent.pipelineMeta,
+              status: lastPipelineEvent.status,
+            };
+          }
+
+          const steps = stepEvents.map((event) => ({
+            operation: event.type === 'initiate-step' ? 'start' : 'finish',
+            step: event.step,
+          }));
+
+          // Send the batch to the server with the correct format
+          await axios.post(`${this.baseUrl}ingestion/batch`, { pipeline, steps }, { headers: this.headers });
 
           if (this.debug) {
             console.log(`[HttpTransport] Successfully sent ${events.length} events`);
@@ -98,7 +117,7 @@ export class HttpTransport implements Transport {
           // Success, so we can exit the retry loop
           return;
         } catch (error: any) {
-          console.error('Error sending batched events:', error);
+          console.error('Error sending batched events:', error.message);
 
           if (this.debug) {
             console.error(`[HttpTransport] Failed to send ${events.length} events: ${error.message}`);
@@ -157,7 +176,7 @@ export class HttpTransport implements Transport {
 
     // Send events with retry without waiting
     this.sendEventsWithRetry(events).catch((err) => {
-      console.error('[HttpTransport] Unexpected error in flush process:', err);
+      console.error('[HttpTransport] Unexpected error in flush process:', err.message);
     });
   }
 
@@ -182,7 +201,7 @@ export class HttpTransport implements Transport {
     try {
       await axios.post(`${this.baseUrl}ingestion/pipeline/start`, pipelineMeta, { headers: this.headers });
     } catch (error: any) {
-      console.error('Error initiating run:', error);
+      console.error('Error initiating run:', error.message);
       throw new Error(`Failed to initiate run: ${error.message}`);
     }
   }
@@ -222,7 +241,7 @@ export class HttpTransport implements Transport {
     try {
       await axios.post(`${this.baseUrl}ingestion/step/start`, { runId, step }, { headers: this.headers });
     } catch (error: any) {
-      console.error('Error initiating step:', error);
+      console.error('Error initiating step:', error.message);
       throw new Error(`Failed to initiate step: ${error.message}`);
     }
   }
@@ -242,7 +261,7 @@ export class HttpTransport implements Transport {
     try {
       await axios.post(`${this.baseUrl}ingestion/step/finish`, { runId, step }, { headers: this.headers });
     } catch (error: any) {
-      console.error('Error finishing step:', error);
+      console.error('Error finishing step:', error.message);
       throw new Error(`Failed to finish step: ${error.message}`);
     }
   }

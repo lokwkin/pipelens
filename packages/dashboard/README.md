@@ -24,7 +24,7 @@ The dashboard supports multiple storage options and can be configured via comman
 | Option | CLI Flag | Environment Variable | Description | Default |
 |--------|----------|----------------------|-------------|---------|
 | Storage Type | `--storage_option`, `-o` | `STORAGE_OPTION` | Storage type to use (`sqlite`, or `postgres`) | `sqlite` |
-| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./steps-track.db` |
+| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./data/steps-track.db` |
 | PostgreSQL URL | `--postgres_url` | `POSTGRES_URL` | PostgreSQL connection URL | `postgres://postgres:postgres@localhost:5432/stepstrack` |
 | Port | `--port`, `-p` | `PORT` | Port to run the dashboard server on | `3000` |
 

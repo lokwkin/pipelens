@@ -10,7 +10,7 @@ const api = {
    */
   async fetchPipelines() {
     try {
-      const response = await fetch('/api/pipelines');
+      const response = await fetch('/api/dashboard/pipelines');
       return await response.json();
     } catch (error) {
       console.error('Error fetching pipelines:', error);
@@ -28,7 +28,7 @@ const api = {
   async loadRuns(pipeline, dateRange, pagination = { page: 1, pageSize: 10 }) {
     try {
       // Build query parameters
-      let url = `/api/pipelines/${pipeline}/runs`;
+      let url = `/api/dashboard/pipelines/${pipeline}/runs`;
       const params = new URLSearchParams();
 
       // Add pagination parameters
@@ -96,7 +96,7 @@ const api = {
   async loadRunDetails(runId) {
     try {
       // Fetch steps data using the dedicated endpoint
-      const stepsResponse = await fetch(`/api/runs/${runId}/steps`);
+      const stepsResponse = await fetch(`/api/dashboard/runs/${runId}/steps`);
       return await stepsResponse.json();
     } catch (error) {
       console.error('Error loading run details:', error);
@@ -112,7 +112,7 @@ const api = {
    */
   async loadStepDetails(runId, stepKey) {
     try {
-      const response = await fetch(`/api/runs/${runId}/step/${stepKey}`);
+      const response = await fetch(`/api/dashboard/runs/${runId}/step/${stepKey}`);
       return await response.json();
     } catch (error) {
       console.error('Error loading step details:', error);
@@ -127,7 +127,7 @@ const api = {
    */
   async loadStepNames(pipeline) {
     try {
-      const response = await fetch(`/api/pipelines/${pipeline}/steps`);
+      const response = await fetch(`/api/dashboard/pipelines/${pipeline}/steps`);
       return await response.json();
     } catch (error) {
       console.error('Error loading step names:', error);
@@ -146,7 +146,7 @@ const api = {
   async loadStepTimeSeries(pipeline, stepName, dateRange, pagination = { page: 1, pageSize: 10 }) {
     try {
       // Build query parameters
-      let url = `/api/pipelines/${pipeline}/steps/${stepName}/time-series`;
+      let url = `/api/dashboard/pipelines/${pipeline}/steps/${stepName}/time-series`;
       const params = new URLSearchParams();
 
       // Add pagination parameters

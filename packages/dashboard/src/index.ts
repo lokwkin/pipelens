@@ -1,7 +1,8 @@
 import { DashboardServer } from './dashboard-server';
 import { SQLStorageAdapter } from './storage/sql-storage-adapter';
 import { StorageAdapter } from './storage/storage-adapter';
-
+import path from 'path';
+import * as fs from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -10,13 +11,13 @@ const argv = yargs(hideBin(process.argv))
   .option('storage_option', {
     alias: 'o',
     describe: 'Storage type to use',
-    choices: ['filesystem', 'sqlite', 'postgres'],
-    default: process.env.STORAGE_OPTION || 'filesystem',
+    choices: ['sqlite', 'postgres'],
+    default: process.env.STORAGE_OPTION || 'sqlite',
   })
   .option('sqlite_path', {
     describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.SQLITE_PATH || './steps-track.db',
+    default: process.env.SQLITE_PATH || './data/steps-track.db',
   })
   .option('postgres_url', {
     describe: 'PostgreSQL connection URL',
@@ -38,6 +39,10 @@ async function main() {
 
   if (argv.storage_option === 'sqlite') {
     console.log(`Using SQL storage adapter with SQLite at: ${argv.sqlite_path}`);
+    const sqliteDir = path.dirname(argv.sqlite_path);
+    if (!fs.existsSync(sqliteDir)) {
+      fs.mkdirSync(sqliteDir, { recursive: true });
+    }
     storageAdapter = new SQLStorageAdapter({
       client: 'sqlite3',
       connection: { filename: argv.sqlite_path },

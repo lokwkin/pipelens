@@ -20,6 +20,7 @@ async function main() {
     batchLogs: true, // Enable batching for better performance
     flushInterval: 5000, // Flush logs every 5 seconds
     maxBatchSize: 50, // Maximum batch size before forcing a flush
+    debug: true,
   });
 
   const pipeline = new Pipeline('pipeline', {

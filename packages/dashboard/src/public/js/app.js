@@ -96,7 +96,7 @@ const app = {
       ui.loadRunDetails(runId, false);
     } else if (view === 'step-analysis' && runId && stepKey) {
       // We need to find the step data
-      fetch(`/api/runs/${runId}/step/${stepKey}`)
+      fetch(`/api/dashboard/runs/${runId}/step/${stepKey}`)
         .then((response) => response.json())
         .then((step) => {
           ui.showView('step-analysis-view');
@@ -515,7 +515,7 @@ const app = {
         });
 
         // Use the unified steps files upload endpoint
-        const response = await fetch('/api/upload/steps-files', {
+        const response = await fetch('/api/dashboard/upload/steps-files', {
           method: 'POST',
           body: formData,
         });

@@ -134,7 +134,7 @@ const charts = {
         '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading Gantt Chart...</p></div>';
 
       // Fetch the steps data for the run
-      const response = await fetch(`/api/runs/${runId}/steps`);
+      const response = await fetch(`/api/dashboard/runs/${runId}/steps`);
       const steps = await response.json();
 
       if (!steps || !steps.length) {
