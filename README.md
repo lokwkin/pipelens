@@ -187,12 +187,9 @@ StepsTrack includes a dashboard that provides several features for monitoring an
 During pipeline initialization, define a Transport to relay pipeline run data to dashboard later on. Currently supported a HttpTransport. See [Advanced Usage](./docs/advanced-usage.md) for more details.
 
 ```typescript
-// HTTP transport for sending data directly to a dashboard
 const httpTransport = new HttpTransport({
-  baseUrl: 'http://localhost:3000/api/', // URL of your dashboard API
-  batchLogs: true, // Enable batching for better performance
-  flushInterval: 5000, // Flush logs every 5 seconds
-  maxBatchSize: 50 // Maximum batch size before forcing a flush
+  baseUrl: 'http://localhost:3000/api/',
+  batchLogs: true,
 });
 
 // Create pipeline with HTTP transport
