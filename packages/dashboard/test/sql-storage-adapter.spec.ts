@@ -1,8 +1,7 @@
 import { SQLStorageAdapter } from '../src/storage/sql-storage-adapter';
-import { PipelineMeta } from '../src/pipeline';
+import { PipelineMeta, StepMeta } from 'steps-track';
 import path from 'path';
 import fs from 'fs';
-import { StepMeta } from '../src/step';
 import { v4 as uuidv4 } from 'uuid';
 import { Knex } from 'knex';
 

@@ -41,9 +41,8 @@ async function main() {
 
   if (argv.storage_option === 'sqlite' || argv.storage_option === 'postgres') {
     try {
-      // We need to use dynamic import here since SQLStorageAdapter
-      // and its dependencies might not be installed
-      const { SQLStorageAdapter } = await import('steps-track');
+      // Now that storage adapters are in the dashboard, we can import them directly
+      const { SQLStorageAdapter } = await import('./storage/sql-storage-adapter');
 
       if (argv.storage_option === 'sqlite') {
         console.log(`Using SQL storage adapter with SQLite at: ${argv.sqlite_path}`);
@@ -67,12 +66,12 @@ async function main() {
       console.log('  For PostgreSQL: npm install pg');
       console.log('Falling back to FileStorageAdapter');
       console.log(`Using FileStorageAdapter with directory: ${argv.data_dir}`);
-      const { FileStorageAdapter } = await import('steps-track');
+      const { FileStorageAdapter } = await import('./storage/file-storage-adapter');
       storageAdapter = new FileStorageAdapter(argv.data_dir as string);
     }
   } else {
     // Default to file storage
-    const { FileStorageAdapter } = await import('steps-track');
+    const { FileStorageAdapter } = await import('./storage/file-storage-adapter');
     console.log(`Using FileStorageAdapter with directory: ${argv.data_dir}`);
     storageAdapter = new FileStorageAdapter(argv.data_dir as string);
   }

@@ -1,6 +1,5 @@
-import { StepMeta } from '../step';
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
-import { PipelineMeta } from '../pipeline';
+import { StepMeta, PipelineMeta } from 'steps-track';
 import { Knex } from 'knex';
 
 interface ConnectionConfig extends Knex.Config {}

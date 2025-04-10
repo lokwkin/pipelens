@@ -1,5 +1,4 @@
-import { PipelineMeta } from '../pipeline';
-import { StepMeta } from '../step';
+import { PipelineMeta, StepMeta } from 'steps-track';
 
 export type FilterOptions = {
   limit?: number;

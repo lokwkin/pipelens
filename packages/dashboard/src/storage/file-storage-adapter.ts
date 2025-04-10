@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-import { StepMeta } from '../step';
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
-import { PipelineMeta } from '../pipeline';
+import { StepMeta, PipelineMeta } from 'steps-track';
 
 // Promisify file system operations
 const mkdir = promisify(fs.mkdir);

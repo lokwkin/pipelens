@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { StorageAdapter, PipelineMeta, StepMeta } from 'steps-track';
+import { StorageAdapter } from './storage/storage-adapter';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
