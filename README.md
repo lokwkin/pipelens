@@ -31,6 +31,7 @@ This repository is a **monorepo** containing following packages:
 - **Visualizing**: Exporting the details and generating basic visualizations including Gantt and Execution Graph
 - **Event Emitting**: Listen to step events for real-time monitoring and custom handling
 - **ES6 Decorators**: Easy integration with ES6 decorators
+- **LLM Tracking Extension**: Simple tracker optimized for LLM usage
 
 #### [2. Using Dashboard](#using-dashboard)
 Monitor and analyze pipeline executions through an interactive web interface
@@ -172,7 +173,7 @@ const stepsHierarchy = pipeline.outputNested();
 
 ### Advanced Usages
 
-StepsTrack also provides **Event Emitting** listeners and **ES6 Decorators** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+StepsTrack also provides **Event Emitting** listeners, **ES6 Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
 

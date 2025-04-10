@@ -1,4 +1,3 @@
-import { Pipeline } from '../pipeline';
 import { Step } from '../step';
 
 export interface OpenAICompatibleChatCompletionResponse {
@@ -64,11 +63,11 @@ export class LLMTrack {
    * @param pipeline - The pipeline to calculate the total usage for.
    * @returns A record of total usage by model.
    */
-  public static getTotalUsage(pipeline: Pipeline): Record<string, LLMUsage> {
+  public static getTotalUsage(step: Step): Record<string, LLMUsage> {
     const totalUsages: Record<string, LLMUsage> = {}; // Usage by Model
 
-    pipeline.outputFlattened().forEach((step) => {
-      const llmResponses = Object.entries(step.records).filter(([key]) =>
+    step.outputFlattened().forEach((substep) => {
+      const llmResponses = Object.entries(substep.records).filter(([key]) =>
         key.startsWith(LLM_RESPONSE_RECORD_KEY_PREFIX),
       );
 
