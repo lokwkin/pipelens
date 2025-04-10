@@ -184,41 +184,32 @@ StepsTrack includes a dashboard that provides several features for monitoring an
 
 ### Initial Configuration
 
-During pipeline initialization, define how you would want to store logs as persistent data, to be able to read by the dashboard later on. Currently supported storing in file-system or SQLite. See [Advanced Usage](./docs/advanced-usage.md) for more details.
+During pipeline initialization, define a Transport to relay pipeline run data to dashboard later on. Currently supported a HttpTransport. See [Advanced Usage](./docs/advanced-usage.md) for more details.
 
 ```typescript
-// File system storage
-const fileStorageAdapter = new FileStorageAdapter('/path/to/data');  
-await fileStorageAdapter.connect();
-
-// SQL storage with SQLite (recommended for most use cases)
-// Note: SQLite dependencies are optional - first install them with:
-// npm install sqlite3
-const sqliteAdapter = new SQLStorageAdapter('/path/to/database.db');
-await sqliteAdapter.connect();
-
-// SQL storage with PostgreSQL
-// Note: PostgreSQL dependencies are optional - first install them with:
-// npm install pg
-const postgresAdapter = new SQLStorageAdapter({
-  client: 'pg',
-  connection: 'postgres://user:password@localhost:5432/stepstrack',
-  pool: { min: 2, max: 10 }
+const httpTransport = new HttpTransport({
+  baseUrl: 'http://localhost:3000/api/',
+  batchLogs: true,
 });
-await postgresAdapter.connect();
 
-// Create pipeline with the preferred storage adapter
+// Create pipeline with HTTP transport
 const pipeline = new Pipeline('my-pipeline', {
   autoSave: true,
-  storageAdapter: sqliteAdapter, // Choose your preferred adapter
+  transport: httpTransport
 });
+
+// Run your pipeline
+await pipeline.track(async (st) => {
+  // Your pipeline steps here
+});
+
+// Make sure to flush any pending logs when your application is shutting down
+await httpTransport.flushAndStop();
 ```
+
 ### Starting up Dashboard
 
 ```bash
-# The image loads data from "/app/.steps-track" FileStorageAdapter by default.
-docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard
-
 # Use SQLite as persistent storage
 docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db
 
@@ -263,6 +254,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Enhance StepsTrack Monitoring Dashboard UI/UX
 - [X] Allow importing external logs into dashboard
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
+- [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
 - [ ] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Use memory-store instead of storing nested steps class
 - [ ] Support Python version of steps tracker

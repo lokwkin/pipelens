@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg, SQLStorageAdapter } from '../packages/lib-ts/src';
+import { Step, Pipeline, StepGanttArg, HttpTransport } from 'steps-track/src';
 import * as fs from 'fs';
 
 const parsePage = (page: string) => {
@@ -14,16 +14,20 @@ const parsePage = (page: string) => {
 };
 
 async function main() {
-  const storageAdapter = new SQLStorageAdapter({
-    client: 'sqlite3',
-    connection: { filename: './data/steps-track.db' },
-    useNullAsDefault: true,
+  // HTTP transport for sending data to a dashboard
+  const httpTransport = new HttpTransport({
+    baseUrl: 'http://localhost:3000/api/', // URL of your dashboard API
+    batchLogs: true, // Enable batching for better performance
+    flushInterval: 5000, // Flush logs every 5 seconds
+    maxBatchSize: 50, // Maximum batch size before forcing a flush
+    debug: true,
   });
-  await storageAdapter.connect();
+
   const pipeline = new Pipeline('pipeline', {
     autoSave: true,
-    storageAdapter,
+    transport: httpTransport, // Setting this will automatically transport logs to the dashboard
   });
+
   pipeline.on('step-record', (stepKey, key, data) => {
     console.log(`[${stepKey}] Record: ${key} = ${data}`);
   });
@@ -73,6 +77,8 @@ async function main() {
     });
   });
 
+  await httpTransport.flushAndStop();
+
   const ganttArgs: StepGanttArg = {
     unit: 's', // 's' | 'ms'. Default 'ms'
     minWidth: 500, // Default 500
@@ -86,12 +92,13 @@ async function main() {
   const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
   const ganttChartHtml = pipeline.ganttGoogleChartHtml(ganttArgs);
 
-  fs.writeFileSync('gantt.png', ganttChartBuffer);
-  fs.writeFileSync('gantt.html', ganttChartHtml);
+  // fs.writeFileSync('gantt.png', ganttChartBuffer);
+  // fs.writeFileSync('gantt.html', ganttChartHtml);
 
   console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
 
-  await storageAdapter.close();
+  // Make sure to flush any pending logs when your application is shutting down
+  await httpTransport.flushAndStop();
 }
 
 main();

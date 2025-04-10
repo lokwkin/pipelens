@@ -1,21 +1,12 @@
 import { Pipeline } from '../src/pipeline';
-import { StorageAdapter } from '../src/storage/storage-adapter';
+import { Transport } from '../src/transport';
 
-// Mock the StorageAdapter
-class MockStorageAdapter implements StorageAdapter {
+// Mock the Transport interface
+class MockTransport implements Transport {
   initiateRun = jest.fn().mockResolvedValue(undefined);
   finishRun = jest.fn().mockResolvedValue(undefined);
   initiateStep = jest.fn().mockResolvedValue(undefined);
   finishStep = jest.fn().mockResolvedValue(undefined);
-
-  // Implement the rest of the required methods
-  connect = jest.fn().mockResolvedValue(undefined);
-  listPipelines = jest.fn().mockResolvedValue([]);
-  listRuns = jest.fn().mockResolvedValue([]);
-  getRunData = jest.fn().mockResolvedValue({});
-  listRunSteps = jest.fn().mockResolvedValue([]);
-  getPipelineStepTimeseries = jest.fn().mockResolvedValue([]);
-  listPipelineSteps = jest.fn().mockResolvedValue([]);
 }
 
 describe('Pipeline', () => {
@@ -38,17 +29,17 @@ describe('Pipeline', () => {
       expect(pipeline.getRunId()).toBe(runId);
     });
 
-    it('should throw an error if autoSave is enabled but no storageAdapter is provided', () => {
+    it('should throw an error if autoSave is enabled but no transport is provided', () => {
       expect(() => {
         new Pipeline('test-pipeline', { autoSave: true });
-      }).toThrow('Storage adapter must be provided when autoSave is enabled');
+      }).toThrow('Transport must be provided when autoSave is enabled');
     });
 
-    it('should not throw an error if autoSave is enabled and storageAdapter is provided', () => {
+    it('should not throw an error if autoSave is enabled and transport is provided', () => {
       expect(() => {
         new Pipeline('test-pipeline', {
           autoSave: true,
-          storageAdapter: new MockStorageAdapter(),
+          transport: new MockTransport(),
         });
       }).not.toThrow();
     });
@@ -87,11 +78,11 @@ describe('Pipeline', () => {
   });
 
   describe('autoSave', () => {
-    it('should call storage adapter methods when autoSave is enabled', async () => {
-      const storageAdapter = new MockStorageAdapter();
+    it('should call transport methods when autoSave is enabled', async () => {
+      const transport = new MockTransport();
       const pipeline = new Pipeline('test-pipeline', {
         autoSave: true,
-        storageAdapter,
+        transport,
       });
 
       await pipeline.track(async (st) => {
@@ -99,44 +90,40 @@ describe('Pipeline', () => {
         return 'final-result';
       });
 
-      // Check that storage adapter methods were called
-      expect(storageAdapter.initiateRun).toHaveBeenCalledTimes(1);
+      // Check that transport methods were called
+      expect(transport.initiateRun).toHaveBeenCalledTimes(1);
 
-      // Just verify that initiateRun was called, but don't check the exact content
-      // as the pipeline meta might change during execution
-      expect(storageAdapter.initiateRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
-      expect(storageAdapter.initiateRun.mock.calls[0][0].name).toBe('test-pipeline');
+      // Just verify that initiateRun was called with the correct pipeline meta
+      expect(transport.initiateRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
+      expect(transport.initiateRun.mock.calls[0][0].name).toBe('test-pipeline');
 
-      expect(storageAdapter.initiateStep).toHaveBeenCalledTimes(2); // Once for pipeline, once for step1
+      expect(transport.initiateStep).toHaveBeenCalledTimes(2); // Once for pipeline, once for step1
 
       // Order can be different, so let's just check that both the pipeline and step1 were initiated
-      const keys = [storageAdapter.initiateStep.mock.calls[0][1].key, storageAdapter.initiateStep.mock.calls[1][1].key];
+      const keys = [transport.initiateStep.mock.calls[0][1].key, transport.initiateStep.mock.calls[1][1].key];
       expect(keys).toContain(pipeline.getKey());
       expect(keys).toContain(`${pipeline.getKey()}.step1`);
 
-      expect(storageAdapter.finishStep).toHaveBeenCalledTimes(2); // Once for step1, once for pipeline
+      expect(transport.finishStep).toHaveBeenCalledTimes(2); // Once for step1, once for pipeline
 
       // Verify the finishStep calls - order can vary
-      const finishKeys = [
-        storageAdapter.finishStep.mock.calls[0][1].key,
-        storageAdapter.finishStep.mock.calls[1][1].key,
-      ];
+      const finishKeys = [transport.finishStep.mock.calls[0][1].key, transport.finishStep.mock.calls[1][1].key];
       expect(finishKeys).toContain(pipeline.getKey());
       expect(finishKeys).toContain(`${pipeline.getKey()}.step1`);
 
-      expect(storageAdapter.finishRun).toHaveBeenCalledTimes(1);
+      expect(transport.finishRun).toHaveBeenCalledTimes(1);
 
       // Verify finishRun call with correct parameters
-      expect(storageAdapter.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
-      expect(storageAdapter.finishRun.mock.calls[0][0].name).toBe('test-pipeline');
-      expect(storageAdapter.finishRun.mock.calls[0][1]).toBe('completed');
+      expect(transport.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
+      expect(transport.finishRun.mock.calls[0][0].name).toBe('test-pipeline');
+      expect(transport.finishRun.mock.calls[0][1]).toBe('completed');
     });
 
     it('should mark run as failed when a step throws an error', async () => {
-      const storageAdapter = new MockStorageAdapter();
+      const transport = new MockTransport();
       const pipeline = new Pipeline('test-pipeline', {
         autoSave: true,
-        storageAdapter,
+        transport,
       });
       const error = new Error('test error');
 
@@ -149,12 +136,12 @@ describe('Pipeline', () => {
         }),
       ).rejects.toThrow('test error');
 
-      // Check that storage adapter methods were called with the correct status
-      expect(storageAdapter.finishRun).toHaveBeenCalledTimes(1);
+      // Check that transport methods were called with the correct status
+      expect(transport.finishRun).toHaveBeenCalledTimes(1);
 
       // Verify finishRun call with the failed status
-      expect(storageAdapter.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
-      expect(storageAdapter.finishRun.mock.calls[0][1]).toBe('failed');
+      expect(transport.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
+      expect(transport.finishRun.mock.calls[0][1]).toBe('failed');
     });
   });
 

@@ -1,6 +1,6 @@
 import { Step, StepMeta } from './step';
 import { v4 as uuidv4 } from 'uuid';
-import { StorageAdapter } from './storage/storage-adapter';
+import { Transport } from './transport';
 
 export type PipelineMeta = StepMeta & {
   logVersion: number; // version of the log format
@@ -10,23 +10,25 @@ export type PipelineMeta = StepMeta & {
 export class Pipeline extends Step {
   private runId: string;
   private autoSave: boolean;
-  private storageAdapter?: StorageAdapter;
+  private transport?: Transport;
 
   constructor(
     name: string,
     options?: {
       runId?: string;
       autoSave?: boolean;
-      storageAdapter?: StorageAdapter;
+      transport?: Transport;
     },
   ) {
     super(name);
     this.runId = options?.runId ?? uuidv4();
     this.autoSave = options?.autoSave ?? false;
-    this.storageAdapter = options?.storageAdapter;
 
-    if (this.autoSave && !this.storageAdapter) {
-      throw new Error('Storage adapter must be provided when autoSave is enabled');
+    if (this.autoSave) {
+      if (!options?.transport) {
+        throw new Error('Transport must be provided when autoSave is enabled');
+      }
+      this.transport = options.transport;
     }
 
     // Add event listener for completion to save data
@@ -34,21 +36,21 @@ export class Pipeline extends Step {
       this.on('step-start', async (key: string, stepMeta?: StepMeta) => {
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.initiateRun(this.outputPipelineMeta());
+          await this.transport?.initiateRun(this.outputPipelineMeta());
         }
         if (!stepMeta) {
           return;
         }
-        await this.storageAdapter?.initiateStep(this.runId, stepMeta);
+        await this.transport?.initiateStep(this.runId, stepMeta);
       });
       this.on('step-complete', async (key: string, stepMeta?: StepMeta) => {
         if (!stepMeta) {
           return;
         }
-        await this.storageAdapter?.finishStep(this.runId, stepMeta);
+        await this.transport?.finishStep(this.runId, stepMeta);
         if (key === this.getKey()) {
           // This step marks the pipeline
-          await this.storageAdapter?.finishRun(this.outputPipelineMeta(), stepMeta.error ? 'failed' : 'completed');
+          await this.transport?.finishRun(this.outputPipelineMeta(), stepMeta.error ? 'failed' : 'completed');
         }
       });
     }

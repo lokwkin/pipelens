@@ -93,20 +93,24 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 });
 ```
 
-## Persistent Storage
+## Transporting Logs to Dashboard
 
-StepsTrack supports persistent storage of pipeline runs. The data stored in persistent storage will also be available for read by [StepsTrack Dashbaord](../packages/dashboard) for analytic purpose.
+StepsTrack supports automatically transporting near real-time data to [StepsTrack Dashbaord](../packages/dashboard) for analytic purpose.
 
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'steps-track';
 
-const storageAdapter = new FileStorageAdapter('./data');
-await storageAdapter.connect();
+// HTTP transport for sending data to a dashboard
+const httpTransport = new HttpTransport({
+  baseUrl: 'http://localhost:3000/api/', // URL of your dashboard API
+  batchLogs: true, // Enable batching for better performance
+  flushInterval: 5000, // Flush logs every 5 seconds
+  maxBatchSize: 50, // Maximum batch size before forcing a flush
+});
 
-// Create a pipeline with file storage
-const pipeline = new Pipeline('my-pipeline', {
+const pipeline = new Pipeline('pipeline', {
   autoSave: true,
-  storageAdapter: storageAdapter,
+  transport: httpTransport,
 });
 
 // Run your pipeline
@@ -114,61 +118,9 @@ await pipeline.track(async (st) => {
   // Your pipeline code
 });
 
-// The pipeline data is automatically saved to the './data' directory
-```
+// Make sure to flush any pending logs when your application is shutting down
+await httpTransport.flushAndStop();
 
-### SQL Storage (Recommended)
-
-For most applications, SQL-based storage provides an excellent balance of performance, reliability, and simplicity. You can use either SQLite for single-application deployments or PostgreSQL for scalable, multi-instance applications:
-
-```typescript
-import { Pipeline, SQLStorageAdapter } from 'steps-track';
-import path from 'path';
-
-// For SQLite:
-// First install the dependencies:
-// npm install sqlite3
-
-// Create a SQLite storage adapter
-const sqliteAdapter = new SQLStorageAdapter({
-  client: 'sqlite3',
-  connection: {
-    filename: './data/steps-track.db'
-  },
-  useNullAsDefault: true,
-  pool: {
-    afterCreate: (conn, cb) => {
-      conn.run('PRAGMA foreign_keys = ON;', cb);
-    }
-  }
-});
-await sqliteAdapter.connect();
-
-// OR for PostgreSQL:
-// First install the dependencies:
-// npm install pg
-
-// Create a PostgreSQL storage adapter
-const postgresAdapter = new SQLStorageAdapter({
-  client: 'pg',
-  connection: 'postgres://user:password@localhost:5432/stepstrack',
-  pool: { min: 2, max: 10 }
-});
-await postgresAdapter.connect();
-
-// Create a pipeline with SQL storage (choose either adapter)
-const pipeline = new Pipeline('my-pipeline', {
-  autoSave: true,
-  storageAdapter: sqliteAdapter, // or postgresAdapter
-});
-
-// Run your pipeline
-await pipeline.track(async (st) => {
-  // Your pipeline code
-});
-
-// Don't forget to close the connection when done with the application
-await sqliteAdapter.close(); // or postgresAdapter.close()
 ```
 
 ## Custom Visualization
