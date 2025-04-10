@@ -1,5 +1,7 @@
-import { StorageAdapter } from 'steps-track';
 import { DashboardServer } from './dashboard-server';
+import { SQLStorageAdapter } from './storage/sql-storage-adapter';
+import { StorageAdapter } from './storage/storage-adapter';
+
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -11,15 +13,10 @@ const argv = yargs(hideBin(process.argv))
     choices: ['filesystem', 'sqlite', 'postgres'],
     default: process.env.STORAGE_OPTION || 'filesystem',
   })
-  .option('data_dir', {
-    describe: 'Directory path for filesystem storage',
-    type: 'string',
-    default: process.env.DATA_DIR || './data',
-  })
   .option('sqlite_path', {
     describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.SQLITE_PATH || './data/steps-track.db',
+    default: process.env.SQLITE_PATH || './steps-track.db',
   })
   .option('postgres_url', {
     describe: 'PostgreSQL connection URL',
@@ -39,41 +36,20 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   let storageAdapter: StorageAdapter;
 
-  if (argv.storage_option === 'sqlite' || argv.storage_option === 'postgres') {
-    try {
-      // Now that storage adapters are in the dashboard, we can import them directly
-      const { SQLStorageAdapter } = await import('./storage/sql-storage-adapter');
-
-      if (argv.storage_option === 'sqlite') {
-        console.log(`Using SQL storage adapter with SQLite at: ${argv.sqlite_path}`);
-        storageAdapter = new SQLStorageAdapter({
-          client: 'sqlite3',
-          connection: { filename: argv.sqlite_path },
-          useNullAsDefault: true,
-        });
-      } else {
-        console.log(`Using SQL storage adapter with PostgreSQL at: ${argv.postgres_url}`);
-        storageAdapter = new SQLStorageAdapter({
-          client: 'pg',
-          connection: argv.postgres_url,
-          pool: { min: 2, max: 10 },
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load SQL storage adapter:', error);
-      console.log('Make sure you have installed required dependencies:');
-      console.log('  For SQLite: npm install sqlite3');
-      console.log('  For PostgreSQL: npm install pg');
-      console.log('Falling back to FileStorageAdapter');
-      console.log(`Using FileStorageAdapter with directory: ${argv.data_dir}`);
-      const { FileStorageAdapter } = await import('./storage/file-storage-adapter');
-      storageAdapter = new FileStorageAdapter(argv.data_dir as string);
-    }
+  if (argv.storage_option === 'sqlite') {
+    console.log(`Using SQL storage adapter with SQLite at: ${argv.sqlite_path}`);
+    storageAdapter = new SQLStorageAdapter({
+      client: 'sqlite3',
+      connection: { filename: argv.sqlite_path },
+      useNullAsDefault: true,
+    });
   } else {
-    // Default to file storage
-    const { FileStorageAdapter } = await import('./storage/file-storage-adapter');
-    console.log(`Using FileStorageAdapter with directory: ${argv.data_dir}`);
-    storageAdapter = new FileStorageAdapter(argv.data_dir as string);
+    console.log(`Using SQL storage adapter with PostgreSQL at: ${argv.postgres_url}`);
+    storageAdapter = new SQLStorageAdapter({
+      client: 'pg',
+      connection: argv.postgres_url,
+      pool: { min: 2, max: 10 },
+    });
   }
 
   await storageAdapter.connect();

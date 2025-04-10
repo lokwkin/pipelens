@@ -23,9 +23,8 @@ The dashboard supports multiple storage options and can be configured via comman
 
 | Option | CLI Flag | Environment Variable | Description | Default |
 |--------|----------|----------------------|-------------|---------|
-| Storage Type | `--storage_option`, `-o` | `STORAGE_OPTION` | Storage type to use (`filesystem`, `sqlite`, or `postgres`) | `filesystem` |
-| Data Directory | `--data_dir` | `DATA_DIR` | Directory path for filesystem storage | `./data` |
-| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./data/steps-track.db` |
+| Storage Type | `--storage_option`, `-o` | `STORAGE_OPTION` | Storage type to use (`sqlite`, or `postgres`) | `sqlite` |
+| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./steps-track.db` |
 | PostgreSQL URL | `--postgres_url` | `POSTGRES_URL` | PostgreSQL connection URL | `postgres://postgres:postgres@localhost:5432/stepstrack` |
 | Port | `--port`, `-p` | `PORT` | Port to run the dashboard server on | `3000` |
 
@@ -34,10 +33,7 @@ Command line arguments take priority over environment variables.
 ### Examples
 
 ```bash
-# Use filesystem storage (default)
-npm start -- --storage_option filesystem --data_dir ./my-data
-
-# Use SQLite storage
+# Use SQLite storage (default)
 npm start -- --storage_option sqlite --sqlite_path ./my-database.db
 
 # Use PostgreSQL storage
@@ -50,10 +46,7 @@ npm start -- -o sqlite -p 8080
 ## Start with Docker
 
 ```bash
-# Use filesystem storage (default)
-docker run -p 3000:3000 -v /path/to/data:/app/data -e STORAGE_OPTION=filesystem -e DATA_DIR=/app/data lokwkin/steps-track-dashboard
-
-# Use SQLite storage
+# Use SQLite storage (default)
 docker run -p 3000:3000 -v /path/to/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db lokwkin/steps-track-dashboard
 
 # Use PostgreSQL storage
