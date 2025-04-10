@@ -252,4 +252,47 @@ async function processData(data: any[]) {
 }
 ```
 
+## LLM Usage Tracking
+
+StepsTrack provides built-in support for tracking and analyzing LLM responses and token usage through the `LLMTrack` helper extension.
+
+```typescript
+import { Pipeline, Step, LLMTrack } from 'steps-track';
+import { OpenAI } from 'openai';
+
+async function llmPipeline(query: string) {
+  const pipeline = new Pipeline('llm-pipeline');
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  
+  return await pipeline.track(async (st: Step) => {
+    const summary = await st.step('summarization', async (st: Step) => {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: query }],
+      });
+      
+      LLMTrack.track(st, completion); // Track the LLM response
+
+      return completion.choices[0].message.content;
+    });
+  });
+
+  // Once you've tracked LLM responses, you can calculate the total token usage across your pipeline:
+  const usages = LLMTrack.getTotalUsage(pipeline);
+  console.log(usages);
+
+  // Print: {
+  //   "gpt-4o-mini": {
+  //     "prompt_tokens": 243
+  //     "completion_tokens": 345
+  //     "total_tokens": 588
+  //   },
+  //   "gpt-4o": {
+  //     "prompt_tokens": 1531
+  //     "completion_tokens": 631
+  //     "total_tokens": 2162
+  //   }
+  // }
+}
+```
 For more information, refer to the [StepsTrack GitHub repository](https://github.com/lokwkin/steps-track). 
