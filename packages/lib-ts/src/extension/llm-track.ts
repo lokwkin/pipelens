@@ -45,7 +45,18 @@ export class LLMTrack {
    * @param response - The LLM response to track.
    */
   public static track(step: Step, response: OpenAICompatibleChatCompletionResponse) {
-    step.record(LLM_RESPONSE_RECORD_KEY_PREFIX + response.id, response);
+    // Create a new object with only the fields defined in the interface
+    const sanitizedResponse: OpenAICompatibleChatCompletionResponse = {
+      id: response.id,
+      object: response.object,
+      created: response.created,
+      model: response.model,
+      choices: response.choices,
+      usage: response.usage,
+      system_fingerprint: response.system_fingerprint,
+    };
+
+    step.record(LLM_RESPONSE_RECORD_KEY_PREFIX + response.id, sanitizedResponse);
   }
 
   /**
