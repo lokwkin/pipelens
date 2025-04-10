@@ -189,7 +189,7 @@ During pipeline initialization, define a Transport to relay pipeline run data to
 
 ```typescript
 const httpTransport = new HttpTransport({
-  baseUrl: 'http://localhost:3000/api/',
+  baseUrl: 'http://localhost:3000',
   batchLogs: true,
 });
 
@@ -211,12 +211,10 @@ await httpTransport.flushAndStop();
 ### Starting up Dashboard
 
 ```bash
-# Use SQLite as persistent storage
-docker run -p 3000:3000 -v /path/to/data:/app/data lokwkin/steps-track-dashboard -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db
-
-# Use PostgreSQL as persistent storage
-docker run -p 3000:3000 lokwkin/steps-track-dashboard -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/stepstrack
+# Uses SQLite storage as default
+docker run -p 3000:3000 lokwkin/steps-track-dashboard
 ```
+
 
 ### Detailed Steps Insepection
 

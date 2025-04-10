@@ -46,8 +46,11 @@ npm start -- -o sqlite -p 8080
 ## Start with Docker
 
 ```bash
-# Use SQLite storage (default)
-docker run -p 3000:3000 -v /path/to/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db lokwkin/steps-track-dashboard
+# Basic quick start with SQLite
+docker run -p 3000:3000 lokwkin/steps-track-dashboard
+
+# Use SQLite storage 
+docker run -p 3000:3000 -v $(pwd)/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db lokwkin/steps-track-dashboard
 
 # Use PostgreSQL storage
 docker run -p 3000:3000 -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/stepstrack lokwkin/steps-track-dashboard
