@@ -8,17 +8,22 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Update the BatchPayload type to match the actual implementation
-type BatchPayload = {
-  pipeline: {
-    operation: 'start' | 'finish';
-    meta: PipelineMeta;
-    status?: 'completed' | 'failed' | 'running';
-  } | null;
-  steps: Array<{
-    operation: 'start' | 'finish';
-    step: StepMeta;
-  }>;
-};
+type BatchEvent =
+  | {
+      type: 'pipeline';
+      operation: 'start' | 'finish';
+      meta: PipelineMeta;
+      status?: 'completed' | 'failed' | 'running';
+    }
+  | {
+      type: 'step';
+      operation: 'start' | 'finish';
+      runId: string;
+      step: StepMeta;
+    };
+
+// Using array instead of object with pipeline and steps
+type BatchPayload = BatchEvent[];
 
 describe('HttpTransport', () => {
   // Reset mocks between tests
@@ -139,11 +144,15 @@ describe('HttpTransport', () => {
   });
 
   describe('Batched mode', () => {
-    const transport = new HttpTransport({
-      baseUrl: 'https://api.example.com',
-      batchLogs: true,
-      flushInterval: 1000,
-      maxBatchSize: 3,
+    let transport: HttpTransport;
+
+    beforeEach(() => {
+      transport = new HttpTransport({
+        baseUrl: 'https://api.example.com',
+        batchLogs: true,
+        flushInterval: 1000,
+        maxBatchSize: 3,
+      });
     });
 
     it('should initialize with correct batch options', () => {
@@ -189,11 +198,20 @@ describe('HttpTransport', () => {
       // Check that events were sent in the request
       const payload = mockedAxios.post.mock.calls[0][1] as BatchPayload;
 
-      // Check pipeline component contains the expected data
-      expect(payload.pipeline).not.toBeNull();
-      expect(payload.pipeline?.operation).toBe('finish');
-      expect(payload.pipeline?.meta).toEqual(mockPipelineMeta);
-      expect(payload.pipeline?.status).toBe('completed');
+      // Check that payload is an array with two events
+      expect(Array.isArray(payload)).toBe(true);
+      expect(payload.length).toBe(2);
+
+      // First event should be pipeline start
+      expect(payload[0].type).toBe('pipeline');
+      expect(payload[0].operation).toBe('start');
+      expect((payload[0] as any).meta).toEqual(mockPipelineMeta);
+
+      // Second event should be pipeline finish
+      expect(payload[1].type).toBe('pipeline');
+      expect(payload[1].operation).toBe('finish');
+      expect((payload[1] as any).meta).toEqual(mockPipelineMeta);
+      expect((payload[1] as any).status).toBe('completed');
 
       // Cache should be cleared after flush
       // @ts-expect-error - accessing private property for testing
@@ -221,17 +239,25 @@ describe('HttpTransport', () => {
       // Check the payload structure
       const payload = mockedAxios.post.mock.calls[0][1] as BatchPayload;
 
-      // Check pipeline and steps
-      expect(payload.pipeline).not.toBeNull();
-      expect(payload.pipeline?.operation).toBe('start'); // Last pipeline event was initiateRun
-      expect(payload.pipeline?.meta).toEqual(mockPipelineMeta);
+      // Check that payload is an array of events
+      expect(Array.isArray(payload)).toBe(true);
+      expect(payload.length).toBe(3);
 
-      // Check steps
-      expect(payload.steps.length).toBe(2);
-      expect(payload.steps[0].operation).toBe('start');
-      expect(payload.steps[0].step).toEqual(mockStepMeta);
-      expect(payload.steps[1].operation).toBe('finish');
-      expect(payload.steps[1].step).toEqual(mockStepMeta);
+      // Check events - first should be pipeline start
+      expect(payload[0].type).toBe('pipeline');
+      expect(payload[0].operation).toBe('start');
+
+      // Second should be step start
+      expect(payload[1].type).toBe('step');
+      expect(payload[1].operation).toBe('start');
+      expect((payload[1] as any).runId).toBe('test-run-id');
+      expect((payload[1] as any).step).toEqual(mockStepMeta);
+
+      // Third should be step finish
+      expect(payload[2].type).toBe('step');
+      expect(payload[2].operation).toBe('finish');
+      expect((payload[2] as any).runId).toBe('test-run-id');
+      expect((payload[2] as any).step).toEqual(mockStepMeta);
 
       // The 4th event should still be in cache
       // @ts-expect-error - accessing private property for testing
