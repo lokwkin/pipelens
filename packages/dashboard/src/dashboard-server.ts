@@ -41,7 +41,7 @@ export class DashboardServer {
 
   public async start(): Promise<void> {
     this.app.listen(this.port, () => {
-      console.log(`Dashboard server running at http://localhost:${this.port}`);
+      console.log(`Dashboard server running at PORT ${this.port}`);
     });
   }
 }
