@@ -7,17 +7,17 @@ import { StepMeta } from '../src/step';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-// Define types for the log events
-type BatchedEvent = {
-  type: 'initiate-run' | 'finish-run' | 'initiate-step' | 'finish-step';
-  pipelineMeta?: PipelineMeta;
-  runId?: string;
-  step?: StepMeta;
-  status?: 'completed' | 'failed' | 'running';
-};
-
+// Update the BatchPayload type to match the actual implementation
 type BatchPayload = {
-  events: BatchedEvent[];
+  pipeline: {
+    operation: 'start' | 'finish';
+    meta: PipelineMeta;
+    status?: 'completed' | 'failed' | 'running';
+  } | null;
+  steps: Array<{
+    operation: 'start' | 'finish';
+    step: StepMeta;
+  }>;
 };
 
 describe('HttpTransport', () => {
@@ -188,14 +188,12 @@ describe('HttpTransport', () => {
 
       // Check that events were sent in the request
       const payload = mockedAxios.post.mock.calls[0][1] as BatchPayload;
-      const sentEvents = payload.events;
 
-      // We need at least these two events, but there might be more due to test environment
-      expect(sentEvents.length).toBeGreaterThanOrEqual(2);
-
-      // Check for events with the expected types
-      expect(sentEvents.some((event) => event.type === 'initiate-run')).toBe(true);
-      expect(sentEvents.some((event) => event.type === 'finish-run')).toBe(true);
+      // Check pipeline component contains the expected data
+      expect(payload.pipeline).not.toBeNull();
+      expect(payload.pipeline?.operation).toBe('finish');
+      expect(payload.pipeline?.meta).toEqual(mockPipelineMeta);
+      expect(payload.pipeline?.status).toBe('completed');
 
       // Cache should be cleared after flush
       // @ts-expect-error - accessing private property for testing
@@ -220,17 +218,20 @@ describe('HttpTransport', () => {
       expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/ingestion/batch');
       expect(mockedAxios.post.mock.calls[0][2]).toEqual({ headers: { 'Content-Type': 'application/json' } });
 
-      // Check that the first 3 events were sent
+      // Check the payload structure
       const payload = mockedAxios.post.mock.calls[0][1] as BatchPayload;
-      const sentEvents = payload.events;
 
-      // We should have at least 3 events
-      expect(sentEvents.length).toBeGreaterThanOrEqual(3);
+      // Check pipeline and steps
+      expect(payload.pipeline).not.toBeNull();
+      expect(payload.pipeline?.operation).toBe('start'); // Last pipeline event was initiateRun
+      expect(payload.pipeline?.meta).toEqual(mockPipelineMeta);
 
-      // Check that we have events of the expected types
-      expect(sentEvents.some((event) => event.type === 'initiate-run')).toBe(true);
-      expect(sentEvents.some((event) => event.type === 'initiate-step')).toBe(true);
-      expect(sentEvents.some((event) => event.type === 'finish-step')).toBe(true);
+      // Check steps
+      expect(payload.steps.length).toBe(2);
+      expect(payload.steps[0].operation).toBe('start');
+      expect(payload.steps[0].step).toEqual(mockStepMeta);
+      expect(payload.steps[1].operation).toBe('finish');
+      expect(payload.steps[1].step).toEqual(mockStepMeta);
 
       // The 4th event should still be in cache
       // @ts-expect-error - accessing private property for testing
