@@ -88,7 +88,7 @@ describe('HttpTransport', () => {
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.example.com/ingestion/pipeline/start',
+        'https://api.example.com/api/ingestion/pipeline/start',
         mockPipelineMeta,
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -99,7 +99,7 @@ describe('HttpTransport', () => {
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.example.com/ingestion/pipeline/finish',
+        'https://api.example.com/api/ingestion/pipeline/finish',
         { pipelineMeta: mockPipelineMeta, status: 'completed' },
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -110,7 +110,7 @@ describe('HttpTransport', () => {
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.example.com/ingestion/step/start',
+        'https://api.example.com/api/ingestion/step/start',
         { runId: 'test-run-id', step: mockStepMeta },
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -121,7 +121,7 @@ describe('HttpTransport', () => {
 
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.example.com/ingestion/step/finish',
+        'https://api.example.com/api/ingestion/step/finish',
         { runId: 'test-run-id', step: mockStepMeta },
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -183,7 +183,7 @@ describe('HttpTransport', () => {
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
 
       // Check that post was called with the correct URL and headers
-      expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/ingestion/batch');
+      expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/api/ingestion/batch');
       expect(mockedAxios.post.mock.calls[0][2]).toEqual({ headers: { 'Content-Type': 'application/json' } });
 
       // Check that events were sent in the request
@@ -215,7 +215,7 @@ describe('HttpTransport', () => {
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
 
       // Check that post was called with the correct URL and headers
-      expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/ingestion/batch');
+      expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/api/ingestion/batch');
       expect(mockedAxios.post.mock.calls[0][2]).toEqual({ headers: { 'Content-Type': 'application/json' } });
 
       // Check the payload structure

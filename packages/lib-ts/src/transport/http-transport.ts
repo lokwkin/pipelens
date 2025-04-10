@@ -108,7 +108,7 @@ export class HttpTransport implements Transport {
           }));
 
           // Send the batch to the server with the correct format
-          await axios.post(`${this.baseUrl}ingestion/batch`, { pipeline, steps }, { headers: this.headers });
+          await axios.post(`${this.baseUrl}api/ingestion/batch`, { pipeline, steps }, { headers: this.headers });
 
           if (this.debug) {
             console.log(`[HttpTransport] Successfully sent ${events.length} events`);
@@ -171,7 +171,7 @@ export class HttpTransport implements Transport {
     this.eventCache = [];
 
     if (this.debug) {
-      console.log(`[HttpTransport] Flushing ${events.length} events to ${this.baseUrl}ingestion/batch`);
+      console.log(`[HttpTransport] Flushing ${events.length} events to ${this.baseUrl}api/ingestion/batch`);
     }
 
     // Send events with retry without waiting
@@ -199,7 +199,7 @@ export class HttpTransport implements Transport {
 
     // Non-batched mode uses the original implementation
     try {
-      await axios.post(`${this.baseUrl}ingestion/pipeline/start`, pipelineMeta, { headers: this.headers });
+      await axios.post(`${this.baseUrl}api/ingestion/pipeline/start`, pipelineMeta, { headers: this.headers });
     } catch (error: any) {
       console.error('Error initiating run:', error.message);
       throw new Error(`Failed to initiate run: ${error.message}`);
@@ -219,7 +219,11 @@ export class HttpTransport implements Transport {
 
     // Non-batched mode uses the original implementation
     try {
-      await axios.post(`${this.baseUrl}ingestion/pipeline/finish`, { pipelineMeta, status }, { headers: this.headers });
+      await axios.post(
+        `${this.baseUrl}api/ingestion/pipeline/finish`,
+        { pipelineMeta, status },
+        { headers: this.headers },
+      );
     } catch (error: any) {
       console.error('Error finishing run:', error);
       throw new Error(`Failed to finish run: ${error.message}`);
@@ -239,7 +243,7 @@ export class HttpTransport implements Transport {
 
     // Non-batched mode uses the original implementation
     try {
-      await axios.post(`${this.baseUrl}ingestion/step/start`, { runId, step }, { headers: this.headers });
+      await axios.post(`${this.baseUrl}api/ingestion/step/start`, { runId, step }, { headers: this.headers });
     } catch (error: any) {
       console.error('Error initiating step:', error.message);
       throw new Error(`Failed to initiate step: ${error.message}`);
@@ -259,7 +263,7 @@ export class HttpTransport implements Transport {
 
     // Non-batched mode uses the original implementation
     try {
-      await axios.post(`${this.baseUrl}ingestion/step/finish`, { runId, step }, { headers: this.headers });
+      await axios.post(`${this.baseUrl}api/ingestion/step/finish`, { runId, step }, { headers: this.headers });
     } catch (error: any) {
       console.error('Error finishing step:', error.message);
       throw new Error(`Failed to finish step: ${error.message}`);

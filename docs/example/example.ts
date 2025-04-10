@@ -16,7 +16,7 @@ const parsePage = (page: string) => {
 async function main() {
   // HTTP transport for sending data to a dashboard
   const httpTransport = new HttpTransport({
-    baseUrl: 'http://localhost:3000/api/', // URL of your dashboard API
+    baseUrl: 'http://localhost:3001/', // URL of your dashboard
     batchLogs: true, // Enable batching for better performance
     flushInterval: 5000, // Flush logs every 5 seconds
     maxBatchSize: 50, // Maximum batch size before forcing a flush

@@ -237,7 +237,7 @@ describe('End-to-End Integration Tests', () => {
 
     // There should be a call to finish the run with failed status
     const finishRunCall = mockedAxios.post.mock.calls.find(
-      (call) => call[0] === 'https://api.example.com/ingestion/pipeline/finish',
+      (call) => call[0] === 'https://api.example.com/api/ingestion/pipeline/finish',
     );
     expect(finishRunCall).toBeDefined();
 
