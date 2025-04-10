@@ -92,28 +92,30 @@ export function setupIngestionRouter(storageAdapter: StorageAdapter, upload: mul
   // Batch log submission - for efficient network usage
   router.post('/batch', async (req, res) => {
     try {
-      const { pipeline, steps } = req.body;
+      const events = req.body;
 
-      if (!pipeline || !Array.isArray(steps)) {
+      if (!Array.isArray(events)) {
         res.status(400).json({
-          error: 'Invalid batch request. Required fields: pipeline, steps (array)',
+          error: 'Invalid batch request. Expected an array of events',
         });
         return;
       }
 
-      // Process pipeline
-      if (pipeline.operation === 'start') {
-        await storageAdapter.initiateRun(pipeline.meta);
-      } else if (pipeline.operation === 'finish') {
-        await storageAdapter.finishRun(pipeline.meta, pipeline.status);
-      }
-
-      // Process steps
-      for (const stepEntry of steps) {
-        if (stepEntry.operation === 'start') {
-          await storageAdapter.initiateStep(pipeline.meta.runId, stepEntry.step);
-        } else if (stepEntry.operation === 'finish') {
-          await storageAdapter.finishStep(pipeline.meta.runId, stepEntry.step);
+      for (const event of events) {
+        if (event.type === 'pipeline') {
+          if (event.operation === 'start') {
+            await storageAdapter.initiateRun(event.meta);
+          } else if (event.operation === 'finish') {
+            await storageAdapter.finishRun(event.meta, event.status);
+          }
+        } else if (event.type === 'step') {
+          if (event.operation === 'start') {
+            await storageAdapter.initiateStep(event.runId, event.step);
+          } else if (event.operation === 'finish') {
+            await storageAdapter.finishStep(event.runId, event.step);
+          }
+        } else {
+          console.warn(`Unknown event type in batch: ${JSON.stringify(event)}`);
         }
       }
 

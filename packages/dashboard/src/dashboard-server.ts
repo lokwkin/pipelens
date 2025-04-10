@@ -22,6 +22,11 @@ export class DashboardServer {
     const storage = multer.memoryStorage();
     this.upload = multer({ storage });
 
+    // Serve static files
+    this.app.use(express.static(path.join(__dirname, 'public')));
+
+    this.app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
+
     // Set up routes - cleanly separated by responsibility
     const ingestionRoutes = setupIngestionRouter(this.storageAdapter, this.upload);
     const dashboardRoutes = setupDashboardRoutes(this.storageAdapter);
@@ -29,11 +34,6 @@ export class DashboardServer {
     // Mount the routers with their respective prefixes
     this.app.use('/api/ingestion', ingestionRoutes);
     this.app.use('/api/dashboard', dashboardRoutes);
-
-    // Serve static files
-    // This works both in development and production after build
-    this.app.use(express.static(path.join(__dirname, 'public')));
-    this.app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
   }
 
   public async start(): Promise<void> {

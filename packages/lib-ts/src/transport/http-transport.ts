@@ -88,27 +88,43 @@ export class HttpTransport implements Transport {
     try {
       while (retryCount <= this.maxRetries) {
         try {
-          // Transform events into the format expected by the server
-          const pipelineEvents = events.filter((e) => e.type === 'initiate-run' || e.type === 'finish-run');
-          const stepEvents = events.filter((e) => e.type === 'initiate-step' || e.type === 'finish-step');
+          // Transform events into the new format expected by the server
+          const transformedEvents = events
+            .map((event) => {
+              if (event.type === 'initiate-run') {
+                return {
+                  type: 'pipeline',
+                  operation: 'start',
+                  meta: event.pipelineMeta,
+                };
+              } else if (event.type === 'finish-run') {
+                return {
+                  type: 'pipeline',
+                  operation: 'finish',
+                  meta: event.pipelineMeta,
+                  status: event.status,
+                };
+              } else if (event.type === 'initiate-step') {
+                return {
+                  type: 'step',
+                  operation: 'start',
+                  runId: event.runId,
+                  step: event.step,
+                };
+              } else if (event.type === 'finish-step') {
+                return {
+                  type: 'step',
+                  operation: 'finish',
+                  runId: event.runId,
+                  step: event.step,
+                };
+              }
+              return null;
+            })
+            .filter(Boolean);
 
-          let pipeline = null;
-          if (pipelineEvents.length > 0) {
-            const lastPipelineEvent = pipelineEvents[pipelineEvents.length - 1];
-            pipeline = {
-              operation: lastPipelineEvent.type === 'initiate-run' ? 'start' : 'finish',
-              meta: lastPipelineEvent.pipelineMeta,
-              status: lastPipelineEvent.status,
-            };
-          }
-
-          const steps = stepEvents.map((event) => ({
-            operation: event.type === 'initiate-step' ? 'start' : 'finish',
-            step: event.step,
-          }));
-
-          // Send the batch to the server with the correct format
-          await axios.post(`${this.baseUrl}api/ingestion/batch`, { pipeline, steps }, { headers: this.headers });
+          // Send the batch to the server with the new array format
+          await axios.post(`${this.baseUrl}api/ingestion/batch`, transformedEvents, { headers: this.headers });
 
           if (this.debug) {
             console.log(`[HttpTransport] Successfully sent ${events.length} events`);
