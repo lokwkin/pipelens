@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg, HttpTransport } from '../packages/lib-ts/src';
+import { Step, Pipeline, StepGanttArg, HttpTransport } from 'steps-track/src';
 import * as fs from 'fs';
 
 const parsePage = (page: string) => {
@@ -92,8 +92,8 @@ async function main() {
   const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
   const ganttChartHtml = pipeline.ganttGoogleChartHtml(ganttArgs);
 
-  fs.writeFileSync('gantt.png', ganttChartBuffer);
-  fs.writeFileSync('gantt.html', ganttChartHtml);
+  // fs.writeFileSync('gantt.png', ganttChartBuffer);
+  // fs.writeFileSync('gantt.html', ganttChartHtml);
 
   console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
 
