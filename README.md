@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
 [![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
 
-StepsTrack is a tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis in a monitoring dashboard. It is originally developed as a go-to tool to inspect and analyze runtime data of an agentic RAG pipeline.
+StepsTrack is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through a analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
 
 <details>
 <summary>Background of StepsTrack</summary>
@@ -256,8 +256,8 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Allow importing external logs into dashboard
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
-- [ ] Optional LLM-extension that optimize for LLM response and usage tracking
-- [ ] Use memory-store instead of storing nested steps class
+- [X] Optional LLM-extension that optimize for LLM response and usage tracking
+- [ ] Use memory-store instead of storing nested steps class in runtime
 - [ ] Support Python version of steps tracker
 
 
