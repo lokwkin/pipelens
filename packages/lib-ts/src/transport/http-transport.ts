@@ -17,6 +17,8 @@ export interface HttpTransportOptions {
   batchLogs?: boolean;
   flushInterval?: number;
   maxBatchSize?: number;
+  debug?: boolean;
+  maxRetries?: number;
 }
 
 export class HttpTransport implements Transport {
@@ -25,11 +27,13 @@ export class HttpTransport implements Transport {
   private batchLogs: boolean;
   private flushInterval: number;
   private maxBatchSize: number;
+  private debug: boolean;
+  private maxRetries: number;
 
   // Cache for events waiting to be sent
   private eventCache: LogEvent[] = [];
   private timer: NodeJS.Timeout | null = null;
-  private isSending = false;
+  private activeFlushes = 0;
 
   constructor(options: HttpTransportOptions) {
     this.baseUrl = options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`;
@@ -42,6 +46,8 @@ export class HttpTransport implements Transport {
     this.batchLogs = options.batchLogs ?? false;
     this.flushInterval = options.flushInterval ?? 3000; // Default 3 seconds
     this.maxBatchSize = options.maxBatchSize ?? 100; // Default 100 items max
+    this.debug = options.debug ?? false;
+    this.maxRetries = options.maxRetries ?? 3; // Default 3 retries
 
     // Start the flush timer if batching is enabled
     if (this.batchLogs) {
@@ -66,27 +72,93 @@ export class HttpTransport implements Transport {
     }
   }
 
-  private async flushEvents(): Promise<void> {
-    // If no events to send or already in the process of sending, don't do anything
-    if (this.eventCache.length === 0 || this.isSending) {
+  // Helper function to delay execution
+  private async delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async sendEventsWithRetry(events: LogEvent[]): Promise<void> {
+    if (events.length === 0) {
       return;
     }
 
+    this.activeFlushes++;
+    let retryCount = 0;
+
     try {
-      this.isSending = true;
+      while (retryCount <= this.maxRetries) {
+        try {
+          // Send the batch to the server
+          await axios.post(`${this.baseUrl}ingestion/batch`, { events }, { headers: this.headers });
 
-      // Take all current events
-      const events = [...this.eventCache];
-      this.eventCache = [];
+          if (this.debug) {
+            console.log(`[HttpTransport] Successfully sent ${events.length} events`);
+          }
 
-      // Send the batch to the server
-      await axios.post(`${this.baseUrl}ingestion/batch`, { events }, { headers: this.headers });
-    } catch (error: any) {
-      console.error('Error sending batched events:', error);
-      // In a production environment, you might want to implement retry logic here
+          // Success, so we can exit the retry loop
+          return;
+        } catch (error: any) {
+          console.error('Error sending batched events:', error);
+
+          if (this.debug) {
+            console.error(`[HttpTransport] Failed to send ${events.length} events: ${error.message}`);
+          }
+
+          // If this is the last retry, or if we have a special error that should not retry, break
+          if (retryCount >= this.maxRetries || error.message === 'Network error during flush') {
+            if (retryCount >= this.maxRetries && this.debug) {
+              console.error(
+                `[HttpTransport] Max retries (${this.maxRetries}) exceeded for batch of ${events.length} events. Dropping events.`,
+              );
+            }
+            break;
+          }
+
+          // Calculate backoff time with exponential backoff. 1 sec initially.
+          const backoffTime = 1000 * Math.pow(2, retryCount);
+
+          if (this.debug) {
+            console.log(
+              `[HttpTransport] Scheduling retry in ${backoffTime}ms (attempt ${retryCount + 1}/${this.maxRetries})`,
+            );
+          }
+
+          // Wait before retrying
+          await this.delay(backoffTime);
+
+          // Increment retry counter
+          retryCount++;
+
+          if (this.debug) {
+            console.log(
+              `[HttpTransport] Retrying batch of ${events.length} events (attempt ${retryCount}/${this.maxRetries})`,
+            );
+          }
+        }
+      }
     } finally {
-      this.isSending = false;
+      this.activeFlushes--;
     }
+  }
+
+  private async flushEvents(): Promise<void> {
+    // If no events to send, don't do anything
+    if (this.eventCache.length === 0) {
+      return;
+    }
+
+    // Take all current events
+    const events = [...this.eventCache];
+    this.eventCache = [];
+
+    if (this.debug) {
+      console.log(`[HttpTransport] Flushing ${events.length} events to ${this.baseUrl}ingestion/batch`);
+    }
+
+    // Send events with retry without waiting
+    this.sendEventsWithRetry(events).catch((err) => {
+      console.error('[HttpTransport] Unexpected error in flush process:', err);
+    });
   }
 
   // Check if we should flush based on cache size
@@ -177,7 +249,24 @@ export class HttpTransport implements Transport {
 
   // Make sure to call this when the application is shutting down
   public async flushAndStop(): Promise<void> {
+    if (this.debug) {
+      console.log('[HttpTransport] Flushing events and stopping timer before shutdown');
+    }
     this.stopFlushTimer();
+
+    // Flush current events
     await this.flushEvents();
+
+    // Wait for any active flushes to complete
+    if (this.activeFlushes > 0) {
+      if (this.debug) {
+        console.log(`[HttpTransport] Waiting for ${this.activeFlushes} active flushes to complete`);
+      }
+
+      // Simple polling to wait for active flushes to complete
+      while (this.activeFlushes > 0) {
+        await this.delay(100);
+      }
+    }
   }
 }

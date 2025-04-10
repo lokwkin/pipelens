@@ -1,7 +1,12 @@
-import { Pipeline } from '../src/pipeline';
-import { FileStorageAdapter } from '../src/storage/file-storage-adapter';
+import { Pipeline } from '../../src/pipeline';
+import { HttpTransport } from '../../src/transport/http-transport';
 import * as fs from 'fs';
 import * as path from 'path';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Helper function to clean up test files
 function cleanupTestFiles(dirPath: string) {
@@ -19,6 +24,12 @@ describe('End-to-End Integration Tests', () => {
   beforeEach(() => {
     // Clean up before each test
     cleanupTestFiles(testStoragePath);
+
+    // Reset mocks between tests
+    jest.clearAllMocks();
+
+    // Set up the axios mock
+    mockedAxios.post.mockResolvedValue({ data: {} });
   });
 
   afterAll(() => {
@@ -26,15 +37,33 @@ describe('End-to-End Integration Tests', () => {
     cleanupTestFiles(testStoragePath);
   });
 
+  /**
+   * This test verifies the complete lifecycle of a pipeline with multiple steps:
+   *
+   * 1. Initializes a Pipeline with HttpTransport for data persistence
+   * 2. Tests nested steps hierarchy with three main steps:
+   *    - load-data: simulates loading data with network delay
+   *    - process-data: demonstrates processing with substeps for each item
+   *    - aggregate-results: shows aggregation of processed data
+   * 3. Verifies metadata recording with the record() method
+   * 4. Confirms correct HTTP transport communication:
+   *    - Pipeline events (start/finish)
+   *    - Step events (start/finish) for all steps and substeps
+   * 5. Validates time tracking for steps and operations
+   * 6. Ensures the nested structure of steps is maintained properly
+   * 7. Checks that results flow correctly through the pipeline
+   */
   it('should track a complete pipeline execution with multiple steps', async () => {
-    // Create a storage adapter
-    const storageAdapter = new FileStorageAdapter(testStoragePath);
-    await storageAdapter.connect();
+    // Create a transport with mocked HTTP
+    const transport = new HttpTransport({
+      baseUrl: 'https://api.example.com',
+      batchLogs: false,
+    });
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('integration-test', {
       autoSave: true,
-      storageAdapter,
+      transport,
     });
 
     // Run the pipeline with multiple steps
@@ -87,21 +116,25 @@ describe('End-to-End Integration Tests', () => {
       sum: 30,
     });
 
-    // Verify that the run was saved
-    const runs = await storageAdapter.listRuns('integration-test');
-    expect(runs.length).toBe(1);
-    expect(runs[0].status).toBe('completed');
+    // Count the HTTP calls
+    const postCalls = mockedAxios.post.mock.calls;
 
-    // Get the run data
-    const runData = await storageAdapter.getRunData(pipeline.getRunId());
-    expect(runData).toBeDefined();
-    expect(runData.meta.status).toBe('completed');
-
-    // Verify steps were recorded
-    const steps = await storageAdapter.listRunSteps(pipeline.getRunId());
-
-    // Check that we have the expected number of steps (1 pipeline + 3 main steps + 5 substeps)
-    expect(steps.length).toBe(9);
+    // We expect exactly 20 HTTP calls for the following reasons:
+    // - 1 call for pipeline/start (initiateRun)
+    // - 1 call for pipeline/finish (finishRun)
+    // - 9 calls for step/start (initiateStep):
+    //   * 1 for the Pipeline itself (Pipeline extends Step)
+    //   * 1 for load-data
+    //   * 1 for process-data
+    //   * 5 for each process-item-N
+    //   * 1 for aggregate-results
+    // - 9 calls for step/finish (finishStep):
+    //   * 1 for the Pipeline itself
+    //   * 1 for load-data
+    //   * 1 for process-data
+    //   * 5 for each process-item-N
+    //   * 1 for aggregate-results
+    expect(postCalls.length).toBe(20);
 
     // Verify the step hierarchy
     const hierarchy = pipeline.outputNested();
@@ -116,9 +149,16 @@ describe('End-to-End Integration Tests', () => {
     expect(hierarchy.substeps[1].name).toBe('process-data');
     expect(hierarchy.substeps[1].result).toEqual([2, 4, 6, 8, 10]);
 
-    // Count the number of process-item steps
-    const processItemSteps = steps.filter((step) => step.key.startsWith('integration-test.process-data.process-item'));
-    expect(processItemSteps.length).toBe(5);
+    // Check that process-item steps exist in the step hierarchy
+    const processDataStep = hierarchy.substeps[1];
+    expect(processDataStep.substeps.length).toBe(5);
+    expect(processDataStep.substeps.map((s) => s.name)).toEqual([
+      'process-item-1',
+      'process-item-2',
+      'process-item-3',
+      'process-item-4',
+      'process-item-5',
+    ]);
 
     // Check the third step (aggregate-results)
     expect(hierarchy.substeps[2].name).toBe('aggregate-results');
@@ -133,15 +173,31 @@ describe('End-to-End Integration Tests', () => {
     expect(hierarchy.substeps[2].time.timeUsageMs).toBeGreaterThanOrEqual(30);
   });
 
+  /**
+   * This test verifies the error handling capabilities of the Pipeline:
+   *
+   * 1. Tests how the Pipeline handles and propagates errors from steps
+   * 2. Verifies that steps completed before the error maintain their results
+   * 3. Ensures the Pipeline properly tracks and exposes error information
+   * 4. Validates that errors are communicated to the transport layer:
+   *    - The run should be marked as 'failed'
+   *    - Error information should be included in the step metadata
+   * 5. Confirms that time tracking continues to work for both successful
+   *    and failed steps
+   * 6. Checks that the step hierarchy maintains the correct structure
+   *    and error information
+   */
   it('should handle errors in steps and mark the run as failed', async () => {
-    // Create a storage adapter
-    const storageAdapter = new FileStorageAdapter(testStoragePath);
-    await storageAdapter.connect();
+    // Create a transport with mocked HTTP
+    const transport = new HttpTransport({
+      baseUrl: 'https://api.example.com',
+      batchLogs: false,
+    });
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('error-test', {
       autoSave: true,
-      storageAdapter,
+      transport,
     });
 
     // Run the pipeline with a step that will fail
@@ -176,21 +232,20 @@ describe('End-to-End Integration Tests', () => {
     // Wait for all async operations to complete
     await wait(100);
 
-    // Verify that the run was saved and marked as failed
-    const runs = await storageAdapter.listRuns('error-test');
-    expect(runs.length).toBe(1);
-    expect(runs[0].status).toBe('failed');
+    // Verify axios calls for error case
+    expect(mockedAxios.post).toHaveBeenCalled();
 
-    // Get the run data
-    const runData = await storageAdapter.getRunData(pipeline.getRunId());
-    expect(runData).toBeDefined();
-    expect(runData.meta.status).toBe('failed');
+    // There should be a call to finish the run with failed status
+    const finishRunCall = mockedAxios.post.mock.calls.find(
+      (call) => call[0] === 'https://api.example.com/ingestion/pipeline/finish',
+    );
+    expect(finishRunCall).toBeDefined();
 
-    // Verify steps were recorded
-    const steps = await storageAdapter.listRunSteps(pipeline.getRunId());
-
-    // Check that we have the expected number of steps (1 pipeline + 2 steps)
-    expect(steps.length).toBe(3);
+    // Safely check the status property
+    if (finishRunCall) {
+      const payload = finishRunCall[1] as { status: string };
+      expect(payload.status).toBe('failed');
+    }
 
     // Verify the step hierarchy
     const hierarchy = pipeline.outputNested();
