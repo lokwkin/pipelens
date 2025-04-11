@@ -12,6 +12,7 @@ interface ConnectionConfig extends Knex.Config {}
  * Database Schema:
  * - runs: Stores run metadata
  * - steps: Stores step metadata
+ * - settings: Stores pipeline settings
  */
 export class SQLStorageAdapter implements StorageAdapter {
   private config: Knex.Config;
@@ -92,6 +93,21 @@ export class SQLStorageAdapter implements StorageAdapter {
         table.index('run_id');
         table.index('name');
         table.index('end_time');
+      });
+    }
+
+    // Create settings table if it doesn't exist
+    const settingsTableExists = await this.db.schema.hasTable('settings');
+    if (!settingsTableExists) {
+      await this.db.schema.createTable('settings', (table) => {
+        table.string('pipeline_name').notNullable();
+        table.text('settings_data').notNullable();
+
+        // Primary key
+        table.primary(['pipeline_name']);
+
+        // Create index for faster queries
+        table.index('pipeline_name');
       });
     }
   }
@@ -512,6 +528,94 @@ export class SQLStorageAdapter implements StorageAdapter {
     } catch (error) {
       console.error('Error listing pipeline steps:', error);
       return [];
+    }
+  }
+
+  /**
+   * Save settings for a pipeline
+   * @param pipelineName The name of the pipeline
+   * @param settings The settings object to save
+   */
+  public async saveSettings(pipelineName: string, settings: any): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const settingsJson = JSON.stringify(settings);
+
+      // If settings is an empty object, delete the settings
+      if (Object.keys(settings).length === 0) {
+        await this.deleteSettings(pipelineName);
+        return;
+      }
+
+      // Handle upsert differently for SQLite vs PostgreSQL
+      if (this.db.client.config.client === 'sqlite3') {
+        // SQLite upsert approach
+        await this.db.raw(
+          `INSERT INTO settings (pipeline_name, settings_data)
+           VALUES (?, ?)
+           ON CONFLICT(pipeline_name) DO UPDATE SET
+             settings_data = excluded.settings_data`,
+          [pipelineName, settingsJson],
+        );
+      } else {
+        // PostgreSQL upsert approach
+        await this.db('settings')
+          .insert({
+            pipeline_name: pipelineName,
+            settings_data: settingsJson,
+          })
+          .onConflict('pipeline_name')
+          .merge({
+            settings_data: settingsJson,
+          });
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get settings for a pipeline
+   * @param pipelineName The name of the pipeline
+   * @returns The settings object or null if no settings exist
+   */
+  public async getSettings(pipelineName: string): Promise<any> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const row = await this.db('settings').where('pipeline_name', pipelineName).first();
+
+      if (!row) {
+        return null;
+      }
+
+      return JSON.parse(row.settings_data);
+    } catch (error) {
+      console.error('Error getting settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete settings for a pipeline (internal use only)
+   * @param pipelineName The name of the pipeline
+   */
+  private async deleteSettings(pipelineName: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      await this.db('settings').where('pipeline_name', pipelineName).delete();
+    } catch (error) {
+      console.error('Error deleting settings:', error);
+      throw error;
     }
   }
 

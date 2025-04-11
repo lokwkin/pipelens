@@ -61,4 +61,10 @@ export interface StorageAdapter {
 
   // List all the available timeserieses of steps under a pipeline
   listPipelineSteps(pipelineName: string): Promise<string[]>;
+
+  // Save settings for a pipeline
+  saveSettings(pipelineName: string, settings: any): Promise<void>;
+
+  // Get settings for a pipeline
+  getSettings(pipelineName: string): Promise<any>;
 }

@@ -3,6 +3,28 @@
  * Handles all communication with the backend API
  */
 
+/**
+ * Extracts nested data using dot notation path
+ * @param {Object} obj - The object to extract data from
+ * @param {string} path - Dot notation path (e.g. "result.metrics.accuracy")
+ * @returns {any} - The extracted value or undefined if not found
+ */
+export function getNestedValue(obj, path) {
+  if (!obj || !path) return undefined;
+
+  const keys = path.split('.');
+  let current = obj;
+
+  for (const key of keys) {
+    if (current === null || current === undefined || typeof current !== 'object') {
+      return undefined;
+    }
+    current = current[key];
+  }
+
+  return current;
+}
+
 const api = {
   /**
    * Fetches all available pipelines
@@ -213,4 +235,45 @@ const api = {
       };
     }
   },
+
+  /**
+   * Gets settings for a pipeline
+   * @param {string} pipeline - Pipeline name
+   * @returns {Promise<Object>} Settings object
+   */
+  async getSettings(pipeline) {
+    try {
+      const response = await fetch(`/api/dashboard/pipelines/${pipeline}/settings`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting settings:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Saves settings for a pipeline
+   * To remove settings, pass an empty object {}
+   * @param {string} pipeline - Pipeline name
+   * @param {Object} settings - Settings object to save
+   * @returns {Promise<Object>} Response with success status
+   */
+  async saveSettings(pipeline, settings) {
+    try {
+      const response = await fetch(`/api/dashboard/pipelines/${pipeline}/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return { success: false, error: 'Failed to save settings' };
+    }
+  },
 };
+
+// Export the API object
+export default api;
