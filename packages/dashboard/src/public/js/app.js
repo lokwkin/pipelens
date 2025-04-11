@@ -669,10 +669,12 @@ const app = {
         presetColumnPath.value = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
         nestedPathContainer.style.display = 'block';
         pathPreview.textContent = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
+        pathPreview.classList.add('bg-light', 'px-2', 'py-1', 'rounded');
       } else {
         presetColumnPath.value = '';
         nestedPathContainer.style.display = 'block';
         pathPreview.textContent = '';
+        pathPreview.classList.remove('bg-light', 'px-2', 'py-1', 'rounded');
       }
     };
     
