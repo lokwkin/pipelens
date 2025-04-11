@@ -2,6 +2,7 @@
  * UI manipulation functions for StepsTrack Portal
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ui = {
   /**
    * Show a specific view and update UI accordingly
@@ -38,7 +39,7 @@ const ui = {
                     ? 'import'
                     : viewId === 'settings-view'
                       ? 'settings'
-                    : viewId;
+                      : viewId;
         url.searchParams.set('view', urlViewParam);
 
         // Update page title based on current view
@@ -748,16 +749,16 @@ const ui = {
       if (searchIcon) {
         searchIcon.addEventListener('click', function (e) {
           e.stopPropagation(); // Prevent row click from triggering
-          
+
           const stepKey = this.getAttribute('data-key');
           const searchBox = document.getElementById('step-filter-search');
-          
+
           if (searchBox) {
             console.log('Setting search value to:', stepKey);
             searchBox.value = stepKey;
             searchBox.dispatchEvent(new Event('input', { bubbles: true }));
             searchBox.dispatchEvent(new Event('change', { bubbles: true }));
-            
+
             // Also try to submit the form if it exists
             const searchForm = searchBox.closest('form');
             if (searchForm) {
@@ -840,7 +841,7 @@ const ui = {
     const stepStatsSummary = document.getElementById('step-stats-summary');
     const chartContainer = document.getElementById('step-time-series-chart-container');
     const paginationContainer = document.getElementById('steps-pagination');
-    const paginationRange = document.getElementById('steps-pagination-range');
+    // const paginationRange = document.getElementById('steps-pagination-range');
     const prevButton = document.getElementById('steps-pagination-prev');
     const nextButton = document.getElementById('steps-pagination-next');
     const pageSizeSelect = document.getElementById('steps-pagination-page-size');

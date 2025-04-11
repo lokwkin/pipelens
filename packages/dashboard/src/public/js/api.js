@@ -3,28 +3,7 @@
  * Handles all communication with the backend API
  */
 
-/**
- * Extracts nested data using dot notation path
- * @param {Object} obj - The object to extract data from
- * @param {string} path - Dot notation path (e.g. "result.metrics.accuracy")
- * @returns {any} - The extracted value or undefined if not found
- */
-export function getNestedValue(obj, path) {
-  if (!obj || !path) return undefined;
-
-  const keys = path.split('.');
-  let current = obj;
-
-  for (const key of keys) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined;
-    }
-    current = current[key];
-  }
-
-  return current;
-}
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const api = {
   /**
    * Fetches all available pipelines
@@ -274,6 +253,3 @@ const api = {
     }
   },
 };
-
-// Export the API object
-export default api;

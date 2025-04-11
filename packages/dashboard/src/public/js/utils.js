@@ -213,7 +213,5 @@ const utils = {
       successCounts,
       errorCounts,
     };
-  }
+  },
 };
-
-export default utils;
