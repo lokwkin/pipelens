@@ -485,7 +485,16 @@
                 
                 <div class="alert alert-info" role="alert">
                   <i class="fas fa-info-circle me-2"></i>
-                  Define custom columns that can be displayed in the steps table. Use dot notation to access nested data (e.g., "records.inputSize" or "result.outputCount").
+                  <div>
+                    <strong>Custom Data Columns</strong>
+                    <p class="mb-0">Define custom columns to display specific step data in the steps table. These columns help you monitor important metrics across steps without expanding each row.</p>
+                    <p class="mb-0 mt-1">To create effective columns:</p>
+                    <ul class="mb-0">
+                      <li>Use the exact data path as it appears in your step details</li>
+                      <li>View existing step details to discover available data paths</li>
+                      <li>Create pipeline-specific columns when data exists only in certain pipelines</li>
+                    </ul>
+                  </div>
                 </div>
                 
                 <div id="preset-columns-container">
@@ -527,7 +536,16 @@
                           <div class="mb-3">
                             <label for="preset-column-path" class="form-label">Data Path</label>
                             <input type="text" class="form-control" id="preset-column-path" required>
-                            <div class="form-text">Use dot notation. Example: records.metrics.count or result.data.size</div>
+                            <div class="form-text">
+                              <p>Use dot notation to access nested data in the step object:</p>
+                              <ul class="mb-0 ps-3">
+                                <li><strong>records.*</strong> - Access data stored in step records (e.g., <code>records.inputSize</code>, <code>records.metrics.count</code>)</li>
+                                <li><strong>result.*</strong> - Access data from the step result (e.g., <code>result.status</code>, <code>result.data.items</code>)</li>
+                                <li><strong>time.*</strong> - Access timing information (e.g., <code>time.timeUsageMs</code>, <code>time.startTs</code>)</li>
+                                <li><strong>name</strong> or <strong>key</strong> - Access step name or key directly</li>
+                              </ul>
+                              <p class="mt-1 mb-0">View a step's details to see its structure for reference.</p>
+                            </div>
                           </div>
                           <div class="mb-3">
                             <label for="preset-column-pipeline" class="form-label">Pipeline (Optional)</label>
