@@ -471,7 +471,7 @@ const ui = {
         <td>${duration}</td>
         <td class="${statusClass}">${status}</td>
         <td class="text-end">
-          <i class="fas fa-search search-children-icon me-2" title="Search for child steps" data-key="${step.key}"></i>
+          <i class="fas fa-sitemap search-children-icon me-2" title="Show child steps" data-key="${step.key}"></i>
           <i class="fas fa-chevron-down expand-icon"></i>
         </td>
       `;
