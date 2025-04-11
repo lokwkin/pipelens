@@ -1,6 +1,6 @@
 import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
 import { StepMeta, PipelineMeta } from 'steps-track';
-import { Knex } from 'knex';
+import { Knex, knex } from 'knex';
 
 interface ConnectionConfig extends Knex.Config {}
 
@@ -15,7 +15,7 @@ interface ConnectionConfig extends Knex.Config {}
  */
 export class SQLStorageAdapter implements StorageAdapter {
   private config: Knex.Config;
-  private db: Knex | null = null;
+  private db: Knex;
   private connected: boolean = false;
 
   /**
@@ -24,6 +24,7 @@ export class SQLStorageAdapter implements StorageAdapter {
    */
   constructor(config: ConnectionConfig) {
     this.config = config;
+    this.db = knex(this.config);
   }
 
   /**
@@ -35,12 +36,6 @@ export class SQLStorageAdapter implements StorageAdapter {
     }
 
     try {
-      // Import knex
-      const knex = await import('knex');
-
-      // Create the database connection using the config
-      this.db = knex.default(this.config);
-
       // Initialize schema
       await this.initSchema();
 
@@ -526,7 +521,6 @@ export class SQLStorageAdapter implements StorageAdapter {
   public async close(): Promise<void> {
     if (this.db) {
       await this.db.destroy();
-      this.db = null;
       this.connected = false;
     }
   }

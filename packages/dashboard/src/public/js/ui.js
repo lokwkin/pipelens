@@ -76,8 +76,12 @@ const ui = {
                   '<tr><td colspan="4" class="text-center py-4">Select a step to view statistics</td></tr>';
               }
             });
+          } else if (viewId === 'settings-view') {
+            // Settings view is currently blank
           }
           // No data loading needed for import-view
+        } else if (viewId === 'settings-view') {
+          // Settings view is currently blank
         }
 
         // Update browser history

@@ -279,6 +279,11 @@ export function setupDashboardRoutes(storageAdapter: StorageAdapter, upload: mul
     }
   });
 
+  // Import from JSON feature
+  router.post('/import', upload.single('file'), async (req, res) => {
+    // Implementation of import from JSON feature
+  });
+
   return router;
 }
 

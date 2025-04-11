@@ -44,23 +44,6 @@
   "homepage": "https://github.com/lokwkin/steps-track#readme",
   "dependencies": {
     "axios": "^1.8.4",
-    "knex": "^3.1.0",
     "uuid": "^11.1.0"
-  },
-  "peerDependencies": {
-    "pg": "^8.0.0",
-    "sqlite3": "^5.0.0"
-  },
-  "peerDependenciesMeta": {
-    "pg": {
-      "optional": true
-    },
-    "sqlite3": {
-      "optional": true
-    }
-  },
-  "optionalDependencies": {
-    "pg": "^8.11.3",
-    "sqlite3": "^5.1.7"
   }
 }
