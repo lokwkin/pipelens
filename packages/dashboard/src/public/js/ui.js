@@ -471,6 +471,7 @@ const ui = {
         <td>${duration}</td>
         <td class="${statusClass}">${status}</td>
         <td class="text-end">
+          <i class="fas fa-search search-children-icon me-2" title="Search for child steps" data-key="${step.key}"></i>
           <i class="fas fa-chevron-down expand-icon"></i>
         </td>
       `;
@@ -734,6 +735,32 @@ const ui = {
 
     // Make rows clickable to expand/collapse
     document.querySelectorAll('#steps-table tbody tr:not(.details-row)').forEach((row) => {
+      // Add click handler for search children icon
+      const searchIcon = row.querySelector('.search-children-icon');
+      if (searchIcon) {
+        searchIcon.addEventListener('click', function (e) {
+          e.stopPropagation(); // Prevent row click from triggering
+          
+          const stepKey = this.getAttribute('data-key');
+          const searchBox = document.getElementById('step-filter-search');
+          
+          if (searchBox) {
+            console.log('Setting search value to:', stepKey);
+            searchBox.value = stepKey;
+            searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+            searchBox.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Also try to submit the form if it exists
+            const searchForm = searchBox.closest('form');
+            if (searchForm) {
+              searchForm.dispatchEvent(new Event('submit', { bubbles: true }));
+            }
+          } else {
+            console.error('Search box not found with ID "step-filter-search"');
+          }
+        });
+      }
+
       row.addEventListener('click', function (e) {
         // Don't trigger if clicking on the step name link
         if (e.target.closest('.step-name-link')) {

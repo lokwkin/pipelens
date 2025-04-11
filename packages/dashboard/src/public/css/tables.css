@@ -92,6 +92,19 @@ tr[data-target]:hover {
   background-color: rgba(44, 110, 155, 0.08);
 }
 
+/* Search children icon */
+.search-children-icon {
+  cursor: pointer;
+  color: var(--primary);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.search-children-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 .detail-content textarea {
   width: 100%;
   min-height: 200px;

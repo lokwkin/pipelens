@@ -326,45 +326,46 @@ const charts = {
 
     google.visualization.events.addListener(chart, 'select', function () {
       const selection = chart.getSelection();
+      console.log('Gantt chart selection:', selection);
 
       if (selection.length > 0) {
         // A row was selected
         const selectedIndex = selection[0].row;
         const selectedStepKey = data.getValue(selectedIndex, 0); // Get the step key (Task ID)
         console.log('Selected step key:', selectedStepKey);
-
+        
         // Find the search step textbox and set its value
-        const searchBox = document.getElementById('search-step');
+        const searchBox = document.getElementById('step-filter-search');
         if (searchBox) {
           console.log('Found search box, setting value to:', selectedStepKey);
           searchBox.value = selectedStepKey;
-
+          
           // First try triggering input event
           searchBox.dispatchEvent(new Event('input', { bubbles: true }));
-
+          
           // Also try triggering change event
           searchBox.dispatchEvent(new Event('change', { bubbles: true }));
-
+          
           // Try to find and trigger any associated search buttons
           const searchForm = searchBox.closest('form');
           if (searchForm) {
             console.log('Found search form, submitting');
             // Try to prevent default form submission behavior that might reload the page
             const originalSubmit = searchForm.onsubmit;
-            searchForm.onsubmit = function (e) {
+            searchForm.onsubmit = function(e) {
               e.preventDefault();
               return false;
             };
-
+            
             // Submit the form
             searchForm.dispatchEvent(new Event('submit', { bubbles: true }));
-
+            
             // Restore original onsubmit handler
             setTimeout(() => {
               searchForm.onsubmit = originalSubmit;
             }, 100);
           }
-
+          
           // Also try to find any search button and click it
           const searchButton = document.querySelector('button[type="submit"]');
           if (searchButton && searchButton.closest('form') === searchForm) {
@@ -372,13 +373,11 @@ const charts = {
             searchButton.click();
           }
         } else {
-          console.log('Search box not found with ID "search-step"');
+          console.log('Search box not found with ID "step-filter-search"');
           // Try to find search box by other means
-          const possibleSearchBoxes = document.querySelectorAll(
-            'input[type="search"], input[type="text"][placeholder*="search" i], input[type="text"][placeholder*="filter" i]',
-          );
+          const possibleSearchBoxes = document.querySelectorAll('input[type="search"], input[type="text"][placeholder*="search" i], input[type="text"][placeholder*="filter" i]');
           console.log('Possible search boxes found:', possibleSearchBoxes.length);
-
+          
           if (possibleSearchBoxes.length > 0) {
             const searchBox = possibleSearchBoxes[0];
             console.log('Using alternative search box:', searchBox);
@@ -389,7 +388,7 @@ const charts = {
         }
       } else {
         // Selection was cleared, clear the search box if it exists
-        const searchBox = document.getElementById('search-step');
+        const searchBox = document.getElementById('step-filter-search');
         if (searchBox) {
           searchBox.value = '';
           searchBox.dispatchEvent(new Event('input', { bubbles: true }));
