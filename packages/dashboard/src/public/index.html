@@ -534,17 +534,31 @@
                             <div class="form-text">This will be displayed as the column header</div>
                           </div>
                           <div class="mb-3">
-                            <label for="preset-column-path" class="form-label">Data Path</label>
-                            <input type="text" class="form-control" id="preset-column-path" required>
-                            <div class="form-text">
-                              <p>Use dot notation to access nested data in the step object:</p>
-                              <ul class="mb-0 ps-3">
-                                <li><strong>records.*</strong> - Access data stored in step records (e.g., <code>records.inputSize</code>, <code>records.metrics.count</code>)</li>
-                                <li><strong>result.*</strong> - Access data from the step result (e.g., <code>result.status</code>, <code>result.data.items</code>)</li>
-                                <li><strong>time.*</strong> - Access timing information (e.g., <code>time.timeUsageMs</code>, <code>time.startTs</code>)</li>
-                                <li><strong>name</strong> or <strong>key</strong> - Access step name or key directly</li>
+                            <label for="data-path-root" class="form-label">Data Path</label>
+                            <div class="row g-2">
+                              <div class="col-md-5">
+                                <select class="form-select" id="data-path-root" required>
+                                  <option value="">Select data source</option>
+                                  <option value="records">records</option>
+                                  <option value="result">result</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a data source</div>
+                              </div>
+                              <div class="col-md-7" id="nested-path-container">
+                                <input type="text" class="form-control" id="data-path-nested" placeholder="Nested path (e.g. metrics.count)">
+                              </div>
+                            </div>
+                            <input type="hidden" id="preset-column-path" required>
+                            <div class="mt-2">
+                              <small class="text-muted">Complete path: <code id="path-preview" class="bg-light px-2 py-1 rounded"></code></small>
+                            </div>
+                            <div class="form-text mt-2">
+                              <p class="mb-1">Example paths based on common step data structures:</p>
+                              <ul class="mb-0 ps-3 small">
+                                <li><strong>records.*</strong> - <code>records.inputSize</code>, <code>records.metrics.count</code></li>
+                                <li><strong>result.*</strong> - <code>result.status</code>, <code>result.data.items</code></li>
                               </ul>
-                              <p class="mt-1 mb-0">View a step's details to see its structure for reference.</p>
+                              <p class="mt-1 mb-0 small text-muted">View a step's details to see its structure for reference.</p>
                             </div>
                           </div>
                           <div class="mb-3">

@@ -57,6 +57,9 @@ const app = {
     // Initialize settings UI
     this.initSettingsUI();
 
+    // Initialize create column UI from dropdowns
+    this.initCreateColumnFromDropdowns();
+
     // Fetch pipelines
     api.fetchPipelines().then((pipelines) => {
       // Populate global pipeline dropdown
@@ -648,6 +651,46 @@ const app = {
     const presetColumnName = document.getElementById('preset-column-name');
     const presetColumnPath = document.getElementById('preset-column-path');
     const presetColumnPipeline = document.getElementById('preset-column-pipeline');
+    const modalElement = document.getElementById('preset-column-modal');
+    
+    // Get the new path selection elements
+    const dataPathRoot = document.getElementById('data-path-root');
+    const dataPathNested = document.getElementById('data-path-nested');
+    const nestedPathContainer = document.getElementById('nested-path-container');
+    
+    // Function to update the hidden path field
+    const updatePathField = () => {
+      const rootValue = dataPathRoot.value;
+      const nestedValue = dataPathNested.value;
+      const pathPreview = document.getElementById('path-preview');
+      
+      if (rootValue) {
+        // Always show nested path field for both records and result
+        presetColumnPath.value = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
+        nestedPathContainer.style.display = 'block';
+        pathPreview.textContent = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
+      } else {
+        presetColumnPath.value = '';
+        nestedPathContainer.style.display = 'block';
+        pathPreview.textContent = '';
+      }
+    };
+    
+    // Update hidden path field when root or nested path changes
+    dataPathRoot.addEventListener('change', updatePathField);
+    dataPathNested.addEventListener('input', updatePathField);
+    
+    // Add event listener for the close button
+    const closeButton = modalElement.querySelector('.btn-close');
+    closeButton.addEventListener('click', () => {
+      presetColumnModal.hide();
+    });
+    
+    // Add event listener for the cancel button
+    const cancelButton = modalElement.querySelector('.modal-footer .btn-secondary');
+    cancelButton.addEventListener('click', () => {
+      presetColumnModal.hide();
+    });
 
     // Populate pipeline dropdown in the modal
     api.fetchPipelines().then((pipelines) => {
@@ -655,6 +698,19 @@ const app = {
       pipelines.forEach((pipeline) => {
         presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
       });
+    });
+    
+    // Ensure modal properly initializes Bootstrap events
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      // Clean up or reset the form when modal is hidden
+      presetColumnIndex.value = '';
+      presetColumnName.value = '';
+      presetColumnPath.value = '';
+      dataPathRoot.value = '';
+      dataPathNested.value = '';
+      presetColumnPipeline.value = '';
+      nestedPathContainer.style.display = 'block';
+      document.getElementById('path-preview').textContent = '';
     });
 
     // Render preset columns table
@@ -665,15 +721,29 @@ const app = {
       presetColumnIndex.value = '';
       presetColumnName.value = '';
       presetColumnPath.value = '';
+      dataPathRoot.value = '';
+      dataPathNested.value = '';
       presetColumnPipeline.value = '';
+      nestedPathContainer.style.display = 'block';
+      document.getElementById('path-preview').textContent = '';
       document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
       presetColumnModal.show();
     });
 
     // Save column button
     savePresetColumnBtn.addEventListener('click', () => {
+      // Update the path field one last time before validation
+      updatePathField();
+      
       if (!presetColumnForm.checkValidity()) {
         presetColumnForm.reportValidity();
+        return;
+      }
+
+      // Additional validation to ensure root is either records or result
+      const rootValue = dataPathRoot.value;
+      if (rootValue !== 'records' && rootValue !== 'result') {
+        alert('Data source must be either "records" or "result"');
         return;
       }
 
@@ -728,7 +798,29 @@ const app = {
 
         presetColumnIndex.value = index;
         presetColumnName.value = column.name;
+        
+        // Parse the path to set root and nested parts
+        const pathParts = column.path.split('.');
+        const rootPath = pathParts[0];
+        
+        // Only allow records or result as root path
+        if (rootPath !== 'records' && rootPath !== 'result') {
+          alert('This column uses an unsupported data source. Please update it to use either "records" or "result".');
+          dataPathRoot.value = '';
+          dataPathNested.value = '';
+        } else {
+          dataPathRoot.value = rootPath;
+          dataPathNested.value = pathParts.slice(1).join('.');
+        }
+        
+        nestedPathContainer.style.display = 'block';
+        
+        // Set the hidden path field
         presetColumnPath.value = column.path;
+        
+        // Update the path preview
+        document.getElementById('path-preview').textContent = column.path;
+        
         presetColumnPipeline.value = column.pipeline || '';
 
         document.getElementById('preset-column-modal-title').textContent = 'Edit Preset Column';
@@ -792,6 +884,8 @@ const app = {
     const dropdown = document.getElementById('preset-columns-dropdown');
     dropdown.innerHTML = '';
 
+    let hasItems = false;
+
     // Add timestamp columns first
     if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
       this.state.timestampColumns.forEach((column, index) => {
@@ -802,6 +896,7 @@ const app = {
           const item = document.createElement('li');
           item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
           dropdown.appendChild(item);
+          hasItems = true;
         }
       });
 
@@ -813,34 +908,47 @@ const app = {
       }
     }
 
-    // Add user-defined preset columns
-    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
-      if (dropdown.children.length === 0) {
-        dropdown.innerHTML = '<li><span class="dropdown-item-text">No preset columns defined</span></li>';
-      }
-      return;
-    }
-
     // Get current pipeline from URL
     const params = new URLSearchParams(window.location.search);
     const currentPipeline = params.get('pipeline') || '';
 
-    this.state.presetColumns.forEach((column, index) => {
-      // Only show columns that apply to all pipelines or the current pipeline
-      if (!column.pipeline || column.pipeline === currentPipeline) {
-        // Check if this column is already active
-        const isActive = this.state.activeColumns.some((c) => c.name === column.name);
+    // Add user-defined preset columns
+    if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+      this.state.presetColumns.forEach((column, index) => {
+        // Only show columns that apply to all pipelines or the current pipeline
+        if (!column.pipeline || column.pipeline === currentPipeline) {
+          // Check if this column is already active
+          const isActive = this.state.activeColumns.some((c) => c.name === column.name);
 
-        if (!isActive) {
-          const item = document.createElement('li');
-          item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
-          dropdown.appendChild(item);
+          if (!isActive) {
+            const item = document.createElement('li');
+            item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+            dropdown.appendChild(item);
+            hasItems = true;
+          }
         }
-      }
-    });
+      });
+    }
+
+    // Add "No available columns" message if no columns are available
+    if (!hasItems) {
+      const noColumnsItem = document.createElement('li');
+      noColumnsItem.innerHTML = '<span class="dropdown-item-text">No preset columns defined</span>';
+      dropdown.appendChild(noColumnsItem);
+    }
+
+    // Add a divider before the Create New Column option
+    const divider = document.createElement('li');
+    divider.innerHTML = '<hr class="dropdown-divider">';
+    dropdown.appendChild(divider);
+      
+    // Always add "Create New Column" option at the end
+    const createItem = document.createElement('li');
+    createItem.innerHTML = '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
+    dropdown.appendChild(createItem);
 
     // Add event listeners to dropdown items
-    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+    dropdown.querySelectorAll('.dropdown-item:not(.create-preset-column)').forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -863,11 +971,6 @@ const app = {
         ui.updateCustomColumns();
       });
     });
-
-    // Add "No available columns" message if all columns are active
-    if (dropdown.children.length === 0) {
-      dropdown.innerHTML = '<li><span class="dropdown-item-text">No available columns</span></li>';
-    }
   },
 
   /**
@@ -876,6 +979,8 @@ const app = {
   updateStepStatsColumnsDropdown() {
     const dropdown = document.getElementById('step-stats-preset-columns-dropdown');
     dropdown.innerHTML = '';
+
+    let hasItems = false;
 
     // Add timestamp columns first
     if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
@@ -887,6 +992,7 @@ const app = {
           const item = document.createElement('li');
           item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
           dropdown.appendChild(item);
+          hasItems = true;
         }
       });
 
@@ -898,34 +1004,47 @@ const app = {
       }
     }
 
-    // Add user-defined preset columns
-    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
-      if (dropdown.children.length === 0) {
-        dropdown.innerHTML = '<li><span class="dropdown-item-text">No preset columns defined</span></li>';
-      }
-      return;
-    }
-
     // Get current pipeline from URL
     const params = new URLSearchParams(window.location.search);
     const currentPipeline = params.get('pipeline') || '';
 
-    this.state.presetColumns.forEach((column, index) => {
-      // Only show columns that apply to all pipelines or the current pipeline
-      if (!column.pipeline || column.pipeline === currentPipeline) {
-        // Check if this column is already active
-        const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
+    // Add user-defined preset columns
+    if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+      this.state.presetColumns.forEach((column, index) => {
+        // Only show columns that apply to all pipelines or the current pipeline
+        if (!column.pipeline || column.pipeline === currentPipeline) {
+          // Check if this column is already active
+          const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
 
-        if (!isActive) {
-          const item = document.createElement('li');
-          item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
-          dropdown.appendChild(item);
+          if (!isActive) {
+            const item = document.createElement('li');
+            item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+            dropdown.appendChild(item);
+            hasItems = true;
+          }
         }
-      }
-    });
+      });
+    }
+
+    // Add "No available columns" message if no columns are available
+    if (!hasItems) {
+      const noColumnsItem = document.createElement('li');
+      noColumnsItem.innerHTML = '<span class="dropdown-item-text">No preset columns defined</span>';
+      dropdown.appendChild(noColumnsItem);
+    }
+
+    // Add a divider before the Create New Column option
+    const divider = document.createElement('li');
+    divider.innerHTML = '<hr class="dropdown-divider">';
+    dropdown.appendChild(divider);
+      
+    // Always add "Create New Column" option at the end
+    const createItem = document.createElement('li');
+    createItem.innerHTML = '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
+    dropdown.appendChild(createItem);
 
     // Add event listeners to dropdown items
-    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+    dropdown.querySelectorAll('.dropdown-item:not(.create-preset-column)').forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -948,11 +1067,6 @@ const app = {
         ui.updateStepStatsCustomColumns();
       });
     });
-
-    // Add "No available columns" message if all columns are active
-    if (dropdown.children.length === 0) {
-      dropdown.innerHTML = '<li><span class="dropdown-item-text">No available columns</span></li>';
-    }
   },
 
   /**
@@ -972,6 +1086,60 @@ const app = {
         isTimestamp: true,
       },
     ];
+  },
+
+  /**
+   * Initialize create column UI from dropdowns
+   */
+  initCreateColumnFromDropdowns() {
+    // Get the modal elements
+    const presetColumnModal = new bootstrap.Modal(document.getElementById('preset-column-modal'));
+    const presetColumnIndex = document.getElementById('preset-column-index');
+    const presetColumnName = document.getElementById('preset-column-name');
+    const presetColumnPath = document.getElementById('preset-column-path');
+    const presetColumnPipeline = document.getElementById('preset-column-pipeline');
+    const dataPathRoot = document.getElementById('data-path-root');
+    const dataPathNested = document.getElementById('data-path-nested');
+    
+    // Event listeners for the modal's close and cancel buttons are already set in initSettingsUI
+
+    // Add event listeners for "Create New Column" in both dropdowns
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('create-preset-column') || e.target.closest('.create-preset-column')) {
+        e.preventDefault();
+        
+        // Reset form values
+        presetColumnIndex.value = '';
+        presetColumnName.value = '';
+        presetColumnPath.value = '';
+        dataPathRoot.value = '';
+        dataPathNested.value = '';
+        document.getElementById('nested-path-container').style.display = 'block';
+        document.getElementById('path-preview').textContent = '';
+        
+        // Get current pipeline from URL or dropdown and pre-select it
+        const params = new URLSearchParams(window.location.search);
+        const currentPipeline = params.get('pipeline') || '';
+        
+        // Ensure the pipeline dropdown is populated
+        api.fetchPipelines().then((pipelines) => {
+          // Populate pipeline dropdown
+          presetColumnPipeline.innerHTML = '<option value="">All Pipelines</option>';
+          pipelines.forEach((pipeline) => {
+            presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
+          });
+          
+          // Set the current pipeline if available
+          presetColumnPipeline.value = currentPipeline;
+        });
+        
+        // Set modal title to "Add Preset Column"
+        document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
+        
+        // Show the modal
+        presetColumnModal.show();
+      }
+    });
   },
 };
 
