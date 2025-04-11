@@ -437,10 +437,21 @@
       <div id="settings-view" class="view">
         <div class="card">
           <div class="card-body">
-            <h3 class="mb-4">Settings</h3>
+            <h3 class="mb-4">Pipeline Settings</h3>
             
             <div class="settings-container">
-              <!-- Settings content will be added here -->
+              <div class="mb-3">
+                <label for="settings-pipeline-select" class="form-label">Select Pipeline</label>
+                <select id="settings-pipeline-select" class="form-select">
+                  <option value="">Select a pipeline</option>
+                </select>
+              </div>
+              
+              <div id="pipeline-settings-content" class="d-none">
+                <!-- Pipeline-specific settings content will be added here -->
+              </div>
+              
+              <div id="settings-alert" class="alert mt-3 d-none" role="alert"></div>
             </div>
           </div>
         </div>

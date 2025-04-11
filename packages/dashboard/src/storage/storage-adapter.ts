@@ -24,6 +24,10 @@ export type StepTimeseriesEntry = {
   stepKey: string;
 };
 
+export interface DashboardSettings {
+  [key: string]: any;
+}
+
 export interface StorageAdapter {
   // Connect to the storage, this should be called before any other operations.
   connect(): Promise<void>;
@@ -61,4 +65,10 @@ export interface StorageAdapter {
 
   // List all the available timeserieses of steps under a pipeline
   listPipelineSteps(pipelineName: string): Promise<string[]>;
+  
+  // Store pipeline-specific dashboard settings
+  storePipelineSettings(pipelineName: string, settings: DashboardSettings): Promise<void>;
+  
+  // Get pipeline-specific dashboard settings
+  getPipelineSettings(pipelineName: string): Promise<DashboardSettings>;
 }

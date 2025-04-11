@@ -77,11 +77,13 @@ const ui = {
               }
             });
           } else if (viewId === 'settings-view') {
-            // Settings view is currently blank
+            // Initialize settings view
+            this.initSettingsView();
           }
           // No data loading needed for import-view
         } else if (viewId === 'settings-view') {
-          // Settings view is currently blank
+          // Initialize settings view even if no pipeline is selected
+          this.initSettingsView();
         }
 
         // Update browser history
@@ -1409,5 +1411,76 @@ const ui = {
       // Update URL without navigation
       window.history.replaceState({}, '', url);
     });
+  },
+
+  /**
+   * Initialize settings view
+   */
+  initSettingsView() {
+    // Get DOM elements
+    const settingsPipelineSelect = document.getElementById('settings-pipeline-select');
+    const pipelineSettingsContent = document.getElementById('pipeline-settings-content');
+    
+    // Load pipelines for the pipeline settings dropdown
+    api.fetchPipelines().then(pipelines => {
+      // Clear existing options
+      settingsPipelineSelect.innerHTML = '<option value="">Select a pipeline</option>';
+      
+      // Add pipeline options
+      pipelines.forEach(pipeline => {
+        settingsPipelineSelect.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
+      });
+      
+      // Set the current pipeline from URL if available
+      const params = new URLSearchParams(window.location.search);
+      const selectedPipeline = params.get('pipeline');
+      if (selectedPipeline) {
+        settingsPipelineSelect.value = selectedPipeline;
+        
+        // Show pipeline settings content
+        pipelineSettingsContent.classList.remove('d-none');
+      }
+    });
+    
+    // Handle pipeline selection change
+    settingsPipelineSelect.addEventListener('change', function() {
+      const pipeline = this.value;
+      
+      if (pipeline) {
+        // Show pipeline settings content
+        pipelineSettingsContent.classList.remove('d-none');
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('pipeline', pipeline);
+        window.history.replaceState({}, '', url);
+      } else {
+        // Hide pipeline settings content
+        pipelineSettingsContent.classList.add('d-none');
+        
+        // Remove pipeline from URL
+        const url = new URL(window.location);
+        url.searchParams.delete('pipeline');
+        window.history.replaceState({}, '', url);
+      }
+    });
+  },
+  
+  /**
+   * Show an alert message in the settings view
+   * @param {string} message - The message to display
+   * @param {string} type - Alert type (success, danger, info, warning)
+   */
+  showSettingsAlert(message, type) {
+    const alertBox = document.getElementById('settings-alert');
+    
+    alertBox.textContent = message;
+    alertBox.className = `alert alert-${type} mt-3`;
+    alertBox.classList.remove('d-none');
+    
+    // Auto-hide the alert after 5 seconds
+    setTimeout(() => {
+      alertBox.classList.add('d-none');
+    }, 5000);
   },
 };

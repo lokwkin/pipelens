@@ -213,4 +213,174 @@ const api = {
       };
     }
   },
+
+  /**
+   * Loads pipeline-specific dashboard settings
+   * @param {string} pipeline - Pipeline name
+   * @returns {Promise<Object>} Pipeline-specific dashboard settings
+   */
+  async getPipelineSettings(pipeline) {
+    try {
+      const response = await fetch(`/api/dashboard/settings/pipeline/${pipeline}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error loading settings for pipeline ${pipeline}:`, error);
+      return {};
+    }
+  },
+
+  /**
+   * Saves pipeline-specific dashboard settings
+   * @param {string} pipeline - Pipeline name
+   * @param {Object} settings - Settings to save
+   * @returns {Promise<Object>} Response with success status
+   */
+  async savePipelineSettings(pipeline, settings) {
+    try {
+      const response = await fetch(`/api/dashboard/settings/pipeline/${pipeline}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error(`Error saving settings for pipeline ${pipeline}:`, error);
+      return { success: false, error: `Failed to save settings for pipeline ${pipeline}` };
+    }
+  },
+
+  /**
+   * Updates preset data columns for a pipeline
+   * @param {string} pipeline - Pipeline name
+   * @param {Array} presetColumns - Array of preset column definitions
+   * @example
+   * // Example preset columns structure:
+   * [
+   *   {
+   *     id: "uniqueId1",
+   *     name: "User ID", 
+   *     path: "records.0.userId",
+   *     stepKey: "fetch-user-data",
+   *     dataType: "string"
+   *   },
+   *   {
+   *     id: "uniqueId2",
+   *     name: "Success Rate", 
+   *     path: "result.stats.successRate",
+   *     stepKey: "calculate-metrics",
+   *     dataType: "number",
+   *     formatter: "percent" // Optional formatter
+   *   }
+   * ]
+   * @returns {Promise<Object>} Response with success status
+   */
+  async updatePresetDataColumns(pipeline, presetColumns) {
+    try {
+      // First get existing settings
+      const currentSettings = await this.getPipelineSettings(pipeline);
+      
+      // Update with new preset columns
+      const updatedSettings = {
+        ...currentSettings,
+        presetDataColumns: presetColumns
+      };
+      
+      // Save updated settings
+      return await this.savePipelineSettings(pipeline, updatedSettings);
+    } catch (error) {
+      console.error(`Error updating preset data columns for pipeline ${pipeline}:`, error);
+      return { success: false, error: `Failed to update preset data columns for pipeline ${pipeline}` };
+    }
+  },
+  
+  /**
+   * Gets preset data columns for a pipeline
+   * @param {string} pipeline - Pipeline name
+   * @returns {Promise<Array>} Array of preset data column definitions
+   */
+  async getPresetDataColumns(pipeline) {
+    try {
+      const settings = await this.getPipelineSettings(pipeline);
+      return settings.presetDataColumns || [];
+    } catch (error) {
+      console.error(`Error getting preset data columns for pipeline ${pipeline}:`, error);
+      return [];
+    }
+  },
+  
+  /**
+   * Resolves data from a step using dot notation path
+   * @param {Object} stepData - Step data containing records or result
+   * @param {string} path - Dot notation path (e.g. "records.0.name" or "result.value")
+   * @returns {*} The value at the specified path or undefined if not found
+   */
+  resolveDataByPath(stepData, path) {
+    try {
+      if (!stepData || !path) return undefined;
+      
+      const parts = path.split('.');
+      let current = stepData;
+      
+      for (const part of parts) {
+        if (current === null || current === undefined) return undefined;
+        current = current[part];
+      }
+      
+      return current;
+    } catch (error) {
+      console.error('Error resolving data path:', error);
+      return undefined;
+    }
+  },
+  
+  /**
+   * Extracts data from a run using preset data columns
+   * @param {Object} run - Run data containing steps
+   * @param {Array} presetColumns - Array of preset column definitions
+   * @returns {Object} Object with column values mapped by column id
+   */
+  extractPresetColumnData(run, presetColumns) {
+    if (!run || !run.steps || !presetColumns || !Array.isArray(presetColumns)) {
+      return {};
+    }
+    
+    const result = {};
+    
+    presetColumns.forEach(column => {
+      const { id, stepKey, path, dataType, formatter } = column;
+      if (!id || !stepKey || !path) return;
+      
+      // Find the step data
+      const stepData = run.steps.find(step => step.key === stepKey);
+      if (!stepData) return;
+      
+      // Extract value using dot notation
+      let value = this.resolveDataByPath(stepData, path);
+      
+      // Apply basic type conversion if needed
+      if (value !== undefined && value !== null) {
+        if (dataType === 'number' && typeof value !== 'number') {
+          value = parseFloat(value);
+        } else if (dataType === 'boolean' && typeof value !== 'boolean') {
+          value = Boolean(value);
+        } else if (dataType === 'string' && typeof value !== 'string') {
+          value = String(value);
+        }
+        
+        // Apply formatter if specified
+        if (formatter === 'percent' && typeof value === 'number') {
+          value = `${(value * 100).toFixed(2)}%`;
+        }
+      }
+      
+      result[id] = value;
+    });
+    
+    return result;
+  }
 };
+
+// Export the API for use in other modules
+export default api;

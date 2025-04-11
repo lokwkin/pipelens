@@ -1,4 +1,4 @@
-import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
+import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter, DashboardSettings } from './storage-adapter';
 import { StepMeta, PipelineMeta } from 'steps-track';
 import { Knex, knex } from 'knex';
 
@@ -92,6 +92,16 @@ export class SQLStorageAdapter implements StorageAdapter {
         table.index('run_id');
         table.index('name');
         table.index('end_time');
+      });
+    }
+    
+    // Create settings table if it doesn't exist
+    const settingsTableExists = await this.db.schema.hasTable('settings');
+    if (!settingsTableExists) {
+      await this.db.schema.createTable('settings', (table) => {
+        table.string('scope_key').primary(); // "global" or pipeline name
+        table.text('settings_json').notNullable();
+        table.timestamp('updated_at').defaultTo(this.db.fn.now());
       });
     }
   }
@@ -522,6 +532,85 @@ export class SQLStorageAdapter implements StorageAdapter {
     if (this.db) {
       await this.db.destroy();
       this.connected = false;
+    }
+  }
+  
+  /**
+   * Store pipeline-specific dashboard settings
+   * @param pipelineName Name of the pipeline
+   * @param settings Object containing dashboard settings
+   */
+  public async storePipelineSettings(pipelineName: string, settings: DashboardSettings): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+    
+    if (!pipelineName) {
+      throw new Error('Pipeline name is required');
+    }
+    
+    try {
+      // Store settings as a single JSON object
+      const serialized = JSON.stringify(settings);
+      
+      // Use upsert (insert or update) pattern
+      if (this.db.client.config.client === 'sqlite3') {
+        // SQLite upsert approach
+        await this.db.raw(
+          `INSERT INTO settings (scope_key, settings_json, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(scope_key) DO UPDATE SET
+             settings_json = excluded.settings_json,
+             updated_at = excluded.updated_at`,
+          [pipelineName, serialized, new Date()]
+        );
+      } else {
+        // PostgreSQL upsert approach
+        await this.db('settings')
+          .insert({
+            scope_key: pipelineName,
+            settings_json: serialized,
+            updated_at: new Date()
+          })
+          .onConflict('scope_key')
+          .merge({
+            settings_json: serialized,
+            updated_at: new Date()
+          });
+      }
+    } catch (error) {
+      console.error(`Error storing settings for pipeline ${pipelineName}:`, error);
+      throw new Error(`Failed to store settings for pipeline ${pipelineName}: ${error}`);
+    }
+  }
+  
+  /**
+   * Get pipeline-specific dashboard settings
+   * @param pipelineName Name of the pipeline
+   * @returns Object containing dashboard settings
+   */
+  public async getPipelineSettings(pipelineName: string): Promise<DashboardSettings> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+    
+    if (!pipelineName) {
+      throw new Error('Pipeline name is required');
+    }
+    
+    try {
+      const result = await this.db('settings')
+        .where('scope_key', pipelineName)
+        .first();
+        
+      if (!result) {
+        return {}; // Return empty object if no settings are found
+      }
+      
+      return JSON.parse(result.settings_json);
+    } catch (error) {
+      console.error(`Error retrieving settings for pipeline ${pipelineName}:`, error);
+      return {}; // Return empty object in case of errors
     }
   }
 }

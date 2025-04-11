@@ -219,6 +219,31 @@ export function setupDashboardRoutes(storageAdapter: StorageAdapter, upload: mul
     }
   });
 
+  // Get pipeline-specific settings
+  router.get('/settings/pipeline/:pipelineName', async (req, res) => {
+    try {
+      const { pipelineName } = req.params;
+      const settings = await storageAdapter.getPipelineSettings(pipelineName);
+      res.json(settings);
+    } catch (error) {
+      console.error(`Error getting settings for pipeline ${req.params.pipelineName}:`, error);
+      res.status(500).json({ error: `Failed to get settings for pipeline ${req.params.pipelineName}` });
+    }
+  });
+
+  // Update pipeline-specific settings
+  router.post('/settings/pipeline/:pipelineName', async (req, res) => {
+    try {
+      const { pipelineName } = req.params;
+      const settings = req.body;
+      await storageAdapter.storePipelineSettings(pipelineName, settings);
+      res.json({ success: true });
+    } catch (error) {
+      console.error(`Error storing settings for pipeline ${req.params.pipelineName}:`, error);
+      res.status(500).json({ error: `Failed to store settings for pipeline ${req.params.pipelineName}` });
+    }
+  });
+
   // Upload endpoint for steps files (handles both single and multiple files)
   router.post('/upload', upload.array('stepsFiles', 10), (req: Request, res: Response) => {
     try {
