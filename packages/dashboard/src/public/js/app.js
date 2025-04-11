@@ -96,6 +96,7 @@ const app = {
    */
   handleInitialView(view, runId, stepKey, stepName, pipeline) {
     // Map URL view parameter to actual view IDs
+    // Ensure all valid views are mapped correctly
     const viewId =
       view === 'run-detail'
         ? 'run-detail-view'
@@ -103,35 +104,40 @@ const app = {
           ? 'step-analysis-view'
           : view === 'step-stats-view'
             ? 'step-stats-view'
-            : 'runs-view'; // Default to runs view
+          : view === 'import' // Added mapping for import view
+            ? 'import-view'
+          : view === 'settings' // Added mapping for settings view
+            ? 'settings-view'
+            : 'runs-view'; // Default to runs view if unknown
 
-    if (view === 'run-detail' && runId) {
-      ui.showView('run-detail-view');
+    // Now use the correctly mapped viewId to show the view
+    ui.showView(viewId);
+
+    // Load data based on the view *after* showing it
+    if (viewId === 'run-detail-view' && runId) {
       ui.loadRunDetails(runId, false);
-    } else if (view === 'step-analysis' && runId && stepKey) {
-      // We need to find the step data
+    } else if (viewId === 'step-analysis-view' && runId && stepKey) {
+      // Fetch step data for analysis view
       fetch(`/api/dashboard/runs/${runId}/step/${stepKey}`)
         .then((response) => response.json())
         .then((step) => {
-          ui.showView('step-analysis-view');
-          document.getElementById('step-analysis-details').innerHTML = `
-            <p><strong>Step Key:</strong> ${step.key}</p>
-            <p><strong>Start Time:</strong> ${utils.formatDateTime(step.time.startTs)}</p>
-            <p><strong>End Time:</strong> ${utils.formatDateTime(step.time.endTs)}</p>
-            <p><strong>Duration:</strong> ${utils.formatDuration(step.time.timeUsageMs)}</p>
-          `;
+          // Ensure the view is still analysis before updating content
+          if (app.state.currentView === 'step-analysis-view') {
+            document.getElementById('step-analysis-details').innerHTML = `
+              <p><strong>Step Key:</strong> ${step.key}</p>
+              <p><strong>Start Time:</strong> ${utils.formatDateTime(step.time.startTs)}</p>
+              <p><strong>End Time:</strong> ${utils.formatDateTime(step.time.endTs)}</p>
+              <p><strong>Duration:</strong> ${utils.formatDuration(step.time.timeUsageMs)}</p>
+            `;
+          }
         });
-    } else if (view === 'step-stats-view') {
-      // Just show the view - the showView method will handle loading
-      // step names and time series based on URL parameters
-      ui.showView('step-stats-view');
-    } else if (view === 'runs-view' && pipeline) {
-      ui.showView('runs-view');
+    } else if (viewId === 'step-stats-view') {
+      // Step stats data loading is handled within ui.showView
+      // based on pipeline and stepName parameters, no specific call needed here
+    } else if (viewId === 'runs-view' && pipeline) {
       ui.loadRuns(pipeline);
-    } else {
-      // Default to showing the main view specified
-      ui.showView(viewId);
     }
+    // No specific data loading needed for import-view or settings-view on initial load
   },
 
   /**
@@ -594,30 +600,25 @@ const app = {
 
     // Start a new interval
     this.state.refreshInterval = setInterval(() => {
-      // Toggle the refresh indicator
-      const refreshIndicator = document.querySelector('.refresh-indicator');
-      refreshIndicator.classList.toggle('active');
-
-      // Get current view and parameters from URL at each refresh cycle
-      const params = new URLSearchParams(window.location.search);
-      const view = params.get('view') || 'runs-view';
-      const runId = params.get('runId');
-      const pipeline = params.get('pipeline');
-      const stepName = params.get('stepName');
-
-      // Refresh data based on current view
-      if (view === 'runs-view' && pipeline) {
-        ui.loadRuns(pipeline);
-      } else if (view === 'run-detail' && runId) {
-        ui.loadRunDetails(runId, true);
-      } else if (view === 'step-stats-view' && pipeline && stepName) {
-        ui.loadStepTimeSeries(pipeline, stepName);
+      // Check if auto-refresh is still enabled
+      if (!this.state.autoRefresh) {
+        this.stopAutoRefresh();
+        return;
       }
 
-      // Hide the indicator after a delay
-      setTimeout(() => {
-        refreshIndicator.classList.remove('active');
-      }, 1000);
+      // Refresh data based on the current view
+      const currentView = this.state.currentView;
+      const params = new URLSearchParams(window.location.search);
+      const pipeline = params.get('pipeline');
+      const runId = params.get('runId');
+
+      // Only refresh data for views that display dynamic run/step info
+      if (currentView === 'runs-view' && pipeline) {
+        ui.loadRuns(pipeline);
+      } else if (currentView === 'run-detail-view' && runId) {
+        ui.loadRunDetails(runId, true); // Pass true for auto-refresh
+      }
+      // Do nothing if on import-view or settings-view or other static views
     }, this.state.refreshFrequency);
   },
 
