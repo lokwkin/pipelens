@@ -515,7 +515,7 @@ const app = {
         });
 
         // Use the unified steps files upload endpoint
-        const response = await fetch('/api/dashboard/upload/steps-files', {
+        const response = await fetch('/api/dashboard/upload', {
           method: 'POST',
           body: formData,
         });
