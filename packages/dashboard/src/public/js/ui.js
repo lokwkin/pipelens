@@ -345,13 +345,19 @@ const ui = {
       // Only set up filter event listeners once
       if (!isAutoRefresh) {
         this.setupStepFilters();
+
+        // Update the custom columns dropdown
+        app.updatePresetColumnsDropdown();
+
+        // Set up custom column event listeners
+        this.setupCustomColumnListeners();
       }
 
       // Apply any current filters
       this.applyStepFilters();
     } catch (error) {
       console.error('Error loading run details:', error);
-      stepsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4">Error loading run details</td></tr>';
+      stepsTable.innerHTML = '<tr><td colspan="5" class="text-center py-4">Error loading run details</td></tr>';
     }
   },
 
@@ -401,6 +407,156 @@ const ui = {
   },
 
   /**
+   * Set up event listeners for custom columns
+   */
+  setupCustomColumnListeners() {
+    // Setup event delegation for removing custom columns
+    const activeColumnsContainer = document.getElementById('active-custom-columns');
+
+    activeColumnsContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-column') || e.target.closest('.remove-column')) {
+        const columnName = e.target.closest('.custom-column-badge').getAttribute('data-column-name');
+
+        // Remove from active columns
+        app.state.activeColumns = app.state.activeColumns.filter((c) => c.name !== columnName);
+
+        // Update UI
+        this.updateCustomColumns();
+
+        // Update the dropdown to show this column again
+        app.updatePresetColumnsDropdown();
+      }
+    });
+
+    // Initial update of custom columns
+    this.updateCustomColumns();
+  },
+
+  /**
+   * Update the custom columns in the steps table
+   */
+  updateCustomColumns() {
+    // Update the active columns display
+    const activeColumnsContainer = document.getElementById('active-custom-columns');
+    activeColumnsContainer.innerHTML = '';
+
+    app.state.activeColumns.forEach((column) => {
+      const badge = document.createElement('div');
+      badge.className = 'badge bg-light text-dark custom-column-badge';
+      badge.setAttribute('data-column-name', column.name);
+      badge.innerHTML = `
+        ${column.name}
+        <button type="button" class="btn-close btn-close-sm remove-column" aria-label="Remove"></button>
+      `;
+      activeColumnsContainer.appendChild(badge);
+    });
+
+    // Update the table header
+    const tableHeader = document.getElementById('steps-table-header');
+
+    // Remove any existing custom columns
+    tableHeader.querySelectorAll('.custom-column').forEach((th) => th.remove());
+
+    // Add custom columns before the last empty column
+    const lastColumn = tableHeader.lastElementChild;
+
+    app.state.activeColumns.forEach((column) => {
+      const th = document.createElement('th');
+      th.className = 'custom-column';
+      th.textContent = column.name;
+      tableHeader.insertBefore(th, lastColumn);
+    });
+
+    // Update the colspan of any "no data" rows
+    const noDataRows = document.querySelectorAll('#steps-table tbody tr:not(.details-row)');
+    noDataRows.forEach((row) => {
+      const firstCell = row.querySelector('td[colspan]');
+      if (firstCell) {
+        // Base column count is now 5 instead of 7
+        const baseColumnCount = 5;
+        firstCell.setAttribute('colspan', baseColumnCount + app.state.activeColumns.length);
+      }
+    });
+
+    // Reapply filters to update the table with the new columns
+    this.applyStepFilters();
+  },
+
+  /**
+   * Safely escape a string for use in HTML attributes
+   * @param {string} str - The string to escape
+   * @returns {string} - The escaped string
+   */
+  escapeHtml(str) {
+    if (typeof str !== 'string') {
+      return str;
+    }
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  },
+
+  /**
+   * Extract nested data from an object using dot notation
+   * @param {Object} obj - The object to extract data from
+   * @param {string} path - The path to the data using dot notation
+   * @returns {*} - The extracted data or "N/A" if not found
+   */
+  getNestedData(obj, path) {
+    // Debug logging
+    console.log('Extracting data:', {
+      objectType: obj ? (Array.isArray(obj) ? 'Array' : typeof obj) : 'null/undefined',
+      path,
+      objectPreview: obj ? JSON.stringify(obj).substring(0, 100) + '...' : 'null',
+    });
+
+    if (!obj || !path) {
+      return 'N/A';
+    }
+
+    const keys = path.split('.');
+    let result = obj;
+
+    for (const key of keys) {
+      console.log(
+        `Accessing key: "${key}", current result type:`,
+        result ? (Array.isArray(result) ? 'Array' : typeof result) : 'null/undefined',
+      );
+
+      if (result === null || result === undefined || typeof result !== 'object') {
+        console.log(`Failed at key "${key}": result is not an object`);
+        return 'N/A';
+      }
+
+      result = result[key];
+
+      if (result === undefined) {
+        console.log(`Failed at key "${key}": property not found`);
+        return 'N/A';
+      }
+    }
+
+    // Debug the final result
+    console.log('Final result:', result);
+
+    // Format the result based on its type
+    if (result === null) {
+      return 'null';
+    } else if (typeof result === 'object') {
+      try {
+        return JSON.stringify(result);
+      } catch (e) {
+        return 'Object';
+      }
+    } else {
+      return result.toString();
+    }
+  },
+
+  /**
    * Apply filters to the steps list
    */
   applyStepFilters() {
@@ -442,15 +598,13 @@ const ui = {
 
     // Show filtered steps or empty message
     if (filteredSteps.length === 0) {
-      stepsTable.innerHTML =
-        '<tr><td colspan="7" class="text-center py-4">No steps match the current filters</td></tr>';
+      const columnsCount = 5 + app.state.activeColumns.length; // Base columns + custom columns
+      stepsTable.innerHTML = `<tr><td colspan="${columnsCount}" class="text-center py-4">No steps match the current filters</td></tr>`;
       return;
     }
 
     // Render filtered steps
     filteredSteps.forEach((step, index) => {
-      const startTime = utils.formatDateTime(step.time.startTs);
-      const endTime = utils.formatDateTime(step.time.endTs);
       const duration = utils.formatDuration(step.time.timeUsageMs);
 
       let status = 'Completed';
@@ -475,15 +629,89 @@ const ui = {
       row.innerHTML = `
         <td>${step.key}</td>
         <td><a href="#" class="step-name-link">${step.name}</a></td>
-        <td>${startTime}</td>
-        <td>${endTime}</td>
         <td>${duration}</td>
         <td class="${statusClass}">${status}</td>
-        <td class="text-end">
-          <i class="fas fa-sitemap search-children-icon me-2" title="Show child steps" data-key="${step.key}"></i>
-          <i class="fas fa-chevron-down expand-icon"></i>
-        </td>
       `;
+
+      // Add custom columns
+      app.state.activeColumns.forEach((column) => {
+        const cell = document.createElement('td');
+
+        // Extract data using the path
+        let dataObj, dataPath;
+
+        if (column.path.startsWith('result.')) {
+          dataObj = step.result;
+          dataPath = column.path.substring(7); // Remove "result." prefix
+        } else if (column.path.startsWith('records.')) {
+          dataObj = step.records;
+          dataPath = column.path.substring(8); // Remove "records." prefix
+        } else {
+          dataObj = step;
+          dataPath = column.path;
+        }
+
+        const data = this.getNestedData(dataObj, dataPath);
+
+        // Format data based on type for better display
+        let displayData = data;
+        let fullData = data; // For tooltip/title
+
+        // Special handling for timestamp columns
+        if (column.isTimestamp) {
+          if (data !== 'N/A' && data !== null && data !== undefined) {
+            // Make sure we have a valid timestamp
+            const timestamp = Number(data);
+            console.log(`Processing timestamp for column ${column.name}:`, {
+              originalData: data,
+              convertedToNumber: timestamp,
+              isValid: !isNaN(timestamp) && timestamp > 0
+            });
+            
+            if (!isNaN(timestamp) && timestamp > 0) {
+              displayData = utils.formatDateTime(timestamp);
+              fullData = displayData;
+            } else {
+              displayData = 'N/A';
+              fullData = 'N/A';
+            }
+          } else {
+            displayData = 'N/A';
+            fullData = 'N/A';
+          }
+        }
+        // Add special styling for different data types
+        else if (data === 'N/A') {
+          cell.classList.add('text-muted');
+        } else if (typeof data === 'number' || !isNaN(Number(data))) {
+          cell.classList.add('text-end');
+          // Format number with commas for readability if it's large
+          if (Number(data) >= 10000) {
+            displayData = Number(data).toLocaleString();
+          }
+        } else if (data.length > 150) {
+          // For very long text, show a condensed version
+          displayData = data.substring(0, 147) + '...';
+        }
+
+        // Safely escape the data for HTML display
+        const safeDisplayData = this.escapeHtml(displayData);
+        const safeFullData = this.escapeHtml(fullData);
+
+        cell.innerHTML = `<span title="${safeFullData}">${safeDisplayData}</span>`;
+
+        row.appendChild(cell);
+      });
+
+      // Add actions column
+      const actionsCell = document.createElement('td');
+      actionsCell.className = 'text-end';
+      actionsCell.innerHTML = `
+        <i class="fas fa-sitemap search-children-icon me-2" title="Show child steps" data-key="${step.key}"></i>
+        <i class="fas fa-chevron-down expand-icon"></i>
+      `;
+      row.appendChild(actionsCell);
+
       stepsTable.appendChild(row);
 
       // Details row
@@ -503,7 +731,7 @@ const ui = {
 
       // Create the details cell
       const detailsCell = document.createElement('td');
-      detailsCell.colSpan = 7;
+      detailsCell.colSpan = 5 + app.state.activeColumns.length; // Base columns + custom columns
 
       let detailsContent = '<div class="step-details">';
 

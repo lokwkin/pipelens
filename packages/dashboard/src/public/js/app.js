@@ -17,6 +17,9 @@ const app = {
       timePreset: '1440', // Default to last 24 hours
     },
     stepsPagination: null, // Added for pagination state
+    presetColumns: [], // Preset data columns for custom table columns
+    activeColumns: [], // Currently active custom columns in steps table
+    timestampColumns: [], // Added for timestamp columns
   },
 
   /**
@@ -40,8 +43,17 @@ const app = {
     this.state.globalDateRange.startDate = startDate;
     this.state.globalDateRange.endDate = endDate;
 
+    // Load preset columns from localStorage
+    this.loadPresetColumns();
+
+    // Initialize timestamp columns
+    this.initTimestampColumns();
+
     // Initialize UI elements
     this.initUIElements();
+
+    // Initialize settings UI
+    this.initSettingsUI();
 
     // Fetch pipelines
     api.fetchPipelines().then((pipelines) => {
@@ -619,6 +631,260 @@ const app = {
       clearInterval(this.state.refreshInterval);
       this.state.refreshInterval = null;
     }
+  },
+
+  /**
+   * Initialize Settings UI
+   */
+  initSettingsUI() {
+    // Add Preset Column Button
+    const addPresetColumnBtn = document.getElementById('add-preset-column');
+    const presetColumnModal = new bootstrap.Modal(document.getElementById('preset-column-modal'));
+    const savePresetColumnBtn = document.getElementById('save-preset-column');
+    const presetColumnForm = document.getElementById('preset-column-form');
+    const presetColumnIndex = document.getElementById('preset-column-index');
+    const presetColumnName = document.getElementById('preset-column-name');
+    const presetColumnPath = document.getElementById('preset-column-path');
+    const presetColumnPipeline = document.getElementById('preset-column-pipeline');
+
+    // Populate pipeline dropdown in the modal
+    api.fetchPipelines().then((pipelines) => {
+      presetColumnPipeline.innerHTML = '<option value="">All Pipelines</option>';
+      pipelines.forEach((pipeline) => {
+        presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
+      });
+    });
+
+    // Render preset columns table
+    this.renderPresetColumnsTable();
+
+    // Add column button
+    addPresetColumnBtn.addEventListener('click', () => {
+      presetColumnIndex.value = '';
+      presetColumnName.value = '';
+      presetColumnPath.value = '';
+      presetColumnPipeline.value = '';
+      document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
+      presetColumnModal.show();
+    });
+
+    // Save column button
+    savePresetColumnBtn.addEventListener('click', () => {
+      if (!presetColumnForm.checkValidity()) {
+        presetColumnForm.reportValidity();
+        return;
+      }
+
+      const index = presetColumnIndex.value;
+      const column = {
+        name: presetColumnName.value,
+        path: presetColumnPath.value,
+        pipeline: presetColumnPipeline.value,
+      };
+
+      if (index === '') {
+        // Add new column
+        this.state.presetColumns.push(column);
+      } else {
+        // Update existing column
+        this.state.presetColumns[parseInt(index, 10)] = column;
+      }
+
+      // Save to localStorage
+      localStorage.setItem('presetColumns', JSON.stringify(this.state.presetColumns));
+
+      // Update UI
+      this.renderPresetColumnsTable();
+      this.updatePresetColumnsDropdown();
+
+      // Close modal
+      presetColumnModal.hide();
+    });
+
+    // Delete column event delegation
+    document.getElementById('preset-columns-table').addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-column-btn') || e.target.closest('.delete-column-btn')) {
+        const index = e.target.closest('.delete-column-btn').getAttribute('data-index');
+        if (confirm('Are you sure you want to delete this column?')) {
+          this.state.presetColumns.splice(parseInt(index, 10), 1);
+          localStorage.setItem('presetColumns', JSON.stringify(this.state.presetColumns));
+          this.renderPresetColumnsTable();
+          this.updatePresetColumnsDropdown();
+
+          // Also remove from active columns if it was active
+          this.state.activeColumns = this.state.activeColumns.filter(
+            (c) => c.name !== this.state.presetColumns[parseInt(index, 10)]?.name,
+          );
+          ui.updateCustomColumns();
+        }
+      }
+
+      // Edit column event
+      if (e.target.classList.contains('edit-column-btn') || e.target.closest('.edit-column-btn')) {
+        const index = e.target.closest('.edit-column-btn').getAttribute('data-index');
+        const column = this.state.presetColumns[parseInt(index, 10)];
+
+        presetColumnIndex.value = index;
+        presetColumnName.value = column.name;
+        presetColumnPath.value = column.path;
+        presetColumnPipeline.value = column.pipeline || '';
+
+        document.getElementById('preset-column-modal-title').textContent = 'Edit Preset Column';
+        presetColumnModal.show();
+      }
+    });
+  },
+
+  /**
+   * Load preset columns from localStorage
+   */
+  loadPresetColumns() {
+    try {
+      const storedColumns = localStorage.getItem('presetColumns');
+      if (storedColumns) {
+        this.state.presetColumns = JSON.parse(storedColumns);
+      }
+    } catch (error) {
+      console.error('Error loading preset columns:', error);
+      this.state.presetColumns = [];
+    }
+  },
+
+  /**
+   * Render preset columns table
+   */
+  renderPresetColumnsTable() {
+    const tableBody = document.querySelector('#preset-columns-table tbody');
+
+    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No preset columns defined</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = '';
+    this.state.presetColumns.forEach((column, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${column.name}</td>
+        <td><code>${column.path}</code></td>
+        <td>${column.pipeline || 'All'}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary edit-column-btn" data-index="${index}" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-column-btn" data-index="${index}" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  },
+
+  /**
+   * Update preset columns dropdown in the steps table
+   */
+  updatePresetColumnsDropdown() {
+    const dropdown = document.getElementById('preset-columns-dropdown');
+    dropdown.innerHTML = '';
+
+    // Add timestamp columns first
+    if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
+      this.state.timestampColumns.forEach((column, index) => {
+        // Check if this column is already active
+        const isActive = this.state.activeColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+        }
+      });
+
+      // Add a divider if we have both timestamp columns and preset columns
+      if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+        const divider = document.createElement('li');
+        divider.innerHTML = '<hr class="dropdown-divider">';
+        dropdown.appendChild(divider);
+      }
+    }
+
+    // Add user-defined preset columns
+    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
+      if (dropdown.children.length === 0) {
+        dropdown.innerHTML = '<li><span class="dropdown-item-text">No preset columns defined</span></li>';
+      }
+      return;
+    }
+
+    // Get current pipeline from URL
+    const params = new URLSearchParams(window.location.search);
+    const currentPipeline = params.get('pipeline') || '';
+
+    this.state.presetColumns.forEach((column, index) => {
+      // Only show columns that apply to all pipelines or the current pipeline
+      if (!column.pipeline || column.pipeline === currentPipeline) {
+        // Check if this column is already active
+        const isActive = this.state.activeColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+        }
+      }
+    });
+
+    // Add event listeners to dropdown items
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Handle timestamp columns differently
+        if (item.classList.contains('timestamp-column')) {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.timestampColumns[index];
+
+          // Add to active columns
+          this.state.activeColumns.push(column);
+        } else {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.presetColumns[index];
+
+          // Add to active columns
+          this.state.activeColumns.push(column);
+        }
+
+        // Update UI
+        ui.updateCustomColumns();
+      });
+    });
+
+    // Add "No available columns" message if all columns are active
+    if (dropdown.children.length === 0) {
+      dropdown.innerHTML = '<li><span class="dropdown-item-text">No available columns</span></li>';
+    }
+  },
+
+  /**
+   * Initialize hard-coded timestamp columns for steps table
+   */
+  initTimestampColumns() {
+    // Define the timestamp columns to be available in the dropdown
+    this.state.timestampColumns = [
+      {
+        name: 'Start Time (UTC)',
+        path: 'time.startTs',
+        isTimestamp: true,
+      },
+      {
+        name: 'End Time (UTC)',
+        path: 'time.endTs',
+        isTimestamp: true,
+      },
+    ];
   },
 };
 
