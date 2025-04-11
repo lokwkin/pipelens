@@ -61,28 +61,32 @@ const pipeline = new Pipeline('my-pipeline');
 
 await pipeline.track(async (st: Step) => {
 
-  // Track a simple step
-  await st.step('some_step', async (st: Step) => {
-    // ...
-    st.record('key', 'value'); // Record data for analysis
-  });
-  
-  // Track nested steps
-  await st.step('parent', async (st: Step) => {
-    await st.step('child_1', async (st: Step) => {
-      // ...
+    // Track a simple step
+    await st.step('some_step', async (st: Step) => {
+
+      // ... your logic ...
+      st.record('key', 'value'); // Record data for analysis
+
+      return 'step_result'  // Results are automatically recorded
     });
     
-    await st.step('child_2', async (st: Step) => {
-      // ...
-    });
+    // Track nested steps
+    await st.step('parent', async (st: Step) => {
+
+      await st.step('child_1', async (st: Step) => {
+        // ...
+      });
+      
+      await st.step('child_2', async (st: Step) => {
+        // ...
+      });
   });
   
-  // Track parallel steps
-  await Promise.all([
-    st.step('parallel_1', async (st: Step) => { /* ... */ }),
-    st.step('parallel_2', async (st: Step) => { /* ... */ })
-  ]);
+    // Track parallel steps
+    await Promise.all([
+        st.step('parallel_1', async (st: Step) => { /* ... */ }),
+        st.step('parallel_2', async (st: Step) => { /* ... */ })
+    ]);
 });
 ```
 
