@@ -36,6 +36,8 @@ const ui = {
                   ? 'step-analysis'
                   : viewId === 'import-view'
                     ? 'import'
+                    : viewId === 'settings-view'
+                      ? 'settings'
                     : viewId;
         url.searchParams.set('view', urlViewParam);
 
@@ -47,6 +49,8 @@ const ui = {
           pageTitle.textContent = 'Step Execution Stats';
         } else if (viewId === 'import-view') {
           pageTitle.textContent = 'Import Pipeline Files';
+        } else if (viewId === 'settings-view') {
+          pageTitle.textContent = 'Settings';
         }
 
         // Get state from URL parameters
