@@ -256,6 +256,9 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
 - [X] Optional LLM-extension that optimize for LLM response and usage tracking
 - [ ] Data Retention Configuration
+- [ ] Dashboard UX
+    - [ ] Custom step data display as column
+    - [ ] Fix auto-refresh not usable crossed page
 - [ ] Use memory-store instead of storing nested steps class in runtime
 - [ ] Support Python version of steps tracker
 
