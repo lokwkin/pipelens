@@ -652,18 +652,18 @@ const app = {
     const presetColumnPath = document.getElementById('preset-column-path');
     const presetColumnPipeline = document.getElementById('preset-column-pipeline');
     const modalElement = document.getElementById('preset-column-modal');
-    
+
     // Get the new path selection elements
     const dataPathRoot = document.getElementById('data-path-root');
     const dataPathNested = document.getElementById('data-path-nested');
     const nestedPathContainer = document.getElementById('nested-path-container');
-    
+
     // Function to update the hidden path field
     const updatePathField = () => {
       const rootValue = dataPathRoot.value;
       const nestedValue = dataPathNested.value;
       const pathPreview = document.getElementById('path-preview');
-      
+
       if (rootValue) {
         // Always show nested path field for both records and result
         presetColumnPath.value = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
@@ -677,17 +677,17 @@ const app = {
         pathPreview.classList.remove('bg-light', 'px-2', 'py-1', 'rounded');
       }
     };
-    
+
     // Update hidden path field when root or nested path changes
     dataPathRoot.addEventListener('change', updatePathField);
     dataPathNested.addEventListener('input', updatePathField);
-    
+
     // Add event listener for the close button
     const closeButton = modalElement.querySelector('.btn-close');
     closeButton.addEventListener('click', () => {
       presetColumnModal.hide();
     });
-    
+
     // Add event listener for the cancel button
     const cancelButton = modalElement.querySelector('.modal-footer .btn-secondary');
     cancelButton.addEventListener('click', () => {
@@ -701,7 +701,7 @@ const app = {
         presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
       });
     });
-    
+
     // Ensure modal properly initializes Bootstrap events
     modalElement.addEventListener('hidden.bs.modal', () => {
       // Clean up or reset the form when modal is hidden
@@ -736,7 +736,7 @@ const app = {
     savePresetColumnBtn.addEventListener('click', () => {
       // Update the path field one last time before validation
       updatePathField();
-      
+
       if (!presetColumnForm.checkValidity()) {
         presetColumnForm.reportValidity();
         return;
@@ -800,11 +800,11 @@ const app = {
 
         presetColumnIndex.value = index;
         presetColumnName.value = column.name;
-        
+
         // Parse the path to set root and nested parts
         const pathParts = column.path.split('.');
         const rootPath = pathParts[0];
-        
+
         // Only allow records or result as root path
         if (rootPath !== 'records' && rootPath !== 'result') {
           alert('This column uses an unsupported data source. Please update it to use either "records" or "result".');
@@ -814,15 +814,15 @@ const app = {
           dataPathRoot.value = rootPath;
           dataPathNested.value = pathParts.slice(1).join('.');
         }
-        
+
         nestedPathContainer.style.display = 'block';
-        
+
         // Set the hidden path field
         presetColumnPath.value = column.path;
-        
+
         // Update the path preview
         document.getElementById('path-preview').textContent = column.path;
-        
+
         presetColumnPipeline.value = column.pipeline || '';
 
         document.getElementById('preset-column-modal-title').textContent = 'Edit Preset Column';
@@ -943,10 +943,11 @@ const app = {
     const divider = document.createElement('li');
     divider.innerHTML = '<hr class="dropdown-divider">';
     dropdown.appendChild(divider);
-      
+
     // Always add "Create New Column" option at the end
     const createItem = document.createElement('li');
-    createItem.innerHTML = '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
+    createItem.innerHTML =
+      '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
     dropdown.appendChild(createItem);
 
     // Add event listeners to dropdown items
@@ -1039,10 +1040,11 @@ const app = {
     const divider = document.createElement('li');
     divider.innerHTML = '<hr class="dropdown-divider">';
     dropdown.appendChild(divider);
-      
+
     // Always add "Create New Column" option at the end
     const createItem = document.createElement('li');
-    createItem.innerHTML = '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
+    createItem.innerHTML =
+      '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
     dropdown.appendChild(createItem);
 
     // Add event listeners to dropdown items
@@ -1102,14 +1104,14 @@ const app = {
     const presetColumnPipeline = document.getElementById('preset-column-pipeline');
     const dataPathRoot = document.getElementById('data-path-root');
     const dataPathNested = document.getElementById('data-path-nested');
-    
+
     // Event listeners for the modal's close and cancel buttons are already set in initSettingsUI
 
     // Add event listeners for "Create New Column" in both dropdowns
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('create-preset-column') || e.target.closest('.create-preset-column')) {
         e.preventDefault();
-        
+
         // Reset form values
         presetColumnIndex.value = '';
         presetColumnName.value = '';
@@ -1118,11 +1120,11 @@ const app = {
         dataPathNested.value = '';
         document.getElementById('nested-path-container').style.display = 'block';
         document.getElementById('path-preview').textContent = '';
-        
+
         // Get current pipeline from URL or dropdown and pre-select it
         const params = new URLSearchParams(window.location.search);
         const currentPipeline = params.get('pipeline') || '';
-        
+
         // Ensure the pipeline dropdown is populated
         api.fetchPipelines().then((pipelines) => {
           // Populate pipeline dropdown
@@ -1130,14 +1132,14 @@ const app = {
           pipelines.forEach((pipeline) => {
             presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
           });
-          
+
           // Set the current pipeline if available
           presetColumnPipeline.value = currentPipeline;
         });
-        
+
         // Set modal title to "Add Preset Column"
         document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
-        
+
         // Show the modal
         presetColumnModal.show();
       }

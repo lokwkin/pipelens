@@ -52,10 +52,10 @@ const ui = {
           pageTitle.textContent = 'Pipeline Runs';
         } else if (viewId === 'step-stats-view') {
           pageTitle.textContent = 'Step Execution Stats';
-          
+
           // Set up custom column event listeners for step stats view
           this.setupStepStatsCustomColumnListeners();
-          
+
           // Update custom columns dropdown for step stats
           app.updateStepStatsColumnsDropdown();
         } else if (viewId === 'import-view') {
@@ -675,9 +675,9 @@ const ui = {
             console.log(`Processing timestamp for column ${column.name}:`, {
               originalData: data,
               convertedToNumber: timestamp,
-              isValid: !isNaN(timestamp) && timestamp > 0
+              isValid: !isNaN(timestamp) && timestamp > 0,
             });
-            
+
             if (!isNaN(timestamp) && timestamp > 0) {
               displayData = utils.formatDateTime(timestamp);
               fullData = displayData;
@@ -1232,7 +1232,7 @@ const ui = {
           runId: instance.runId,
           stepKey: instance.stepKey,
           duration: instance.duration,
-          fullInstance: instance
+          fullInstance: instance,
         });
 
         // Add custom columns
@@ -1249,10 +1249,10 @@ const ui = {
             dataObj = instance.records;
             dataPath = column.path.substring(8); // Remove "records." prefix
           } else if (column.path.startsWith('time.')) {
-            dataObj = instance.time || { 
-              startTs: instance.timestamp, 
+            dataObj = instance.time || {
+              startTs: instance.timestamp,
               endTs: instance.timestamp + instance.duration,
-              timeUsageMs: instance.duration 
+              timeUsageMs: instance.duration,
             };
             dataPath = column.path.substring(5); // Remove "time." prefix
           } else {
@@ -1263,7 +1263,7 @@ const ui = {
           console.log(`Extracting path ${column.path} for instance ${index}:`, {
             columnName: column.name,
             dataObj,
-            dataPath
+            dataPath,
           });
 
           const data = this.getNestedData(dataObj, dataPath);
@@ -1280,9 +1280,9 @@ const ui = {
               console.log(`Processing timestamp for column ${column.name}:`, {
                 originalData: data,
                 convertedToNumber: timestamp,
-                isValid: !isNaN(timestamp) && timestamp > 0
+                isValid: !isNaN(timestamp) && timestamp > 0,
               });
-              
+
               if (!isNaN(timestamp) && timestamp > 0) {
                 displayData = utils.formatDateTime(timestamp);
                 fullData = displayData;
@@ -1327,7 +1327,7 @@ const ui = {
         row.appendChild(actionsCell);
 
         stepStatsTable.appendChild(row);
-        
+
         // Add click event listener to the Run ID link
         const runIdLink = row.querySelector('.run-id-link');
         runIdLink.addEventListener('click', (e) => {
@@ -1360,17 +1360,17 @@ const ui = {
               instance.result = step.result;
               instance.time = step.time;
               instance.error = step.error;
-              
+
               // Now that we have detailed data, refresh any custom columns that show N/A
               app.state.stepStatsActiveColumns.forEach((column) => {
                 // Find the corresponding cell in the row
                 const cells = row.querySelectorAll('td');
                 const columnIndex = 4 + app.state.stepStatsActiveColumns.indexOf(column); // Base index (4) + column position
-                
+
                 if (columnIndex >= 4 && columnIndex < cells.length && cells[columnIndex].textContent.trim() === 'N/A') {
                   // Try to extract data again with complete data
                   let dataObj, dataPath;
-                  
+
                   if (column.path.startsWith('result.')) {
                     dataObj = step.result;
                     dataPath = column.path.substring(7);
@@ -1384,14 +1384,14 @@ const ui = {
                     dataObj = step;
                     dataPath = column.path;
                   }
-                  
+
                   const data = ui.getNestedData(dataObj, dataPath);
-                  
+
                   // Format and update only if we got actual data
                   if (data !== 'N/A') {
                     let displayData = data;
                     let fullData = data;
-                    
+
                     // Special handling for timestamp columns
                     if (column.isTimestamp && !isNaN(Number(data)) && Number(data) > 0) {
                       displayData = utils.formatDateTime(Number(data));
@@ -1402,14 +1402,14 @@ const ui = {
                         displayData = Number(data).toLocaleString();
                       }
                     }
-                    
+
                     // Safely escape the data for HTML display
                     const safeDisplayData = ui.escapeHtml(displayData);
                     const safeFullData = ui.escapeHtml(fullData);
-                    
+
                     // Update the cell content
                     cells[columnIndex].innerHTML = `<span title="${safeFullData}">${safeDisplayData}</span>`;
-                    
+
                     // Add appropriate styling
                     if (typeof data === 'number' || !isNaN(Number(data))) {
                       cells[columnIndex].classList.add('text-end');
@@ -1488,14 +1488,14 @@ const ui = {
 
               detailsContent += '</div>';
               detailsCell.innerHTML = detailsContent;
-              
+
               // Add click handlers for copy/view buttons
               detailsCell.querySelectorAll('.copy-btn').forEach((btn) => {
                 btn.addEventListener('click', function (e) {
                   e.stopPropagation();
                   const content = decodeURIComponent(this.getAttribute('data-content'));
                   navigator.clipboard.writeText(content);
-                  
+
                   // Show a temporary "Copied!" tooltip
                   this.setAttribute('title', 'Copied!');
                   setTimeout(() => {
@@ -1503,12 +1503,12 @@ const ui = {
                   }, 2000);
                 });
               });
-              
+
               detailsCell.querySelectorAll('.view-btn').forEach((btn) => {
                 btn.addEventListener('click', function (e) {
                   e.stopPropagation();
                   const content = decodeURIComponent(this.getAttribute('data-content'));
-                  
+
                   // Open in a modal or new tab
                   const modal = new bootstrap.Modal(document.getElementById('content-view-modal'));
                   document.getElementById('content-view-modal-body').innerHTML = `<pre>${content}</pre>`;
@@ -1523,7 +1523,7 @@ const ui = {
             console.error('Error loading step details:', error);
             detailsCell.innerHTML = `<div class="p-3 text-center">Error loading step details: ${error.message}</div>`;
           });
-          
+
         detailsRow.appendChild(detailsCell);
         stepStatsTable.appendChild(detailsRow);
 
