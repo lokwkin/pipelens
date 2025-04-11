@@ -28,8 +28,8 @@ export class DashboardServer {
     this.app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
 
     // Set up routes - cleanly separated by responsibility
-    const ingestionRoutes = setupIngestionRouter(this.storageAdapter, this.upload);
-    const dashboardRoutes = setupDashboardRoutes(this.storageAdapter);
+    const ingestionRoutes = setupIngestionRouter(this.storageAdapter);
+    const dashboardRoutes = setupDashboardRoutes(this.storageAdapter, this.upload);
 
     // Mount the routers with their respective prefixes
     this.app.use('/api/ingestion', ingestionRoutes);

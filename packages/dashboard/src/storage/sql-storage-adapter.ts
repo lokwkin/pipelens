@@ -214,19 +214,34 @@ export class SQLStorageAdapter implements StorageAdapter {
       throw new Error('Database not connected');
     }
 
-    const { runId, time, steps } = pipelineMeta;
+    const { runId, time, steps, name } = pipelineMeta;
 
     try {
       // Calculate duration if end time exists
       const endTime = time.endTs;
       const duration = endTime ? endTime - time.startTs : undefined;
 
-      // Update run status
-      await this.db('runs').where('run_id', runId).update({
-        status,
-        end_time: endTime,
-        duration,
-      });
+      // Check if run exists
+      const existingRun = await this.db('runs').where('run_id', runId).first();
+
+      if (!existingRun) {
+        // If run doesn't exist, insert it
+        await this.db('runs').insert({
+          run_id: runId,
+          pipeline_name: name,
+          start_time: time.startTs,
+          end_time: endTime,
+          duration,
+          status,
+        });
+      } else {
+        // Update existing run status
+        await this.db('runs').where('run_id', runId).update({
+          status,
+          end_time: endTime,
+          duration,
+        });
+      }
 
       // Make sure all steps are stored (in case any were missed)
       const promises = steps.map((step) => this.finishStep(runId, step));
