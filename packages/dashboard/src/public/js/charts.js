@@ -327,79 +327,73 @@ const charts = {
     google.visualization.events.addListener(chart, 'select', function () {
       const selection = chart.getSelection();
 
-      // Get the steps table
-      const stepsTable = document.getElementById('steps-table').querySelector('tbody');
-      const allRows = stepsTable.querySelectorAll('tr:not(.details-row)');
-      const allDetailRows = stepsTable.querySelectorAll('tr.details-row');
-
       if (selection.length > 0) {
         // A row was selected
         const selectedIndex = selection[0].row;
+        const selectedStepKey = data.getValue(selectedIndex, 0); // Get the step key (Task ID)
+        console.log('Selected step key:', selectedStepKey);
 
-        // Hide all rows first
-        allRows.forEach((row, index) => {
-          row.style.display = 'none';
+        // Find the search step textbox and set its value
+        const searchBox = document.getElementById('search-step');
+        if (searchBox) {
+          console.log('Found search box, setting value to:', selectedStepKey);
+          searchBox.value = selectedStepKey;
 
-          // Also hide corresponding detail rows
-          const detailRow = document.getElementById(`step-details-${index}`);
-          if (detailRow) {
-            detailRow.style.display = 'none';
+          // First try triggering input event
+          searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+
+          // Also try triggering change event
+          searchBox.dispatchEvent(new Event('change', { bubbles: true }));
+
+          // Try to find and trigger any associated search buttons
+          const searchForm = searchBox.closest('form');
+          if (searchForm) {
+            console.log('Found search form, submitting');
+            // Try to prevent default form submission behavior that might reload the page
+            const originalSubmit = searchForm.onsubmit;
+            searchForm.onsubmit = function (e) {
+              e.preventDefault();
+              return false;
+            };
+
+            // Submit the form
+            searchForm.dispatchEvent(new Event('submit', { bubbles: true }));
+
+            // Restore original onsubmit handler
+            setTimeout(() => {
+              searchForm.onsubmit = originalSubmit;
+            }, 100);
           }
-        });
 
-        // Show only the selected row
-        if (allRows[selectedIndex]) {
-          allRows[selectedIndex].style.display = 'table-row';
+          // Also try to find any search button and click it
+          const searchButton = document.querySelector('button[type="submit"]');
+          if (searchButton && searchButton.closest('form') === searchForm) {
+            console.log('Found search button, clicking');
+            searchButton.click();
+          }
+        } else {
+          console.log('Search box not found with ID "search-step"');
+          // Try to find search box by other means
+          const possibleSearchBoxes = document.querySelectorAll(
+            'input[type="search"], input[type="text"][placeholder*="search" i], input[type="text"][placeholder*="filter" i]',
+          );
+          console.log('Possible search boxes found:', possibleSearchBoxes.length);
 
-          // Add a "clear selection" button if it doesn't exist
-          let clearButton = document.getElementById('clear-gantt-selection');
-          if (!clearButton) {
-            clearButton = document.createElement('button');
-            clearButton.id = 'clear-gantt-selection';
-            clearButton.className = 'btn btn-sm btn-outline-secondary mt-2 mb-3';
-            clearButton.innerHTML = '<i class="fas fa-times"></i> Clear Selection';
-
-            clearButton.addEventListener('click', function () {
-              // Show all rows again
-              allRows.forEach((row) => (row.style.display = 'table-row'));
-
-              // Restore details rows to their previous state (hidden by default)
-              allDetailRows.forEach((row) => {
-                // Check if this row was previously expanded
-                const wasExpanded = app.state.expandedRows.has(row.id);
-                row.style.display = wasExpanded ? 'table-row' : 'none';
-              });
-
-              // Remove the clear button
-              this.remove();
-
-              // Clear the chart selection
-              chart.setSelection([]);
-
-              // Force a redraw of the chart to clear visual selection state
-              chart.draw(data, options);
-            });
-
-            // Insert before the steps table
-            const stepsCount = document.getElementById('steps-count');
-            stepsCount.parentNode.insertBefore(clearButton, stepsCount.nextSibling);
+          if (possibleSearchBoxes.length > 0) {
+            const searchBox = possibleSearchBoxes[0];
+            console.log('Using alternative search box:', searchBox);
+            searchBox.value = selectedStepKey;
+            searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+            searchBox.dispatchEvent(new Event('change', { bubbles: true }));
           }
         }
       } else {
-        // Selection was cleared, show all rows
-        allRows.forEach((row) => (row.style.display = 'table-row'));
-
-        // Restore details rows to their previous state
-        allDetailRows.forEach((row) => {
-          // Check if this row was previously expanded
-          const wasExpanded = app.state.expandedRows.has(row.id);
-          row.style.display = wasExpanded ? 'table-row' : 'none';
-        });
-
-        // Remove the clear button if it exists
-        const clearButton = document.getElementById('clear-gantt-selection');
-        if (clearButton) {
-          clearButton.remove();
+        // Selection was cleared, clear the search box if it exists
+        const searchBox = document.getElementById('search-step');
+        if (searchBox) {
+          searchBox.value = '';
+          searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+          searchBox.dispatchEvent(new Event('change', { bubbles: true }));
         }
       }
     });
