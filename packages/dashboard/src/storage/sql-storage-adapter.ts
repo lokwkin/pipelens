@@ -94,7 +94,7 @@ export class SQLStorageAdapter implements StorageAdapter {
         table.index('end_time');
       });
     }
-    
+
     // Create settings table if it doesn't exist
     const settingsTableExists = await this.db.schema.hasTable('settings');
     if (!settingsTableExists) {
@@ -534,7 +534,7 @@ export class SQLStorageAdapter implements StorageAdapter {
       this.connected = false;
     }
   }
-  
+
   /**
    * Store pipeline-specific dashboard settings
    * @param pipelineName Name of the pipeline
@@ -544,15 +544,15 @@ export class SQLStorageAdapter implements StorageAdapter {
     if (!this.db) {
       throw new Error('Database not connected');
     }
-    
+
     if (!pipelineName) {
       throw new Error('Pipeline name is required');
     }
-    
+
     try {
       // Store settings as a single JSON object
       const serialized = JSON.stringify(settings);
-      
+
       // Use upsert (insert or update) pattern
       if (this.db.client.config.client === 'sqlite3') {
         // SQLite upsert approach
@@ -562,7 +562,7 @@ export class SQLStorageAdapter implements StorageAdapter {
            ON CONFLICT(scope_key) DO UPDATE SET
              settings_json = excluded.settings_json,
              updated_at = excluded.updated_at`,
-          [pipelineName, serialized, new Date()]
+          [pipelineName, serialized, new Date()],
         );
       } else {
         // PostgreSQL upsert approach
@@ -570,12 +570,12 @@ export class SQLStorageAdapter implements StorageAdapter {
           .insert({
             scope_key: pipelineName,
             settings_json: serialized,
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .onConflict('scope_key')
           .merge({
             settings_json: serialized,
-            updated_at: new Date()
+            updated_at: new Date(),
           });
       }
     } catch (error) {
@@ -583,7 +583,7 @@ export class SQLStorageAdapter implements StorageAdapter {
       throw new Error(`Failed to store settings for pipeline ${pipelineName}: ${error}`);
     }
   }
-  
+
   /**
    * Get pipeline-specific dashboard settings
    * @param pipelineName Name of the pipeline
@@ -593,20 +593,18 @@ export class SQLStorageAdapter implements StorageAdapter {
     if (!this.db) {
       throw new Error('Database not connected');
     }
-    
+
     if (!pipelineName) {
       throw new Error('Pipeline name is required');
     }
-    
+
     try {
-      const result = await this.db('settings')
-        .where('scope_key', pipelineName)
-        .first();
-        
+      const result = await this.db('settings').where('scope_key', pipelineName).first();
+
       if (!result) {
         return {}; // Return empty object if no settings are found
       }
-      
+
       return JSON.parse(result.settings_json);
     } catch (error) {
       console.error(`Error retrieving settings for pipeline ${pipelineName}:`, error);

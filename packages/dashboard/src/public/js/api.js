@@ -260,14 +260,14 @@ const api = {
    * [
    *   {
    *     id: "uniqueId1",
-   *     name: "User ID", 
+   *     name: "User ID",
    *     path: "records.0.userId",
    *     stepKey: "fetch-user-data",
    *     dataType: "string"
    *   },
    *   {
    *     id: "uniqueId2",
-   *     name: "Success Rate", 
+   *     name: "Success Rate",
    *     path: "result.stats.successRate",
    *     stepKey: "calculate-metrics",
    *     dataType: "number",
@@ -280,13 +280,13 @@ const api = {
     try {
       // First get existing settings
       const currentSettings = await this.getPipelineSettings(pipeline);
-      
+
       // Update with new preset columns
       const updatedSettings = {
         ...currentSettings,
-        presetDataColumns: presetColumns
+        presetDataColumns: presetColumns,
       };
-      
+
       // Save updated settings
       return await this.savePipelineSettings(pipeline, updatedSettings);
     } catch (error) {
@@ -294,7 +294,7 @@ const api = {
       return { success: false, error: `Failed to update preset data columns for pipeline ${pipeline}` };
     }
   },
-  
+
   /**
    * Gets preset data columns for a pipeline
    * @param {string} pipeline - Pipeline name
@@ -309,7 +309,7 @@ const api = {
       return [];
     }
   },
-  
+
   /**
    * Resolves data from a step using dot notation path
    * @param {Object} stepData - Step data containing records or result
@@ -319,22 +319,22 @@ const api = {
   resolveDataByPath(stepData, path) {
     try {
       if (!stepData || !path) return undefined;
-      
+
       const parts = path.split('.');
       let current = stepData;
-      
+
       for (const part of parts) {
         if (current === null || current === undefined) return undefined;
         current = current[part];
       }
-      
+
       return current;
     } catch (error) {
       console.error('Error resolving data path:', error);
       return undefined;
     }
   },
-  
+
   /**
    * Extracts data from a run using preset data columns
    * @param {Object} run - Run data containing steps
@@ -345,20 +345,20 @@ const api = {
     if (!run || !run.steps || !presetColumns || !Array.isArray(presetColumns)) {
       return {};
     }
-    
+
     const result = {};
-    
-    presetColumns.forEach(column => {
+
+    presetColumns.forEach((column) => {
       const { id, stepKey, path, dataType, formatter } = column;
       if (!id || !stepKey || !path) return;
-      
+
       // Find the step data
-      const stepData = run.steps.find(step => step.key === stepKey);
+      const stepData = run.steps.find((step) => step.key === stepKey);
       if (!stepData) return;
-      
+
       // Extract value using dot notation
       let value = this.resolveDataByPath(stepData, path);
-      
+
       // Apply basic type conversion if needed
       if (value !== undefined && value !== null) {
         if (dataType === 'number' && typeof value !== 'number') {
@@ -368,18 +368,18 @@ const api = {
         } else if (dataType === 'string' && typeof value !== 'string') {
           value = String(value);
         }
-        
+
         // Apply formatter if specified
         if (formatter === 'percent' && typeof value === 'number') {
           value = `${(value * 100).toFixed(2)}%`;
         }
       }
-      
+
       result[id] = value;
     });
-    
+
     return result;
-  }
+  },
 };
 
 // Export the API for use in other modules
