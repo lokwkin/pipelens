@@ -57,9 +57,6 @@ const app = {
     // Initialize settings UI
     this.initSettingsUI();
 
-    // Initialize create column UI from dropdowns
-    this.initCreateColumnFromDropdowns();
-
     // Fetch pipelines
     api.fetchPipelines().then((pipelines) => {
       // Populate global pipeline dropdown
@@ -939,19 +936,8 @@ const app = {
       dropdown.appendChild(noColumnsItem);
     }
 
-    // Add a divider before the Create New Column option
-    const divider = document.createElement('li');
-    divider.innerHTML = '<hr class="dropdown-divider">';
-    dropdown.appendChild(divider);
-
-    // Always add "Create New Column" option at the end
-    const createItem = document.createElement('li');
-    createItem.innerHTML =
-      '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
-    dropdown.appendChild(createItem);
-
     // Add event listeners to dropdown items
-    dropdown.querySelectorAll('.dropdown-item:not(.create-preset-column)').forEach((item) => {
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -1036,19 +1022,8 @@ const app = {
       dropdown.appendChild(noColumnsItem);
     }
 
-    // Add a divider before the Create New Column option
-    const divider = document.createElement('li');
-    divider.innerHTML = '<hr class="dropdown-divider">';
-    dropdown.appendChild(divider);
-
-    // Always add "Create New Column" option at the end
-    const createItem = document.createElement('li');
-    createItem.innerHTML =
-      '<a class="dropdown-item create-preset-column" href="#"><i class="fas fa-plus me-2"></i>Create New Column</a>';
-    dropdown.appendChild(createItem);
-
     // Add event listeners to dropdown items
-    dropdown.querySelectorAll('.dropdown-item:not(.create-preset-column)').forEach((item) => {
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
 
@@ -1090,60 +1065,6 @@ const app = {
         isTimestamp: true,
       },
     ];
-  },
-
-  /**
-   * Initialize create column UI from dropdowns
-   */
-  initCreateColumnFromDropdowns() {
-    // Get the modal elements
-    const presetColumnModal = new bootstrap.Modal(document.getElementById('preset-column-modal'));
-    const presetColumnIndex = document.getElementById('preset-column-index');
-    const presetColumnName = document.getElementById('preset-column-name');
-    const presetColumnPath = document.getElementById('preset-column-path');
-    const presetColumnPipeline = document.getElementById('preset-column-pipeline');
-    const dataPathRoot = document.getElementById('data-path-root');
-    const dataPathNested = document.getElementById('data-path-nested');
-
-    // Event listeners for the modal's close and cancel buttons are already set in initSettingsUI
-
-    // Add event listeners for "Create New Column" in both dropdowns
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('create-preset-column') || e.target.closest('.create-preset-column')) {
-        e.preventDefault();
-
-        // Reset form values
-        presetColumnIndex.value = '';
-        presetColumnName.value = '';
-        presetColumnPath.value = '';
-        dataPathRoot.value = '';
-        dataPathNested.value = '';
-        document.getElementById('nested-path-container').style.display = 'block';
-        document.getElementById('path-preview').textContent = '';
-
-        // Get current pipeline from URL or dropdown and pre-select it
-        const params = new URLSearchParams(window.location.search);
-        const currentPipeline = params.get('pipeline') || '';
-
-        // Ensure the pipeline dropdown is populated
-        api.fetchPipelines().then((pipelines) => {
-          // Populate pipeline dropdown
-          presetColumnPipeline.innerHTML = '<option value="">All Pipelines</option>';
-          pipelines.forEach((pipeline) => {
-            presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
-          });
-
-          // Set the current pipeline if available
-          presetColumnPipeline.value = currentPipeline;
-        });
-
-        // Set modal title to "Add Preset Column"
-        document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
-
-        // Show the modal
-        presetColumnModal.show();
-      }
-    });
   },
 };
 
