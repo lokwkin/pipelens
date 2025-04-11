@@ -317,10 +317,28 @@
               </div>
             </div>
             
+            <!-- Custom Column Selector for Steps Stats -->
+            <div class="custom-columns-selector mb-3">
+              <div class="d-flex align-items-center">
+                <label class="me-2 mb-0"><i class="fas fa-columns me-1"></i> Custom Columns:</label>
+                <div class="dropdown">
+                  <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="step-stats-add-custom-column-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                    Add Column
+                  </button>
+                  <ul class="dropdown-menu" id="step-stats-preset-columns-dropdown" aria-labelledby="step-stats-add-custom-column-btn">
+                    <li><span class="dropdown-item-text">No preset columns defined</span></li>
+                  </ul>
+                </div>
+                <div id="step-stats-active-custom-columns" class="ms-3 d-flex flex-wrap gap-2">
+                  <!-- Active custom columns will be added here as badges -->
+                </div>
+              </div>
+            </div>
+            
             <div class="table-responsive">
               <table id="step-stats-table" class="table table-hover">
                 <thead>
-                  <tr>
+                  <tr id="step-stats-table-header">
                     <th>Timestamp (UTC)</th>
                     <th>Run ID</th>
                     <th>Step Key</th>

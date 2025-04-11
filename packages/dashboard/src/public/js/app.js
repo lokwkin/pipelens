@@ -11,6 +11,7 @@ const app = {
     refreshInterval: null,
     refreshFrequency: 3000,
     expandedRows: new Set(), // Track expanded rows in UI
+    stepsExpandedRows: new Set(), // Track expanded rows in step stats UI
     globalDateRange: {
       startDate: null,
       endDate: null,
@@ -19,6 +20,7 @@ const app = {
     stepsPagination: null, // Added for pagination state
     presetColumns: [], // Preset data columns for custom table columns
     activeColumns: [], // Currently active custom columns in steps table
+    stepStatsActiveColumns: [], // Currently active custom columns in step stats table
     timestampColumns: [], // Added for timestamp columns
   },
 
@@ -859,6 +861,91 @@ const app = {
 
         // Update UI
         ui.updateCustomColumns();
+      });
+    });
+
+    // Add "No available columns" message if all columns are active
+    if (dropdown.children.length === 0) {
+      dropdown.innerHTML = '<li><span class="dropdown-item-text">No available columns</span></li>';
+    }
+  },
+
+  /**
+   * Update preset columns dropdown in the step stats table
+   */
+  updateStepStatsColumnsDropdown() {
+    const dropdown = document.getElementById('step-stats-preset-columns-dropdown');
+    dropdown.innerHTML = '';
+
+    // Add timestamp columns first
+    if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
+      this.state.timestampColumns.forEach((column, index) => {
+        // Check if this column is already active
+        const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+        }
+      });
+
+      // Add a divider if we have both timestamp columns and preset columns
+      if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+        const divider = document.createElement('li');
+        divider.innerHTML = '<hr class="dropdown-divider">';
+        dropdown.appendChild(divider);
+      }
+    }
+
+    // Add user-defined preset columns
+    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
+      if (dropdown.children.length === 0) {
+        dropdown.innerHTML = '<li><span class="dropdown-item-text">No preset columns defined</span></li>';
+      }
+      return;
+    }
+
+    // Get current pipeline from URL
+    const params = new URLSearchParams(window.location.search);
+    const currentPipeline = params.get('pipeline') || '';
+
+    this.state.presetColumns.forEach((column, index) => {
+      // Only show columns that apply to all pipelines or the current pipeline
+      if (!column.pipeline || column.pipeline === currentPipeline) {
+        // Check if this column is already active
+        const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+        }
+      }
+    });
+
+    // Add event listeners to dropdown items
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Handle timestamp columns differently
+        if (item.classList.contains('timestamp-column')) {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.timestampColumns[index];
+
+          // Add to active columns
+          this.state.stepStatsActiveColumns.push(column);
+        } else {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.presetColumns[index];
+
+          // Add to active columns
+          this.state.stepStatsActiveColumns.push(column);
+        }
+
+        // Update UI
+        ui.updateStepStatsCustomColumns();
       });
     });
 

@@ -12,11 +12,15 @@ const ui = {
     const navLinks = document.querySelectorAll('.nav-link');
     const views = document.querySelectorAll('.view');
 
-    // Update active link
-    navLinks.forEach((l) => l.classList.remove('active'));
-    document.querySelector(`.nav-link[data-view="${viewId}"]`)?.classList.add('active');
+    // Update active navigation link
+    navLinks.forEach((link) => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-view') === viewId) {
+        link.classList.add('active');
+      }
+    });
 
-    // Show selected view
+    // Show the selected view
     views.forEach((view) => {
       view.classList.remove('active');
       if (view.id === viewId) {
@@ -48,6 +52,12 @@ const ui = {
           pageTitle.textContent = 'Pipeline Runs';
         } else if (viewId === 'step-stats-view') {
           pageTitle.textContent = 'Step Execution Stats';
+          
+          // Set up custom column event listeners for step stats view
+          this.setupStepStatsCustomColumnListeners();
+          
+          // Update custom columns dropdown for step stats
+          app.updateStepStatsColumnsDropdown();
         } else if (viewId === 'import-view') {
           pageTitle.textContent = 'Import Pipeline Files';
         } else if (viewId === 'settings-view') {
@@ -1214,11 +1224,110 @@ const ui = {
           <td><a href="#" class="run-id-link">${instance.runId}</a></td>
           <td>${instance.stepKey}</td>
           <td>${duration}</td>
-          <td class="text-end">
-            <i class="fas fa-chevron-down expand-icon"></i>
-          </td>
         `;
 
+        // Log the instance structure to debug
+        console.log('Step stats instance structure:', {
+          index,
+          runId: instance.runId,
+          stepKey: instance.stepKey,
+          duration: instance.duration,
+          fullInstance: instance
+        });
+
+        // Add custom columns
+        app.state.stepStatsActiveColumns.forEach((column) => {
+          const cell = document.createElement('td');
+
+          // Extract data using the path - try to get from instance first
+          let dataObj, dataPath;
+
+          if (column.path.startsWith('result.')) {
+            dataObj = instance.result;
+            dataPath = column.path.substring(7); // Remove "result." prefix
+          } else if (column.path.startsWith('records.')) {
+            dataObj = instance.records;
+            dataPath = column.path.substring(8); // Remove "records." prefix
+          } else if (column.path.startsWith('time.')) {
+            dataObj = instance.time || { 
+              startTs: instance.timestamp, 
+              endTs: instance.timestamp + instance.duration,
+              timeUsageMs: instance.duration 
+            };
+            dataPath = column.path.substring(5); // Remove "time." prefix
+          } else {
+            dataObj = instance;
+            dataPath = column.path;
+          }
+
+          console.log(`Extracting path ${column.path} for instance ${index}:`, {
+            columnName: column.name,
+            dataObj,
+            dataPath
+          });
+
+          const data = this.getNestedData(dataObj, dataPath);
+
+          // Format data based on type for better display
+          let displayData = data;
+          let fullData = data; // For tooltip/title
+
+          // Special handling for timestamp columns
+          if (column.isTimestamp) {
+            if (data !== 'N/A' && data !== null && data !== undefined) {
+              // Make sure we have a valid timestamp
+              const timestamp = Number(data);
+              console.log(`Processing timestamp for column ${column.name}:`, {
+                originalData: data,
+                convertedToNumber: timestamp,
+                isValid: !isNaN(timestamp) && timestamp > 0
+              });
+              
+              if (!isNaN(timestamp) && timestamp > 0) {
+                displayData = utils.formatDateTime(timestamp);
+                fullData = displayData;
+              } else {
+                displayData = 'N/A';
+                fullData = 'N/A';
+              }
+            } else {
+              displayData = 'N/A';
+              fullData = 'N/A';
+            }
+          }
+          // Add special styling for different data types
+          else if (data === 'N/A') {
+            cell.classList.add('text-muted');
+          } else if (typeof data === 'number' || !isNaN(Number(data))) {
+            cell.classList.add('text-end');
+            // Format number with commas for readability if it's large
+            if (Number(data) >= 10000) {
+              displayData = Number(data).toLocaleString();
+            }
+          } else if (data && data.length > 150) {
+            // For very long text, show a condensed version
+            displayData = data.substring(0, 147) + '...';
+          }
+
+          // Safely escape the data for HTML display
+          const safeDisplayData = this.escapeHtml(displayData);
+          const safeFullData = this.escapeHtml(fullData);
+
+          cell.innerHTML = `<span title="${safeFullData}">${safeDisplayData}</span>`;
+
+          row.appendChild(cell);
+        });
+
+        // Add actions column
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'text-end';
+        actionsCell.innerHTML = `
+          <i class="fas fa-chevron-down expand-icon"></i>
+        `;
+        row.appendChild(actionsCell);
+
+        stepStatsTable.appendChild(row);
+        
         // Add click event listener to the Run ID link
         const runIdLink = row.querySelector('.run-id-link');
         runIdLink.addEventListener('click', (e) => {
@@ -1226,8 +1335,6 @@ const ui = {
           e.stopPropagation();
           this.showRunDetails(instance.runId);
         });
-
-        stepStatsTable.appendChild(row);
 
         // Details row
         const detailsRow = document.createElement('tr');
@@ -1237,7 +1344,7 @@ const ui = {
 
         // Create the details cell
         const detailsCell = document.createElement('td');
-        detailsCell.colSpan = 5;
+        detailsCell.colSpan = 5 + app.state.stepStatsActiveColumns.length;
 
         // Fetch step details for this instance
         api
@@ -1247,209 +1354,165 @@ const ui = {
             const step = steps.find((s) => s.key === instance.stepKey);
 
             if (step) {
+              // Store the step details in the instance for potential later use by custom columns
+              instance.stepDetails = step;
+              instance.records = step.records;
+              instance.result = step.result;
+              instance.time = step.time;
+              instance.error = step.error;
+              
+              // Now that we have detailed data, refresh any custom columns that show N/A
+              app.state.stepStatsActiveColumns.forEach((column) => {
+                // Find the corresponding cell in the row
+                const cells = row.querySelectorAll('td');
+                const columnIndex = 4 + app.state.stepStatsActiveColumns.indexOf(column); // Base index (4) + column position
+                
+                if (columnIndex >= 4 && columnIndex < cells.length && cells[columnIndex].textContent.trim() === 'N/A') {
+                  // Try to extract data again with complete data
+                  let dataObj, dataPath;
+                  
+                  if (column.path.startsWith('result.')) {
+                    dataObj = step.result;
+                    dataPath = column.path.substring(7);
+                  } else if (column.path.startsWith('records.')) {
+                    dataObj = step.records;
+                    dataPath = column.path.substring(8);
+                  } else if (column.path.startsWith('time.')) {
+                    dataObj = step.time;
+                    dataPath = column.path.substring(5);
+                  } else {
+                    dataObj = step;
+                    dataPath = column.path;
+                  }
+                  
+                  const data = ui.getNestedData(dataObj, dataPath);
+                  
+                  // Format and update only if we got actual data
+                  if (data !== 'N/A') {
+                    let displayData = data;
+                    let fullData = data;
+                    
+                    // Special handling for timestamp columns
+                    if (column.isTimestamp && !isNaN(Number(data)) && Number(data) > 0) {
+                      displayData = utils.formatDateTime(Number(data));
+                      fullData = displayData;
+                    } else if (typeof data === 'number' || !isNaN(Number(data))) {
+                      // Format number with commas for readability if it's large
+                      if (Number(data) >= 10000) {
+                        displayData = Number(data).toLocaleString();
+                      }
+                    }
+                    
+                    // Safely escape the data for HTML display
+                    const safeDisplayData = ui.escapeHtml(displayData);
+                    const safeFullData = ui.escapeHtml(fullData);
+                    
+                    // Update the cell content
+                    cells[columnIndex].innerHTML = `<span title="${safeFullData}">${safeDisplayData}</span>`;
+                    
+                    // Add appropriate styling
+                    if (typeof data === 'number' || !isNaN(Number(data))) {
+                      cells[columnIndex].classList.add('text-end');
+                    }
+                  }
+                }
+              });
+
               let detailsContent = '<div class="step-details">';
 
               // Records section
               const recordsJson = JSON.stringify(step.records || {}, null, 2);
               detailsContent += `
-              <div class="detail-section">
-                <div class="detail-header">
-                  <h4>Records:</h4>
-                  <div class="detail-actions">
-                    <button class="view-btn" data-content="${encodeURIComponent(recordsJson)}">
-                      <i class="fa fa-expand"></i>
-                    </button>
-                    <button class="copy-btn" data-content="${encodeURIComponent(recordsJson)}">
-                      <i class="fa fa-copy"></i>
-                    </button>
+                <div class="detail-section">
+                  <div class="detail-header">
+                    <h4>Records:</h4>
+                    <div class="detail-actions">
+                      <button class="view-btn" data-content="${encodeURIComponent(recordsJson)}">
+                        <i class="fa fa-expand"></i>
+                      </button>
+                      <button class="copy-btn" data-content="${encodeURIComponent(recordsJson)}">
+                        <i class="fa fa-copy"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="detail-content">
+                    <textarea readonly rows="10">${recordsJson}</textarea>
                   </div>
                 </div>
-                <div class="detail-content">
-                  <textarea readonly rows="10">${recordsJson}</textarea>
-                </div>
-              </div>
-            `;
+              `;
 
               // Result section (if available)
               if (step.result !== undefined) {
                 const resultJson = JSON.stringify(step.result, null, 2);
                 detailsContent += `
-                <div class="detail-section">
-                  <div class="detail-header">
-                    <h4>Result:</h4>
-                    <div class="detail-actions">
-                      <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
-                        <i class="fa fa-expand"></i>
-                      </button>
-                      <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
-                        <i class="fa fa-copy"></i>
-                      </button>
+                  <div class="detail-section">
+                    <div class="detail-header">
+                      <h4>Result:</h4>
+                      <div class="detail-actions">
+                        <button class="view-btn" data-content="${encodeURIComponent(resultJson)}">
+                          <i class="fa fa-expand"></i>
+                        </button>
+                        <button class="copy-btn" data-content="${encodeURIComponent(resultJson)}">
+                          <i class="fa fa-copy"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="detail-content">
+                      <textarea readonly rows="10">${resultJson}</textarea>
                     </div>
                   </div>
-                  <div class="detail-content">
-                    <textarea readonly rows="10">${resultJson}</textarea>
-                  </div>
-                </div>
-              `;
+                `;
               }
 
               // Error section (if available)
               if (step.error) {
                 detailsContent += `
-                <div class="detail-section">
-                  <div class="detail-header">
-                    <h4>Error:</h4>
-                    <div class="detail-actions">
-                      <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
-                        <i class="fa fa-expand"></i>
-                      </button>
-                      <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
-                        <i class="fa fa-copy"></i>
-                      </button>
+                  <div class="detail-section">
+                    <div class="detail-header">
+                      <h4>Error:</h4>
+                      <div class="detail-actions">
+                        <button class="view-btn" data-content="${encodeURIComponent(step.error)}">
+                          <i class="fa fa-expand"></i>
+                        </button>
+                        <button class="copy-btn" data-content="${encodeURIComponent(step.error)}">
+                          <i class="fa fa-copy"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="detail-content">
+                      <textarea readonly rows="10">${step.error}</textarea>
                     </div>
                   </div>
-                  <div class="detail-content">
-                    <textarea readonly rows="10">${step.error}</textarea>
-                  </div>
-                </div>
-              `;
+                `;
               }
 
               detailsContent += '</div>';
               detailsCell.innerHTML = detailsContent;
-
-              // Add event listeners for view buttons
-              detailsRow.querySelectorAll('.view-btn').forEach((btn) => {
+              
+              // Add click handlers for copy/view buttons
+              detailsCell.querySelectorAll('.copy-btn').forEach((btn) => {
                 btn.addEventListener('click', function (e) {
-                  e.stopPropagation(); // Prevent row expansion when clicking view
+                  e.stopPropagation();
                   const content = decodeURIComponent(this.getAttribute('data-content'));
-                  const title = this.closest('.detail-section').querySelector('h4').textContent;
-
-                  // Calculate popup dimensions (80% of screen size)
-                  const width = Math.min(1200, Math.floor(window.innerWidth * 0.8));
-                  const height = Math.min(900, Math.floor(window.innerHeight * 0.8));
-
-                  // Calculate center position relative to the browser window
-                  const left = Math.floor(window.screenX + (window.innerWidth - width) / 2);
-                  const top = Math.floor(window.screenY + (window.innerHeight - height) / 2);
-
-                  // Open popup window with calculated dimensions and position
-                  const popup = window.open(
-                    '',
-                    '_blank',
-                    `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`,
-                  );
-
-                  popup.document.write(`
-                  <!DOCTYPE html>
-                  <html>
-                  <head>
-                    <title>${title}</title>
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                    <style>
-                      body {
-                        margin: 0;
-                        padding: 20px;
-                        font-family: 'JetBrains Mono', monospace;
-                        background: #f5f7fa;
-                        height: 100vh;
-                        box-sizing: border-box;
-                      }
-                      .container {
-                        position: relative;
-                        height: calc(100vh - 40px);
-                      }
-                      pre {
-                        background: white;
-                        padding: 20px;
-                        border-radius: 4px;
-                        border: 1px solid #dde2e7;
-                        overflow: auto;
-                        margin: 0;
-                        font-size: 12px;
-                        line-height: 1.5;
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        height: 100%;
-                        box-sizing: border-box;
-                      }
-                      .copy-btn {
-                        position: absolute;
-                        top: 10px;
-                        right: 10px;
-                        background: white;
-                        border: 1px solid #dde2e7;
-                        border-radius: 4px;
-                        padding: 8px 12px;
-                        font-size: 14px;
-                        color: #2c6e9b;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        transition: all 0.2s ease;
-                        z-index: 1;
-                      }
-                      .copy-btn:hover {
-                        background: #f5f7fa;
-                        border-color: #2c6e9b;
-                      }
-                      .copy-btn i {
-                        font-size: 14px;
-                      }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="container">
-                      <button class="copy-btn" onclick="copyContent()">
-                        <i class="fa fa-copy"></i>
-                        Copy
-                      </button>
-                      <pre>${content}</pre>
-                    </div>
-                    <script>
-                      function copyContent() {
-                        const content = document.querySelector('pre').textContent;
-                        navigator.clipboard.writeText(content).then(() => {
-                          const btn = document.querySelector('.copy-btn');
-                          const originalHtml = btn.innerHTML;
-                          btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
-                          setTimeout(() => {
-                            btn.innerHTML = originalHtml;
-                          }, 2000);
-                        }).catch(err => {
-                          console.error('Failed to copy text:', err);
-                        });
-                      }
-                    </script>
-                  </body>
-                  </html>
-                `);
+                  navigator.clipboard.writeText(content);
+                  
+                  // Show a temporary "Copied!" tooltip
+                  this.setAttribute('title', 'Copied!');
+                  setTimeout(() => {
+                    this.removeAttribute('title');
+                  }, 2000);
                 });
               });
-
-              // Add event listeners for copy buttons
-              detailsRow.querySelectorAll('.copy-btn').forEach((btn) => {
+              
+              detailsCell.querySelectorAll('.view-btn').forEach((btn) => {
                 btn.addEventListener('click', function (e) {
-                  e.stopPropagation(); // Prevent row expansion when clicking copy
+                  e.stopPropagation();
                   const content = decodeURIComponent(this.getAttribute('data-content'));
-
-                  // Copy to clipboard
-                  navigator.clipboard
-                    .writeText(content)
-                    .then(() => {
-                      // Show success feedback
-                      const originalHtml = this.innerHTML;
-                      this.innerHTML = '<i class="fa fa-check"></i>';
-
-                      // Restore original icon after 2 seconds
-                      setTimeout(() => {
-                        this.innerHTML = originalHtml;
-                      }, 2000);
-                    })
-                    .catch((err) => {
-                      console.error('Failed to copy text:', err);
-                    });
+                  
+                  // Open in a modal or new tab
+                  const modal = new bootstrap.Modal(document.getElementById('content-view-modal'));
+                  document.getElementById('content-view-modal-body').innerHTML = `<pre>${content}</pre>`;
+                  modal.show();
                 });
               });
             } else {
@@ -1460,7 +1523,7 @@ const ui = {
             console.error('Error loading step details:', error);
             detailsCell.innerHTML = `<div class="p-3 text-center">Error loading step details: ${error.message}</div>`;
           });
-
+          
         detailsRow.appendChild(detailsCell);
         stepStatsTable.appendChild(detailsRow);
 
@@ -1638,5 +1701,87 @@ const ui = {
       // Update URL without navigation
       window.history.replaceState({}, '', url);
     });
+  },
+
+  /**
+   * Update the custom columns in the step stats table
+   */
+  updateStepStatsCustomColumns() {
+    // Update the active columns display
+    const activeColumnsContainer = document.getElementById('step-stats-active-custom-columns');
+    activeColumnsContainer.innerHTML = '';
+
+    app.state.stepStatsActiveColumns.forEach((column) => {
+      const badge = document.createElement('div');
+      badge.className = 'badge bg-light text-dark custom-column-badge';
+      badge.setAttribute('data-column-name', column.name);
+      badge.innerHTML = `
+        ${column.name}
+        <button type="button" class="btn-close btn-close-sm remove-column" aria-label="Remove"></button>
+      `;
+      activeColumnsContainer.appendChild(badge);
+    });
+
+    // Update the table header
+    const tableHeader = document.getElementById('step-stats-table-header');
+
+    // Remove any existing custom columns
+    tableHeader.querySelectorAll('.custom-column').forEach((th) => th.remove());
+
+    // Add custom columns before the last empty column
+    const lastColumn = tableHeader.lastElementChild;
+
+    app.state.stepStatsActiveColumns.forEach((column) => {
+      const th = document.createElement('th');
+      th.className = 'custom-column';
+      th.textContent = column.name;
+      tableHeader.insertBefore(th, lastColumn);
+    });
+
+    // Update the colspan of any "no data" rows
+    const noDataRows = document.querySelectorAll('#step-stats-table tbody tr:not(.details-row)');
+    noDataRows.forEach((row) => {
+      const firstCell = row.querySelector('td[colspan]');
+      if (firstCell) {
+        // Base column count is 5
+        const baseColumnCount = 5;
+        firstCell.setAttribute('colspan', baseColumnCount + app.state.stepStatsActiveColumns.length);
+      }
+    });
+
+    // If we have data loaded, reload it to show the custom columns
+    const params = new URLSearchParams(window.location.search);
+    const pipeline = params.get('pipeline');
+    const stepName = params.get('stepName');
+
+    if (pipeline && stepName) {
+      this.loadStepTimeSeries(pipeline, stepName);
+    }
+  },
+
+  /**
+   * Set up event listeners for step stats custom columns
+   */
+  setupStepStatsCustomColumnListeners() {
+    // Setup event delegation for removing custom columns
+    const activeColumnsContainer = document.getElementById('step-stats-active-custom-columns');
+
+    activeColumnsContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-column') || e.target.closest('.remove-column')) {
+        const columnName = e.target.closest('.custom-column-badge').getAttribute('data-column-name');
+
+        // Remove from active columns
+        app.state.stepStatsActiveColumns = app.state.stepStatsActiveColumns.filter((c) => c.name !== columnName);
+
+        // Update UI
+        this.updateStepStatsCustomColumns();
+
+        // Update the dropdown to show this column again
+        app.updateStepStatsColumnsDropdown();
+      }
+    });
+
+    // Initial update of custom columns
+    this.updateStepStatsCustomColumns();
   },
 };
