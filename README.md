@@ -215,6 +215,7 @@ await httpTransport.flushAndStop();
 docker run -p 3000:3000 lokwkin/steps-track-dashboard
 ```
 
+See [Dashboard](./packages/dashboard) for more details.
 
 ### Detailed Steps Insepection
 
@@ -255,6 +256,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
 - [X] Optional LLM-extension that optimize for LLM response and usage tracking
+- [ ] Data Retention Configuration
 - [ ] Use memory-store instead of storing nested steps class in runtime
 - [ ] Support Python version of steps tracker
 
