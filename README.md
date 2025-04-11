@@ -57,7 +57,7 @@ Create a pipeline and track steps with nested, sequential, or parallel logic:
 ```typescript
 import { Pipeline, Step } from 'steps-track';
 
-const pipeline = new Pipeline('my-pipeline');
+const pipeline = new Pipeline('my_pipeline');
 
 await pipeline.track(async (st: Step) => {
 
@@ -72,14 +72,8 @@ await pipeline.track(async (st: Step) => {
     
     // Track nested steps
     await st.step('parent', async (st: Step) => {
-
-      await st.step('child_1', async (st: Step) => {
-        // ...
-      });
-      
-      await st.step('child_2', async (st: Step) => {
-        // ...
-      });
+      await st.step('child_1', async (st: Step) => { /* ... */ });
+      await st.step('child_2', async (st: Step) => { /* ... */ });
   });
   
     // Track parallel steps
