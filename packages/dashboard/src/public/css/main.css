@@ -255,8 +255,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  margin-right: 5px;
-  margin-bottom: 5px;
+  margin: 0; /* Remove default margins to let gap handle spacing */
   background-color: #f8f9fa;
   border: 1px solid #dee2e6;
   border-radius: 3px;
@@ -279,6 +278,27 @@ body {
   border-radius: 4px;
   padding: 8px 12px;
   margin-bottom: 1rem;
+}
+
+/* Ensure proper vertical alignment in custom column selector */
+.custom-columns-selector .d-flex.align-items-center {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center !important;
+}
+
+.custom-columns-selector label {
+  margin-bottom: 0;
+}
+
+#active-custom-columns,
+#step-stats-active-custom-columns {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 0 !important;
 }
 
 /* Preset columns table */
