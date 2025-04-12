@@ -104,11 +104,11 @@ const app = {
           ? 'step-analysis-view'
           : view === 'step-stats-view'
             ? 'step-stats-view'
-          : view === 'import' // Added mapping for import view
-            ? 'import-view'
-          : view === 'settings' // Added mapping for settings view
-            ? 'settings-view'
-            : 'runs-view'; // Default to runs view if unknown
+            : view === 'import' // Added mapping for import view
+              ? 'import-view'
+              : view === 'settings' // Added mapping for settings view
+                ? 'settings-view'
+                : 'runs-view'; // Default to runs view if unknown
 
     // Now use the correctly mapped viewId to show the view
     ui.showView(viewId);
