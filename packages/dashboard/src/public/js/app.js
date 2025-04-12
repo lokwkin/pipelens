@@ -11,12 +11,17 @@ const app = {
     refreshInterval: null,
     refreshFrequency: 3000,
     expandedRows: new Set(), // Track expanded rows in UI
+    stepsExpandedRows: new Set(), // Track expanded rows in step stats UI
     globalDateRange: {
       startDate: null,
       endDate: null,
       timePreset: '1440', // Default to last 24 hours
     },
     stepsPagination: null, // Added for pagination state
+    presetColumns: [], // Preset data columns for custom table columns
+    activeColumns: [], // Currently active custom columns in steps table
+    stepStatsActiveColumns: [], // Currently active custom columns in step stats table
+    timestampColumns: [], // Added for timestamp columns
   },
 
   /**
@@ -40,8 +45,17 @@ const app = {
     this.state.globalDateRange.startDate = startDate;
     this.state.globalDateRange.endDate = endDate;
 
+    // Load preset columns from localStorage
+    this.loadPresetColumns();
+
+    // Initialize timestamp columns
+    this.initTimestampColumns();
+
     // Initialize UI elements
     this.initUIElements();
+
+    // Initialize settings UI
+    this.initSettingsUI();
 
     // Fetch pipelines
     api.fetchPipelines().then((pipelines) => {
@@ -82,6 +96,7 @@ const app = {
    */
   handleInitialView(view, runId, stepKey, stepName, pipeline) {
     // Map URL view parameter to actual view IDs
+    // Ensure all valid views are mapped correctly
     const viewId =
       view === 'run-detail'
         ? 'run-detail-view'
@@ -89,35 +104,40 @@ const app = {
           ? 'step-analysis-view'
           : view === 'step-stats-view'
             ? 'step-stats-view'
-            : 'runs-view'; // Default to runs view
+            : view === 'import' // Added mapping for import view
+              ? 'import-view'
+              : view === 'settings' // Added mapping for settings view
+                ? 'settings-view'
+                : 'runs-view'; // Default to runs view if unknown
 
-    if (view === 'run-detail' && runId) {
-      ui.showView('run-detail-view');
+    // Now use the correctly mapped viewId to show the view
+    ui.showView(viewId);
+
+    // Load data based on the view *after* showing it
+    if (viewId === 'run-detail-view' && runId) {
       ui.loadRunDetails(runId, false);
-    } else if (view === 'step-analysis' && runId && stepKey) {
-      // We need to find the step data
+    } else if (viewId === 'step-analysis-view' && runId && stepKey) {
+      // Fetch step data for analysis view
       fetch(`/api/dashboard/runs/${runId}/step/${stepKey}`)
         .then((response) => response.json())
         .then((step) => {
-          ui.showView('step-analysis-view');
-          document.getElementById('step-analysis-details').innerHTML = `
-            <p><strong>Step Key:</strong> ${step.key}</p>
-            <p><strong>Start Time:</strong> ${utils.formatDateTime(step.time.startTs)}</p>
-            <p><strong>End Time:</strong> ${utils.formatDateTime(step.time.endTs)}</p>
-            <p><strong>Duration:</strong> ${utils.formatDuration(step.time.timeUsageMs)}</p>
-          `;
+          // Ensure the view is still analysis before updating content
+          if (app.state.currentView === 'step-analysis-view') {
+            document.getElementById('step-analysis-details').innerHTML = `
+              <p><strong>Step Key:</strong> ${step.key}</p>
+              <p><strong>Start Time:</strong> ${utils.formatDateTime(step.time.startTs)}</p>
+              <p><strong>End Time:</strong> ${utils.formatDateTime(step.time.endTs)}</p>
+              <p><strong>Duration:</strong> ${utils.formatDuration(step.time.timeUsageMs)}</p>
+            `;
+          }
         });
-    } else if (view === 'step-stats-view') {
-      // Just show the view - the showView method will handle loading
-      // step names and time series based on URL parameters
-      ui.showView('step-stats-view');
-    } else if (view === 'runs-view' && pipeline) {
-      ui.showView('runs-view');
+    } else if (viewId === 'step-stats-view') {
+      // Step stats data loading is handled within ui.showView
+      // based on pipeline and stepName parameters, no specific call needed here
+    } else if (viewId === 'runs-view' && pipeline) {
       ui.loadRuns(pipeline);
-    } else {
-      // Default to showing the main view specified
-      ui.showView(viewId);
     }
+    // No specific data loading needed for import-view or settings-view on initial load
   },
 
   /**
@@ -580,30 +600,25 @@ const app = {
 
     // Start a new interval
     this.state.refreshInterval = setInterval(() => {
-      // Toggle the refresh indicator
-      const refreshIndicator = document.querySelector('.refresh-indicator');
-      refreshIndicator.classList.toggle('active');
-
-      // Get current view and parameters from URL at each refresh cycle
-      const params = new URLSearchParams(window.location.search);
-      const view = params.get('view') || 'runs-view';
-      const runId = params.get('runId');
-      const pipeline = params.get('pipeline');
-      const stepName = params.get('stepName');
-
-      // Refresh data based on current view
-      if (view === 'runs-view' && pipeline) {
-        ui.loadRuns(pipeline);
-      } else if (view === 'run-detail' && runId) {
-        ui.loadRunDetails(runId, true);
-      } else if (view === 'step-stats-view' && pipeline && stepName) {
-        ui.loadStepTimeSeries(pipeline, stepName);
+      // Check if auto-refresh is still enabled
+      if (!this.state.autoRefresh) {
+        this.stopAutoRefresh();
+        return;
       }
 
-      // Hide the indicator after a delay
-      setTimeout(() => {
-        refreshIndicator.classList.remove('active');
-      }, 1000);
+      // Refresh data based on the current view
+      const currentView = this.state.currentView;
+      const params = new URLSearchParams(window.location.search);
+      const pipeline = params.get('pipeline');
+      const runId = params.get('runId');
+
+      // Only refresh data for views that display dynamic run/step info
+      if (currentView === 'runs-view' && pipeline) {
+        ui.loadRuns(pipeline);
+      } else if (currentView === 'run-detail-view' && runId) {
+        ui.loadRunDetails(runId, true); // Pass true for auto-refresh
+      }
+      // Do nothing if on import-view or settings-view or other static views
     }, this.state.refreshFrequency);
   },
 
@@ -619,6 +634,438 @@ const app = {
       clearInterval(this.state.refreshInterval);
       this.state.refreshInterval = null;
     }
+  },
+
+  /**
+   * Initialize Settings UI
+   */
+  initSettingsUI() {
+    // Add Preset Column Button
+    const addPresetColumnBtn = document.getElementById('add-preset-column');
+    const presetColumnModal = new bootstrap.Modal(document.getElementById('preset-column-modal'));
+    const savePresetColumnBtn = document.getElementById('save-preset-column');
+    const presetColumnForm = document.getElementById('preset-column-form');
+    const presetColumnIndex = document.getElementById('preset-column-index');
+    const presetColumnName = document.getElementById('preset-column-name');
+    const presetColumnPath = document.getElementById('preset-column-path');
+    const presetColumnPipeline = document.getElementById('preset-column-pipeline');
+    const modalElement = document.getElementById('preset-column-modal');
+
+    // Get the new path selection elements
+    const dataPathRoot = document.getElementById('data-path-root');
+    const dataPathNested = document.getElementById('data-path-nested');
+    const nestedPathContainer = document.getElementById('nested-path-container');
+
+    // Function to update the hidden path field
+    const updatePathField = () => {
+      const rootValue = dataPathRoot.value;
+      const nestedValue = dataPathNested.value;
+      const pathPreview = document.getElementById('path-preview');
+
+      if (rootValue) {
+        // Always show nested path field for both records and result
+        presetColumnPath.value = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
+        nestedPathContainer.style.display = 'block';
+        pathPreview.textContent = nestedValue ? `${rootValue}.${nestedValue}` : rootValue;
+        pathPreview.classList.add('bg-light', 'px-2', 'py-1', 'rounded');
+      } else {
+        presetColumnPath.value = '';
+        nestedPathContainer.style.display = 'block';
+        pathPreview.textContent = '';
+        pathPreview.classList.remove('bg-light', 'px-2', 'py-1', 'rounded');
+      }
+    };
+
+    // Update hidden path field when root or nested path changes
+    dataPathRoot.addEventListener('change', updatePathField);
+    dataPathNested.addEventListener('input', updatePathField);
+
+    // Add event listener for the close button
+    const closeButton = modalElement.querySelector('.btn-close');
+    closeButton.addEventListener('click', () => {
+      presetColumnModal.hide();
+    });
+
+    // Add event listener for the cancel button
+    const cancelButton = modalElement.querySelector('.modal-footer .btn-secondary');
+    cancelButton.addEventListener('click', () => {
+      presetColumnModal.hide();
+    });
+
+    // Populate pipeline dropdown in the modal
+    api.fetchPipelines().then((pipelines) => {
+      presetColumnPipeline.innerHTML = '<option value="">All Pipelines</option>';
+      pipelines.forEach((pipeline) => {
+        presetColumnPipeline.innerHTML += `<option value="${pipeline}">${pipeline}</option>`;
+      });
+    });
+
+    // Ensure modal properly initializes Bootstrap events
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      // Clean up or reset the form when modal is hidden
+      presetColumnIndex.value = '';
+      presetColumnName.value = '';
+      presetColumnPath.value = '';
+      dataPathRoot.value = '';
+      dataPathNested.value = '';
+      presetColumnPipeline.value = '';
+      nestedPathContainer.style.display = 'block';
+      document.getElementById('path-preview').textContent = '';
+    });
+
+    // Render preset columns table
+    this.renderPresetColumnsTable();
+
+    // Add column button
+    addPresetColumnBtn.addEventListener('click', () => {
+      presetColumnIndex.value = '';
+      presetColumnName.value = '';
+      presetColumnPath.value = '';
+      dataPathRoot.value = '';
+      dataPathNested.value = '';
+      presetColumnPipeline.value = '';
+      nestedPathContainer.style.display = 'block';
+      document.getElementById('path-preview').textContent = '';
+      document.getElementById('preset-column-modal-title').textContent = 'Add Preset Column';
+      presetColumnModal.show();
+    });
+
+    // Save column button
+    savePresetColumnBtn.addEventListener('click', () => {
+      // Update the path field one last time before validation
+      updatePathField();
+
+      if (!presetColumnForm.checkValidity()) {
+        presetColumnForm.reportValidity();
+        return;
+      }
+
+      // Additional validation to ensure root is either records or result
+      const rootValue = dataPathRoot.value;
+      if (rootValue !== 'records' && rootValue !== 'result') {
+        alert('Data source must be either "records" or "result"');
+        return;
+      }
+
+      const index = presetColumnIndex.value;
+      const column = {
+        name: presetColumnName.value,
+        path: presetColumnPath.value,
+        pipeline: presetColumnPipeline.value,
+      };
+
+      if (index === '') {
+        // Add new column
+        this.state.presetColumns.push(column);
+      } else {
+        // Update existing column
+        this.state.presetColumns[parseInt(index, 10)] = column;
+      }
+
+      // Save to localStorage
+      localStorage.setItem('presetColumns', JSON.stringify(this.state.presetColumns));
+
+      // Update UI
+      this.renderPresetColumnsTable();
+      this.updatePresetColumnsDropdown();
+
+      // Close modal
+      presetColumnModal.hide();
+    });
+
+    // Delete column event delegation
+    document.getElementById('preset-columns-table').addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-column-btn') || e.target.closest('.delete-column-btn')) {
+        const index = e.target.closest('.delete-column-btn').getAttribute('data-index');
+        if (confirm('Are you sure you want to delete this column?')) {
+          this.state.presetColumns.splice(parseInt(index, 10), 1);
+          localStorage.setItem('presetColumns', JSON.stringify(this.state.presetColumns));
+          this.renderPresetColumnsTable();
+          this.updatePresetColumnsDropdown();
+
+          // Also remove from active columns if it was active
+          this.state.activeColumns = this.state.activeColumns.filter(
+            (c) => c.name !== this.state.presetColumns[parseInt(index, 10)]?.name,
+          );
+          ui.updateCustomColumns();
+        }
+      }
+
+      // Edit column event
+      if (e.target.classList.contains('edit-column-btn') || e.target.closest('.edit-column-btn')) {
+        const index = e.target.closest('.edit-column-btn').getAttribute('data-index');
+        const column = this.state.presetColumns[parseInt(index, 10)];
+
+        presetColumnIndex.value = index;
+        presetColumnName.value = column.name;
+
+        // Parse the path to set root and nested parts
+        const pathParts = column.path.split('.');
+        const rootPath = pathParts[0];
+
+        // Only allow records or result as root path
+        if (rootPath !== 'records' && rootPath !== 'result') {
+          alert('This column uses an unsupported data source. Please update it to use either "records" or "result".');
+          dataPathRoot.value = '';
+          dataPathNested.value = '';
+        } else {
+          dataPathRoot.value = rootPath;
+          dataPathNested.value = pathParts.slice(1).join('.');
+        }
+
+        nestedPathContainer.style.display = 'block';
+
+        // Set the hidden path field
+        presetColumnPath.value = column.path;
+
+        // Update the path preview
+        document.getElementById('path-preview').textContent = column.path;
+
+        presetColumnPipeline.value = column.pipeline || '';
+
+        document.getElementById('preset-column-modal-title').textContent = 'Edit Preset Column';
+        presetColumnModal.show();
+      }
+    });
+  },
+
+  /**
+   * Load preset columns from localStorage
+   */
+  loadPresetColumns() {
+    try {
+      const storedColumns = localStorage.getItem('presetColumns');
+      if (storedColumns) {
+        this.state.presetColumns = JSON.parse(storedColumns);
+      }
+    } catch (error) {
+      console.error('Error loading preset columns:', error);
+      this.state.presetColumns = [];
+    }
+  },
+
+  /**
+   * Render preset columns table
+   */
+  renderPresetColumnsTable() {
+    const tableBody = document.querySelector('#preset-columns-table tbody');
+
+    if (!this.state.presetColumns || this.state.presetColumns.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No preset columns defined</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = '';
+    this.state.presetColumns.forEach((column, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${column.name}</td>
+        <td><code>${column.path}</code></td>
+        <td>${column.pipeline || 'All'}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary edit-column-btn" data-index="${index}" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-column-btn" data-index="${index}" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  },
+
+  /**
+   * Update preset columns dropdown in the steps table
+   */
+  updatePresetColumnsDropdown() {
+    const dropdown = document.getElementById('preset-columns-dropdown');
+    dropdown.innerHTML = '';
+
+    let hasItems = false;
+
+    // Add timestamp columns first
+    if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
+      this.state.timestampColumns.forEach((column, index) => {
+        // Check if this column is already active
+        const isActive = this.state.activeColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+          hasItems = true;
+        }
+      });
+
+      // Add a divider if we have both timestamp columns and preset columns
+      if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+        const divider = document.createElement('li');
+        divider.innerHTML = '<hr class="dropdown-divider">';
+        dropdown.appendChild(divider);
+      }
+    }
+
+    // Get current pipeline from URL
+    const params = new URLSearchParams(window.location.search);
+    const currentPipeline = params.get('pipeline') || '';
+
+    // Add user-defined preset columns
+    if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+      this.state.presetColumns.forEach((column, index) => {
+        // Only show columns that apply to all pipelines or the current pipeline
+        if (!column.pipeline || column.pipeline === currentPipeline) {
+          // Check if this column is already active
+          const isActive = this.state.activeColumns.some((c) => c.name === column.name);
+
+          if (!isActive) {
+            const item = document.createElement('li');
+            item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+            dropdown.appendChild(item);
+            hasItems = true;
+          }
+        }
+      });
+    }
+
+    // Add "No available columns" message if no columns are available
+    if (!hasItems) {
+      const noColumnsItem = document.createElement('li');
+      noColumnsItem.innerHTML = '<span class="dropdown-item-text">No preset columns defined</span>';
+      dropdown.appendChild(noColumnsItem);
+    }
+
+    // Add event listeners to dropdown items
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Handle timestamp columns differently
+        if (item.classList.contains('timestamp-column')) {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.timestampColumns[index];
+
+          // Add to active columns
+          this.state.activeColumns.push(column);
+        } else {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.presetColumns[index];
+
+          // Add to active columns
+          this.state.activeColumns.push(column);
+        }
+
+        // Update UI
+        ui.updateCustomColumns();
+      });
+    });
+  },
+
+  /**
+   * Update preset columns dropdown in the step stats table
+   */
+  updateStepStatsColumnsDropdown() {
+    const dropdown = document.getElementById('step-stats-preset-columns-dropdown');
+    dropdown.innerHTML = '';
+
+    let hasItems = false;
+
+    // Add timestamp columns first
+    if (this.state.timestampColumns && this.state.timestampColumns.length > 0) {
+      this.state.timestampColumns.forEach((column, index) => {
+        // Check if this column is already active
+        const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
+
+        if (!isActive) {
+          const item = document.createElement('li');
+          item.innerHTML = `<a class="dropdown-item timestamp-column" href="#" data-index="${index}">${column.name}</a>`;
+          dropdown.appendChild(item);
+          hasItems = true;
+        }
+      });
+
+      // Add a divider if we have both timestamp columns and preset columns
+      if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+        const divider = document.createElement('li');
+        divider.innerHTML = '<hr class="dropdown-divider">';
+        dropdown.appendChild(divider);
+      }
+    }
+
+    // Get current pipeline from URL
+    const params = new URLSearchParams(window.location.search);
+    const currentPipeline = params.get('pipeline') || '';
+
+    // Add user-defined preset columns
+    if (this.state.presetColumns && this.state.presetColumns.length > 0) {
+      this.state.presetColumns.forEach((column, index) => {
+        // Only show columns that apply to all pipelines or the current pipeline
+        if (!column.pipeline || column.pipeline === currentPipeline) {
+          // Check if this column is already active
+          const isActive = this.state.stepStatsActiveColumns.some((c) => c.name === column.name);
+
+          if (!isActive) {
+            const item = document.createElement('li');
+            item.innerHTML = `<a class="dropdown-item" href="#" data-index="${index}">${column.name}</a>`;
+            dropdown.appendChild(item);
+            hasItems = true;
+          }
+        }
+      });
+    }
+
+    // Add "No available columns" message if no columns are available
+    if (!hasItems) {
+      const noColumnsItem = document.createElement('li');
+      noColumnsItem.innerHTML = '<span class="dropdown-item-text">No preset columns defined</span>';
+      dropdown.appendChild(noColumnsItem);
+    }
+
+    // Add event listeners to dropdown items
+    dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Handle timestamp columns differently
+        if (item.classList.contains('timestamp-column')) {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.timestampColumns[index];
+
+          // Add to active columns
+          this.state.stepStatsActiveColumns.push(column);
+        } else {
+          const index = parseInt(e.target.getAttribute('data-index'), 10);
+          const column = this.state.presetColumns[index];
+
+          // Add to active columns
+          this.state.stepStatsActiveColumns.push(column);
+        }
+
+        // Update UI
+        ui.updateStepStatsCustomColumns();
+      });
+    });
+  },
+
+  /**
+   * Initialize hard-coded timestamp columns for steps table
+   */
+  initTimestampColumns() {
+    // Define the timestamp columns to be available in the dropdown
+    this.state.timestampColumns = [
+      {
+        name: 'Start Time (UTC)',
+        path: 'time.startTs',
+        isTimestamp: true,
+      },
+      {
+        name: 'End Time (UTC)',
+        path: 'time.endTs',
+        isTimestamp: true,
+      },
+    ];
   },
 };
 

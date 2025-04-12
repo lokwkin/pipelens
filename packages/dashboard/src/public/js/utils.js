@@ -2,6 +2,7 @@
  * Utility functions for StepsTrack Portal
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const utils = {
   /**
    * Format date to YYYY-MM-DD HH:mm:ss format for display

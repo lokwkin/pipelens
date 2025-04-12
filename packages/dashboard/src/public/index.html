@@ -45,6 +45,9 @@
         <a href="#" class="nav-link" data-view="import-view">
           <i class="fas fa-file-import"></i> Import Logs
         </a>
+        <a href="#" class="nav-link" data-view="settings-view">
+          <i class="fas fa-cog"></i> Settings
+        </a>
       </nav>
       
       <!-- Auto-refresh Controls -->
@@ -199,16 +202,32 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- Custom Column Selector -->
+              <div class="custom-columns-selector mb-3">
+                <div class="d-flex align-items-center">
+                  <label class="me-2"><i class="fas fa-columns me-1"></i> Custom Columns:</label>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="add-custom-column-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                      Add Column
+                    </button>
+                    <ul class="dropdown-menu" id="preset-columns-dropdown" aria-labelledby="add-custom-column-btn">
+                      <li><span class="dropdown-item-text">No preset columns defined</span></li>
+                    </ul>
+                  </div>
+                  <div id="active-custom-columns" class="d-flex flex-wrap">
+                    <!-- Active custom columns will be added here as badges -->
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div class="table-responsive">
               <table id="steps-table" class="table">
                 <thead>
-                  <tr>
+                  <tr id="steps-table-header">
                     <th>Step Key</th>
                     <th>Step Name</th>
-                    <th>Start Time (UTC)</th>
-                    <th>End Time (UTC)</th>
                     <th>Duration</th>
                     <th>Status</th>
                     <th></th>
@@ -216,7 +235,7 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td colspan="7" class="text-center py-4">Loading steps...</td>
+                    <td colspan="5" class="text-center py-4">Loading steps...</td>
                   </tr>
                 </tbody>
               </table>
@@ -298,10 +317,28 @@
               </div>
             </div>
             
+            <!-- Custom Column Selector for Steps Stats -->
+            <div class="custom-columns-selector mb-3">
+              <div class="d-flex align-items-center">
+                <label class="me-2"><i class="fas fa-columns me-1"></i> Custom Columns:</label>
+                <div class="dropdown">
+                  <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="step-stats-add-custom-column-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                    Add Column
+                  </button>
+                  <ul class="dropdown-menu" id="step-stats-preset-columns-dropdown" aria-labelledby="step-stats-add-custom-column-btn">
+                    <li><span class="dropdown-item-text">No preset columns defined</span></li>
+                  </ul>
+                </div>
+                <div id="step-stats-active-custom-columns" class="d-flex flex-wrap">
+                  <!-- Active custom columns will be added here as badges -->
+                </div>
+              </div>
+            </div>
+            
             <div class="table-responsive">
               <table id="step-stats-table" class="table table-hover">
                 <thead>
-                  <tr>
+                  <tr id="step-stats-table-header">
                     <th>Timestamp (UTC)</th>
                     <th>Run ID</th>
                     <th>Step Key</th>
@@ -370,7 +407,7 @@
       <div id="import-view" class="view">
         <div class="card">
           <div class="card-body">
-            <h3 class="mb-4">Import Pipeline Log Files</h3>
+            <h5 class="mb-4">Import Pipeline Log Files</h5>
             
             <div class="import-container mb-4">
               <div id="drop-area" class="drop-area p-5 text-center border border-dashed rounded mb-3">
@@ -423,6 +460,121 @@
                     <tbody id="import-results-body">
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="settings-view" class="view">
+        <div class="card">
+          <div class="card-body">
+            
+            <div class="settings-container">
+              <!-- Preset Data Columns Settings -->
+              <div class="preset-data-columns mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5>Preset Data Columns</h5>
+                  <button id="add-preset-column" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i> Add Column
+                  </button>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <div>
+                    <strong>Custom Data Columns</strong>
+                    <p class="mb-0">Define custom columns to display specific step data in the steps table. These columns help you monitor important metrics across steps without expanding each row.</p>
+                    <p class="mb-0 mt-1">To create effective columns:</p>
+                    <ul class="mb-0">
+                      <li>Use the exact data path as it appears in your step details</li>
+                      <li>View existing step details to discover available data paths</li>
+                      <li>Create pipeline-specific columns when data exists only in certain pipelines</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div id="preset-columns-container">
+                  <div class="table-responsive">
+                    <table id="preset-columns-table" class="table">
+                      <thead>
+                        <tr>
+                          <th>Column Name</th>
+                          <th>Data Path</th>
+                          <th>Pipeline</th>
+                          <th width="100">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colspan="4" class="text-center py-4">No preset columns defined</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <!-- Add/Edit Column Modal -->
+                <div class="modal fade" id="preset-column-modal" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="preset-column-modal-title">Add Preset Column</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form id="preset-column-form">
+                          <input type="hidden" id="preset-column-index" value="">
+                          <div class="mb-3">
+                            <label for="preset-column-name" class="form-label">Column Name</label>
+                            <input type="text" class="form-control" id="preset-column-name" required>
+                            <div class="form-text">This will be displayed as the column header</div>
+                          </div>
+                          <div class="mb-3">
+                            <label for="data-path-root" class="form-label">Data Path</label>
+                            <div class="row g-2">
+                              <div class="col-md-5">
+                                <select class="form-select" id="data-path-root" required>
+                                  <option value="">Select data source</option>
+                                  <option value="records">records</option>
+                                  <option value="result">result</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a data source</div>
+                              </div>
+                              <div class="col-md-7" id="nested-path-container">
+                                <input type="text" class="form-control" id="data-path-nested" placeholder="Nested path (e.g. metrics.count)">
+                              </div>
+                            </div>
+                            <input type="hidden" id="preset-column-path" required>
+                            <div class="mt-2">
+                              <small class="text-muted">Complete path: <code id="path-preview"></code></small>
+                            </div>
+                            <div class="form-text mt-2">
+                              <p class="mb-1">Example paths based on common step data structures:</p>
+                              <ul class="mb-0 ps-3 small">
+                                <li><strong>records.*</strong> - <code>records.inputSize</code>, <code>records.metrics.count</code></li>
+                                <li><strong>result.*</strong> - <code>result.status</code>, <code>result.data.items</code></li>
+                              </ul>
+                              <p class="mt-1 mb-0 small text-muted">View a step's details to see its structure for reference.</p>
+                            </div>
+                          </div>
+                          <div class="mb-3">
+                            <label for="preset-column-pipeline" class="form-label">Pipeline (Optional)</label>
+                            <select class="form-select" id="preset-column-pipeline">
+                              <option value="">All Pipelines</option>
+                            </select>
+                            <div class="form-text">Leave blank to apply to all pipelines</div>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-preset-column">Save</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

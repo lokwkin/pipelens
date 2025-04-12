@@ -242,7 +242,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 
 <img src="./docs/dashboard-stats.gif" width="60%">
 
-## Roadmap
+## Roadmap and To Dos
 - [X] Decorator support for easier integration.
 - [X] Generate speed analysis stats from multiple runs.
 - [X] Add Redis / File support for persistent data storage.
@@ -258,8 +258,8 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [ ] Data Retention Configuration
 - [ ] Dashboard UX
     - [X] Filter to show selected step children 
-    - [ ] Custom step data display as column
-    - [ ] Fix auto-refresh not usable crossed page
+    - [X] Custom step data display as column
+    - [ ] Fix auto-refresh disabled when changed page
 - [ ] Use memory-store instead of storing nested steps class in runtime
 - [ ] Support Python version of steps tracker
 

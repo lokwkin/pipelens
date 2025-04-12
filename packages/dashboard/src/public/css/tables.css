@@ -260,4 +260,41 @@ tr[data-target] .expand-icon.fa-chevron-up {
 
 #pagination-page-size {
   min-width: 120px;
+}
+
+/* Column width controls for steps table */
+#steps-table th:first-child {
+  width: 20%; /* Reduce width of the first column (Step Key) */
+  max-width: 25%;
+}
+
+#steps-table th:nth-child(2)
+#steps-table th:nth-child(3), 
+#steps-table th:nth-child(4) {
+  width: 10%; /* Start/End Time columns */
+}
+
+#steps-table th.custom-column {
+  width: auto; /* Let custom columns adjust based on content */
+  min-width: 10%;
+}
+
+/* Text wrapping for table cells */
+#steps-table td {
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+#steps-table td:first-child {
+  word-break: break-all; /* Ensure long strings without spaces can wrap */
+  font-size: 0.9em; /* Slightly smaller font for the step key */
+  hyphens: auto; /* Enable hyphenation for very long words */
+}
+
+/* Override the ellipsis truncation for better readability */
+#steps-table td span {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 } 

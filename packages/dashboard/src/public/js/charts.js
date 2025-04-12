@@ -2,6 +2,7 @@
  * Chart visualization functions for StepsTrack Portal
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const charts = {
   /**
    * Draw the step time series chart
@@ -49,8 +50,8 @@ const charts = {
       data.addRows(rows);
 
       // Find max values for scaling the axes
-      const maxDuration = Math.max(...chartData.maxDurations);
-      const maxCount = Math.max(...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i]));
+      // const maxDuration = Math.max(...chartData.maxDurations);
+      // const maxCount = Math.max(...chartData.successCounts.map((success, i) => success + chartData.errorCounts[i]));
 
       // Set chart options
       const options = {
@@ -244,15 +245,15 @@ const charts = {
       const relativeEndTs = step.time.endTs ? step.time.endTs - ganttStartTs : maxEndTs - ganttStartTs;
 
       // Handle steps that are still running or failed
-      let endDate;
+      // let endDate;
       let percentComplete;
 
       if (step.time.endTs && step.time.endTs > 0) {
-        endDate = new Date(step.time.endTs);
+        // endDate = new Date(step.time.endTs);
         percentComplete = 100; // Completed
       } else {
         // For running steps, use current time as temporary end
-        endDate = new Date();
+        // endDate = new Date();
         percentComplete = 50; // In progress
       }
 

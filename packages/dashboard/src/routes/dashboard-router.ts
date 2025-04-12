@@ -279,6 +279,42 @@ export function setupDashboardRoutes(storageAdapter: StorageAdapter, upload: mul
     }
   });
 
+  // Import from JSON feature
+  router.post('/import', upload.single('file'), async (_req, _res) => {
+    // Implementation of import from JSON feature
+  });
+
+  // Get settings for a pipeline
+  router.get('/pipelines/:pipelineName/settings', async (req, res) => {
+    try {
+      const { pipelineName } = req.params;
+      const settings = await storageAdapter.getSettings(pipelineName);
+
+      if (!settings) {
+        res.json({});
+      } else {
+        res.json(settings);
+      }
+    } catch (error) {
+      console.error('Error retrieving settings:', error);
+      res.status(500).json({ error: 'Failed to retrieve settings' });
+    }
+  });
+
+  // Save settings for a pipeline
+  router.post('/pipelines/:pipelineName/settings', async (req, res) => {
+    try {
+      const { pipelineName } = req.params;
+      const settings = req.body;
+
+      await storageAdapter.saveSettings(pipelineName, settings);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      res.status(500).json({ error: 'Failed to save settings' });
+    }
+  });
+
   return router;
 }
 

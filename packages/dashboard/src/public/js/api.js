@@ -3,6 +3,7 @@
  * Handles all communication with the backend API
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const api = {
   /**
    * Fetches all available pipelines
@@ -211,6 +212,44 @@ const api = {
           totalPages: 0,
         },
       };
+    }
+  },
+
+  /**
+   * Gets settings for a pipeline
+   * @param {string} pipeline - Pipeline name
+   * @returns {Promise<Object>} Settings object
+   */
+  async getSettings(pipeline) {
+    try {
+      const response = await fetch(`/api/dashboard/pipelines/${pipeline}/settings`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting settings:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Saves settings for a pipeline
+   * To remove settings, pass an empty object {}
+   * @param {string} pipeline - Pipeline name
+   * @param {Object} settings - Settings object to save
+   * @returns {Promise<Object>} Response with success status
+   */
+  async saveSettings(pipeline, settings) {
+    try {
+      const response = await fetch(`/api/dashboard/pipelines/${pipeline}/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return { success: false, error: 'Failed to save settings' };
     }
   },
 };
