@@ -62,7 +62,7 @@ describe('End-to-End Integration Tests', () => {
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('integration-test', {
-      autoSave: true,
+      autoSave: 'real_time',
       transport,
     });
 
@@ -196,7 +196,7 @@ describe('End-to-End Integration Tests', () => {
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('error-test', {
-      autoSave: true,
+      autoSave: 'real_time',
       transport,
     });
 

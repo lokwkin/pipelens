@@ -31,14 +31,14 @@ describe('Pipeline', () => {
 
     it('should throw an error if autoSave is enabled but no transport is provided', () => {
       expect(() => {
-        new Pipeline('test-pipeline', { autoSave: true });
+        new Pipeline('test-pipeline', { autoSave: 'real_time' });
       }).toThrow('Transport must be provided when autoSave is enabled');
     });
 
     it('should not throw an error if autoSave is enabled and transport is provided', () => {
       expect(() => {
         new Pipeline('test-pipeline', {
-          autoSave: true,
+          autoSave: 'real_time',
           transport: new MockTransport(),
         });
       }).not.toThrow();
@@ -81,7 +81,7 @@ describe('Pipeline', () => {
     it('should call transport methods when autoSave is enabled', async () => {
       const transport = new MockTransport();
       const pipeline = new Pipeline('test-pipeline', {
-        autoSave: true,
+        autoSave: 'real_time',
         transport,
       });
 
@@ -122,7 +122,7 @@ describe('Pipeline', () => {
     it('should mark run as failed when a step throws an error', async () => {
       const transport = new MockTransport();
       const pipeline = new Pipeline('test-pipeline', {
-        autoSave: true,
+        autoSave: 'real_time',
         transport,
       });
       const error = new Error('test error');

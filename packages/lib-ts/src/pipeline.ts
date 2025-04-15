@@ -9,22 +9,28 @@ export type PipelineMeta = StepMeta & {
 };
 export class Pipeline extends Step {
   private runId: string;
-  private autoSave: boolean;
+
+  /**
+   * 'real_time' = save every step
+   * 'run_complete' = save only on pipeline run completion
+   * 'off' = no auto saving
+   */
+  private autoSave: 'real_time' | 'run_complete' | 'off';
   private transport?: Transport;
 
   constructor(
     name: string,
     options?: {
       runId?: string;
-      autoSave?: boolean;
+      autoSave?: 'real_time' | 'run_complete' | 'off';
       transport?: Transport;
     },
   ) {
     super(name);
     this.runId = options?.runId ?? uuidv4();
-    this.autoSave = options?.autoSave ?? false;
+    this.autoSave = options?.autoSave ?? 'off';
 
-    if (this.autoSave) {
+    if (this.autoSave !== 'off') {
       if (!options?.transport) {
         throw new Error('Transport must be provided when autoSave is enabled');
       }
@@ -32,7 +38,7 @@ export class Pipeline extends Step {
     }
 
     // Add event listener for completion to save data
-    if (this.autoSave) {
+    if (this.autoSave === 'real_time') {
       this.on('step-start', async (key: string, stepMeta?: StepMeta) => {
         if (key === this.getKey()) {
           // This step marks the pipeline
@@ -51,6 +57,13 @@ export class Pipeline extends Step {
         if (key === this.getKey()) {
           // This step marks the pipeline
           await this.transport?.finishRun(this.outputPipelineMeta(), stepMeta.error ? 'failed' : 'completed');
+        }
+      });
+    } else if (this.autoSave === 'run_complete') {
+      this.on('step-complete', async (key: string, stepMeta?: StepMeta) => {
+        if (key === this.getKey()) {
+          // This step marks the pipeline
+          await this.transport?.finishRun(this.outputPipelineMeta(), stepMeta?.error ? 'failed' : 'completed');
         }
       });
     }
