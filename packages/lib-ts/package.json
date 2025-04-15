@@ -5,8 +5,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "keywords": [
-        "steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics", 
-    ],
+    "steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"
+  ],
   "files": [
     "dist"
   ],
