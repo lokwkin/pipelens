@@ -1,4 +1,10 @@
-import { FilterOptions, RunMeta, StepTimeseriesEntry, StorageAdapter } from './storage-adapter';
+import {
+  FilterOptions,
+  RunMeta,
+  StepTimeseriesEntry,
+  StorageAdapter,
+  DEFAULT_DATA_RETENTION_DAYS,
+} from './storage-adapter';
 import { StepMeta, PipelineMeta } from 'steps-track';
 import { Knex, knex } from 'knex';
 
@@ -598,6 +604,41 @@ export class SQLStorageAdapter implements StorageAdapter {
       return JSON.parse(row.settings_data);
     } catch (error) {
       console.error('Error getting settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete data older than retention period
+   * @param pipelineName The name of the pipeline
+   * @param retentionDays Override the retention period in days (default: from settings or 14 days)
+   */
+  public async purgeOldData(pipelineName: string, retentionDays?: number): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      // Get the data retention period from settings or use default if not set
+      let dataRetentionDays = retentionDays ?? DEFAULT_DATA_RETENTION_DAYS;
+
+      if (!retentionDays) {
+        const settings = await this.getSettings(pipelineName);
+        dataRetentionDays = settings?.dataRetentionDays ?? DEFAULT_DATA_RETENTION_DAYS;
+      }
+
+      // Calculate the cutoff timestamp (current time - retention period)
+      const cutoffTimestamp = Date.now() - dataRetentionDays * 24 * 60 * 60 * 1000;
+
+      // Delete runs and related steps (steps will cascade delete due to foreign key constraint)
+      const deletedCount = await this.db('runs')
+        .where('pipeline_name', pipelineName)
+        .andWhere('start_time', '<', cutoffTimestamp)
+        .delete();
+
+      console.log(`Purged ${deletedCount} runs older than ${dataRetentionDays} days for pipeline: ${pipelineName}`);
+    } catch (error) {
+      console.error('Error purging old data:', error);
       throw error;
     }
   }

@@ -24,6 +24,9 @@ export type StepTimeseriesEntry = {
   stepKey: string;
 };
 
+// Default data retention period in days
+export const DEFAULT_DATA_RETENTION_DAYS = 14;
+
 export interface StorageAdapter {
   // Connect to the storage, this should be called before any other operations.
   connect(): Promise<void>;
@@ -67,4 +70,7 @@ export interface StorageAdapter {
 
   // Get settings for a pipeline
   getSettings(pipelineName: string): Promise<any>;
+
+  // Delete data older than retention period
+  purgeOldData(pipelineName: string, retentionDays?: number): Promise<void>;
 }
