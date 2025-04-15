@@ -62,7 +62,7 @@ describe('End-to-End Integration Tests', () => {
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('integration-test', {
-      autoSave: true,
+      autoSave: 'real_time',
       transport,
     });
 
@@ -196,7 +196,7 @@ describe('End-to-End Integration Tests', () => {
 
     // Create a pipeline with auto-save enabled
     const pipeline = new Pipeline('error-test', {
-      autoSave: true,
+      autoSave: 'real_time',
       transport,
     });
 
@@ -265,5 +265,78 @@ describe('End-to-End Integration Tests', () => {
     expect(hierarchy.time.timeUsageMs).toBeGreaterThan(0);
     expect(hierarchy.substeps[0].time.timeUsageMs).toBeGreaterThanOrEqual(20);
     expect(hierarchy.substeps[1].time.timeUsageMs).toBeGreaterThanOrEqual(20);
+  });
+
+  /**
+   * This test verifies the behavior of a pipeline with autoSave='finish':
+   *
+   * 1. Tests that the data is only saved at the completion of the run
+   * 2. Verifies that intermediate step data is not sent to the transport
+   * 3. Confirms that the final pipeline metadata includes all steps
+   * 4. Validates that all steps are properly tracked and results are maintained
+   */
+  it('should only save data at run completion when autoSave is finish', async () => {
+    // Create a transport with mocked HTTP
+    const transport = new HttpTransport({
+      baseUrl: 'https://api.example.com',
+      batchLogs: false,
+    });
+
+    // Create a pipeline with finish auto-save
+    const pipeline = new Pipeline('completion-test', {
+      autoSave: 'finish',
+      transport,
+    });
+
+    // Run the pipeline with multiple steps
+    const result = await pipeline.track(async (st) => {
+      // Step 1: First step
+      const value1 = await st.step('step1', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 'result1';
+      });
+
+      // Step 2: Second step
+      const value2 = await st.step('step2', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 'result2';
+      });
+
+      return { value1, value2 };
+    });
+
+    // Wait for all async operations to complete
+    await wait(100);
+
+    // Verify the pipeline result
+    expect(result).toEqual({
+      value1: 'result1',
+      value2: 'result2',
+    });
+
+    // Verify the HTTP calls - should only have one call for finishRun
+    const postCalls = mockedAxios.post.mock.calls;
+
+    // With finish, we should only have 1 call to finishRun
+    expect(postCalls.length).toBe(1);
+
+    // And that call should be to finish the run
+    expect(postCalls[0][0]).toBe('https://api.example.com/api/ingestion/pipeline/finish');
+
+    // Verify the finishRun payload contains all steps
+    const payload = postCalls[0][1] as any;
+    const { status, pipelineMeta } = payload;
+    expect(pipelineMeta.name).toBe('completion-test');
+    expect(pipelineMeta.steps.length).toBe(3); // pipeline + 2 steps
+    expect(pipelineMeta.steps.some((s: any) => s.name === 'step1')).toBe(true);
+    expect(pipelineMeta.steps.some((s: any) => s.name === 'step2')).toBe(true);
+    expect(status).toBe('completed');
+
+    // Verify the step hierarchy
+    const hierarchy = pipeline.outputNested();
+    expect(hierarchy.name).toBe('completion-test');
+    expect(hierarchy.substeps.length).toBe(2);
+    expect(hierarchy.substeps[0].name).toBe('step1');
+    expect(hierarchy.substeps[1].name).toBe('step2');
   });
 });

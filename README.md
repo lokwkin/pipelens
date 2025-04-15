@@ -194,7 +194,7 @@ const httpTransport = new HttpTransport({
 
 // Create pipeline with HTTP transport
 const pipeline = new Pipeline('my-pipeline', {
-  autoSave: true,
+  autoSave: 'real_time',
   transport: httpTransport
 });
 
@@ -255,7 +255,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
 - [X] Optional LLM-extension that optimize for LLM response and usage tracking
-- [ ] Data Retention Configuration
+- [X] Data Retention Configuration
 - [ ] Dashboard UX
     - [X] Filter to show selected step children 
     - [X] Custom step data display as column
