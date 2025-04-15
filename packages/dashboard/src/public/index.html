@@ -479,6 +479,36 @@
           <div class="card-body">
             
             <div class="settings-container">
+              <!-- Data Retention Settings -->
+              <div class="data-retention-settings mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5>Data Retention</h5>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <div>
+                    <strong>Data Retention Settings</strong>
+                    <p class="mb-0">Configure how long run and step data is retained before being automatically deleted. Data older than the retention period will be permanently removed.</p>
+                  </div>
+                </div>
+                
+                <div class="retention-settings-form mb-4">
+                  <form id="retention-settings-form">
+                    <div class="mb-3">
+                      <label for="retention-days" class="form-label">Retention Period (days)</label>
+                      <div class="input-group" style="max-width: 200px;">
+                        <input type="number" class="form-control" id="retention-days" value="14" min="1" required>
+                        <span class="input-group-text">days</span>
+                      </div>
+                      <div class="form-text">Set how many days to keep data before automatic deletion (default: 14 days)</div>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary" id="save-retention-settings">Save Settings</button>
+                  </form>
+                </div>
+
+              </div>
+              
               <!-- Preset Data Columns Settings -->
               <div class="preset-data-columns mb-5">
                 <div class="d-flex justify-content-between align-items-center mb-3">

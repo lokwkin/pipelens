@@ -640,6 +640,59 @@ const app = {
    * Initialize Settings UI
    */
   initSettingsUI() {
+    // Data Retention Settings
+    const retentionForm = document.getElementById('retention-settings-form');
+    const retentionDaysInput = document.getElementById('retention-days');
+
+    // Load current pipeline
+    const currentPipeline = this.state.selectedPipeline;
+    if (currentPipeline) {
+      // Load settings for current pipeline
+      api
+        .getSettings(currentPipeline)
+        .then((settings) => {
+          if (settings && settings.dataRetentionDays) {
+            retentionDaysInput.value = settings.dataRetentionDays;
+          } else {
+            retentionDaysInput.value = 14; // Default value
+          }
+        })
+        .catch(() => {
+          retentionDaysInput.value = 14; // Default value on error
+        });
+    }
+
+    // Handle retention settings form submission
+    retentionForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const retentionDays = parseInt(retentionDaysInput.value, 10);
+      if (isNaN(retentionDays) || retentionDays < 1) {
+        alert('Please enter a valid retention period (minimum 1 day)');
+        return;
+      }
+
+      // Get current settings
+      const currentPipeline = this.state.selectedPipeline;
+      if (!currentPipeline) {
+        alert('Please select a pipeline first');
+        return;
+      }
+
+      let settings = (await api.getSettings(currentPipeline)) || {};
+
+      // Update retention days
+      settings.dataRetentionDays = retentionDays;
+
+      // Save settings
+      const result = await api.saveSettings(currentPipeline, settings);
+      if (result.success) {
+        ui.showToast('Success', 'Data retention settings saved successfully');
+      } else {
+        ui.showToast('Error', 'Failed to save settings', 'error');
+      }
+    });
+
     // Add Preset Column Button
     const addPresetColumnBtn = document.getElementById('add-preset-column');
     const presetColumnModal = new bootstrap.Modal(document.getElementById('preset-column-modal'));

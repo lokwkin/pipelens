@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { Knex } from 'knex';
+import { DEFAULT_DATA_RETENTION_DAYS } from '../src/storage/storage-adapter';
 
 describe('SQLStorageAdapter', () => {
   let adapter: SQLStorageAdapter;
@@ -33,6 +34,33 @@ describe('SQLStorageAdapter', () => {
 
   // Function to generate unique runIds for tests using UUID
   const getUniqueRunId = () => `${baseRunId}-${uuidv4()}`;
+
+  // Helper to create pipeline meta with custom timestamp
+  const createPipelineMetaWithTimestamp = (runId: string, timestamp: number): PipelineMeta => ({
+    name: pipelineName,
+    key: pipelineName,
+    runId,
+    logVersion: 1,
+    time: {
+      startTs: timestamp,
+      endTs: timestamp + 100,
+      timeUsageMs: 100,
+    },
+    records: {},
+    steps: [
+      {
+        name: stepKey,
+        key: stepKey,
+        time: {
+          startTs: timestamp,
+          endTs: timestamp + 50,
+          timeUsageMs: 50,
+        },
+        records: { testData: 'test-value' },
+        result: { output: 'test-output' },
+      },
+    ],
+  });
 
   const createPipelineMeta = (runId: string): PipelineMeta => ({
     name: pipelineName,
@@ -209,6 +237,132 @@ describe('SQLStorageAdapter', () => {
       expect(timeseriesEntry?.stepMeta?.time.timeUsageMs).toBe(stepMeta.time.timeUsageMs);
       expect(timeseriesEntry?.stepMeta?.records.testData).toBe('test-value');
       expect(timeseriesEntry?.stepMeta?.result).toEqual({ output: 'test-output' });
+    });
+  });
+
+  describe('data retention operations', () => {
+    it('should purge data older than the retention period', async () => {
+      // Set up test data with different timestamps
+      const now = Date.now();
+      const retentionDays = 7; // Use a shorter retention period for testing
+      const dayInMs = 24 * 60 * 60 * 1000;
+      
+      // Create pipeline and save settings with custom retention
+      const settings = { dataRetentionDays: retentionDays };
+      await adapter.saveSettings(pipelineName, settings);
+      
+      // Create some runs with different ages
+      // Recent run - within retention period (3 days old)
+      const recentRunId = getUniqueRunId();
+      const recentTimestamp = now - (3 * dayInMs);
+      const recentRun = createPipelineMetaWithTimestamp(recentRunId, recentTimestamp);
+      await adapter.initiateRun(recentRun);
+      await adapter.finishRun(recentRun, 'completed');
+      
+      // Old run - outside retention period (10 days old)
+      const oldRunId = getUniqueRunId();
+      const oldTimestamp = now - (10 * dayInMs);
+      const oldRun = createPipelineMetaWithTimestamp(oldRunId, oldTimestamp);
+      await adapter.initiateRun(oldRun);
+      await adapter.finishRun(oldRun, 'completed');
+      
+      // Very old run - outside retention period (14 days old)
+      const veryOldRunId = getUniqueRunId();
+      const veryOldTimestamp = now - (14 * dayInMs);
+      const veryOldRun = createPipelineMetaWithTimestamp(veryOldRunId, veryOldTimestamp);
+      await adapter.initiateRun(veryOldRun);
+      await adapter.finishRun(veryOldRun, 'completed');
+      
+      // Verify all runs are present initially
+      const initialRuns = await adapter.listRuns(pipelineName);
+      expect(initialRuns.some(run => run.runId === recentRunId)).toBe(true);
+      expect(initialRuns.some(run => run.runId === oldRunId)).toBe(true);
+      expect(initialRuns.some(run => run.runId === veryOldRunId)).toBe(true);
+      
+      // Run the purge operation
+      await adapter.purgeOldData(pipelineName);
+      
+      // Verify only the recent run remains
+      const remainingRuns = await adapter.listRuns(pipelineName);
+      expect(remainingRuns.some(run => run.runId === recentRunId)).toBe(true);
+      expect(remainingRuns.some(run => run.runId === oldRunId)).toBe(false);
+      expect(remainingRuns.some(run => run.runId === veryOldRunId)).toBe(false);
+    });
+    
+    it('should use default retention period if not specified', async () => {
+      // Set up test data with different timestamps
+      const now = Date.now();
+      const dayInMs = 24 * 60 * 60 * 1000;
+      const defaultRetentionDays = DEFAULT_DATA_RETENTION_DAYS;
+      
+      // Clear any existing settings
+      await adapter.saveSettings(pipelineName, {});
+      
+      // Create runs with different ages
+      // Recent run - within default retention period (5 days old)
+      const recentRunId = getUniqueRunId();
+      const recentTimestamp = now - (5 * dayInMs);
+      const recentRun = createPipelineMetaWithTimestamp(recentRunId, recentTimestamp);
+      await adapter.initiateRun(recentRun);
+      await adapter.finishRun(recentRun, 'completed');
+      
+      // Old run - outside default retention period (20 days old)
+      const oldRunId = getUniqueRunId();
+      const oldTimestamp = now - (20 * dayInMs);
+      const oldRun = createPipelineMetaWithTimestamp(oldRunId, oldTimestamp);
+      await adapter.initiateRun(oldRun);
+      await adapter.finishRun(oldRun, 'completed');
+      
+      // Verify both runs are present initially
+      const initialRuns = await adapter.listRuns(pipelineName);
+      expect(initialRuns.some(run => run.runId === recentRunId)).toBe(true);
+      expect(initialRuns.some(run => run.runId === oldRunId)).toBe(true);
+      
+      // Run the purge operation with no explicit retention period
+      await adapter.purgeOldData(pipelineName);
+      
+      // Verify only the recent run remains
+      const remainingRuns = await adapter.listRuns(pipelineName);
+      expect(remainingRuns.some(run => run.runId === recentRunId)).toBe(true);
+      expect(remainingRuns.some(run => run.runId === oldRunId)).toBe(false);
+    });
+    
+    it('should respect the override retention period parameter', async () => {
+      // Set up test data with different timestamps
+      const now = Date.now();
+      const dayInMs = 24 * 60 * 60 * 1000;
+      const overrideRetentionDays = 3; // Very short retention
+      
+      // Set a longer default in settings
+      await adapter.saveSettings(pipelineName, { dataRetentionDays: 30 });
+      
+      // Create runs with different ages
+      // Very recent run (1 day old)
+      const veryRecentRunId = getUniqueRunId();
+      const veryRecentTimestamp = now - (1 * dayInMs);
+      const veryRecentRun = createPipelineMetaWithTimestamp(veryRecentRunId, veryRecentTimestamp);
+      await adapter.initiateRun(veryRecentRun);
+      await adapter.finishRun(veryRecentRun, 'completed');
+      
+      // Somewhat recent run (5 days old) - should be deleted with 3-day override
+      const somewhatRecentRunId = getUniqueRunId();
+      const somewhatRecentTimestamp = now - (5 * dayInMs);
+      const somewhatRecentRun = createPipelineMetaWithTimestamp(somewhatRecentRunId, somewhatRecentTimestamp);
+      await adapter.initiateRun(somewhatRecentRun);
+      await adapter.finishRun(somewhatRecentRun, 'completed');
+      
+      // Verify both runs are present initially
+      const initialRuns = await adapter.listRuns(pipelineName);
+      expect(initialRuns.some(run => run.runId === veryRecentRunId)).toBe(true);
+      expect(initialRuns.some(run => run.runId === somewhatRecentRunId)).toBe(true);
+      
+      // Run the purge operation with override retention period
+      await adapter.purgeOldData(pipelineName, overrideRetentionDays);
+      
+      // Verify only the very recent run remains
+      const remainingRuns = await adapter.listRuns(pipelineName);
+      expect(remainingRuns.some(run => run.runId === veryRecentRunId)).toBe(true);
+      expect(remainingRuns.some(run => run.runId === somewhatRecentRunId)).toBe(false);
     });
   });
 });
