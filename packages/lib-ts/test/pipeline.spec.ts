@@ -143,6 +143,37 @@ describe('Pipeline', () => {
       expect(transport.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
       expect(transport.finishRun.mock.calls[0][1]).toBe('failed');
     });
+
+    it('should only save data at run completion when autoSave is finish', async () => {
+      const transport = new MockTransport();
+      const pipeline = new Pipeline('test-pipeline', {
+        autoSave: 'finish',
+        transport,
+      });
+
+      await pipeline.track(async (st) => {
+        await st.step('step1', async () => 'result1');
+        await st.step('step2', async () => 'result2');
+        return 'final-result';
+      });
+
+      // Check that only finishRun was called (at the end of the run)
+      expect(transport.initiateRun).not.toHaveBeenCalled();
+      expect(transport.initiateStep).not.toHaveBeenCalled();
+      expect(transport.finishStep).not.toHaveBeenCalled();
+      expect(transport.finishRun).toHaveBeenCalledTimes(1);
+
+      // Verify finishRun call with the correct parameters
+      expect(transport.finishRun.mock.calls[0][0].runId).toBe(pipeline.getRunId());
+      expect(transport.finishRun.mock.calls[0][0].name).toBe('test-pipeline');
+      expect(transport.finishRun.mock.calls[0][1]).toBe('completed');
+
+      // Verify that all steps are included in the metadata
+      const pipelineMeta = transport.finishRun.mock.calls[0][0];
+      expect(pipelineMeta.steps.length).toBe(3); // pipeline + 2 steps
+      expect(pipelineMeta.steps.some((s: any) => s.name === 'step1')).toBe(true);
+      expect(pipelineMeta.steps.some((s: any) => s.name === 'step2')).toBe(true);
+    });
   });
 
   describe('inheritance from Step', () => {
