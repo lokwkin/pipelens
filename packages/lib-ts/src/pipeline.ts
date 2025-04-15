@@ -11,18 +11,18 @@ export class Pipeline extends Step {
   private runId: string;
 
   /**
-   * 'real_time' = save every step
-   * 'run_complete' = save only on pipeline run completion
+   * 'real_time' = save as soon as a step has status change
+   * 'finish' = save only on pipeline run completion
    * 'off' = no auto saving
    */
-  private autoSave: 'real_time' | 'run_complete' | 'off';
+  private autoSave: 'real_time' | 'finish' | 'off';
   private transport?: Transport;
 
   constructor(
     name: string,
     options?: {
       runId?: string;
-      autoSave?: 'real_time' | 'run_complete' | 'off';
+      autoSave?: 'real_time' | 'finish' | 'off';
       transport?: Transport;
     },
   ) {
@@ -59,7 +59,7 @@ export class Pipeline extends Step {
           await this.transport?.finishRun(this.outputPipelineMeta(), stepMeta.error ? 'failed' : 'completed');
         }
       });
-    } else if (this.autoSave === 'run_complete') {
+    } else if (this.autoSave === 'finish') {
       this.on('step-complete', async (key: string, stepMeta?: StepMeta) => {
         if (key === this.getKey()) {
           // This step marks the pipeline
