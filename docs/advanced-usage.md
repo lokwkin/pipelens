@@ -109,7 +109,13 @@ const httpTransport = new HttpTransport({
 });
 
 const pipeline = new Pipeline('pipeline', {
-  autoSave: true,
+  /**
+   * 'real_time' = save as soon as a step has status change. Note that real_time may introduce increased http traffic or performance overhead
+   * 'finish' = save only on pipeline run completion
+   * 'off' = no auto saving
+   */
+  autoSave: 'real_time',
+
   transport: httpTransport,
 });
 

@@ -24,7 +24,7 @@ async function main() {
   });
 
   const pipeline = new Pipeline('pipeline', {
-    autoSave: true,
+    autoSave: 'real_time',
     transport: httpTransport, // Setting this will automatically transport logs to the dashboard
   });
 
