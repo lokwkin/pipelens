@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "steps-track"
+version = "1.12.1"
+description = "An observability tool built to help tracking, visualizing and inspecting intermediate steps in a complex pipeline-based application. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard."
+authors = ["lokwkin <lokwkin@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/lokwkin/steps-track"
+repository = "https://github.com/lokwkin/steps-track"
+keywords = ["steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"]
+packages = [{include = "steps_track", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiohttp = "^3.9.1"
+uuid = "^1.30"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
