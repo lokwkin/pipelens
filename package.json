@@ -1,6 +1,6 @@
 {
   "name": "steps-track-monorepo",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "Monorepo for steps-track library and dashboard",
   "private": true,
   "workspaces": [

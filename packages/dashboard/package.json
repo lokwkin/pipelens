@@ -1,6 +1,6 @@
 {
   "name": "steps-track-dashboard",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "Dashboard for visualizing steps-track data",
   "main": "dist/index.js",
   "scripts": {

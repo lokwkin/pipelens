@@ -1,11 +1,25 @@
 {
   "name": "steps-track",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "An observability tool built to help tracking, visualizing and inspecting intermediate steps in a complex pipeline-based application. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "keywords": [
-    "steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"
+    "steps-track",
+    "steps",
+    "track",
+    "pipeline",
+    "observability",
+    "monitoring",
+    "rag",
+    "llm",
+    "visualization",
+    "tracing",
+    "tracking",
+    "debugging",
+    "analytics",
+    "performance",
+    "metrics"
   ],
   "files": [
     "dist"
