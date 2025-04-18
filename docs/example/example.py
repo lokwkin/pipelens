@@ -102,24 +102,22 @@ async def main():
         filter='pipeline.parsing(\\.[a-zA-Z0-9-_])?'  # string[] | RegExp. if not provided, all steps will be included
     )
 
-    steps_hierarchy = pipeline.output_nested()
     steps_flattened = pipeline.output_flattened()
+
+    print('Steps:', json.dumps([s.model_dump() for s in steps_flattened], indent=2))
 
     # Generate charts
     gantt_chart_buffer = await pipeline.gantt_quickchart(gantt_args)
     gantt_chart_html = pipeline.gantt_google_chart_html(gantt_args)
 
     # Uncomment to save the charts
-    # with open('gantt.png', 'wb') as f:
-    #     f.write(gantt_chart_buffer.getvalue())
-    # with open('gantt.html', 'w') as f:
-    #     f.write(gantt_chart_html)
-
-    print('Steps Hierarchy: ', json.dumps(steps_hierarchy.dict(), indent=2))
+    with open('gantt.png', 'wb') as f:
+        f.write(gantt_chart_buffer.getvalue())
+    with open('gantt.html', 'w') as f:
+        f.write(gantt_chart_html)
 
     # Make sure to flush any pending logs when your application is shutting down
-    if hasattr(http_transport, 'flush_and_stop'):
-        await http_transport.flush_and_stop()
+    await http_transport.flush_and_stop()
 
 
 if __name__ == "__main__":

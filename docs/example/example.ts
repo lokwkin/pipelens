@@ -86,16 +86,15 @@ async function main() {
     filter: /pipeline.parsing(\.[a-zA-Z0-9-_])?/, // string[] | RegExp. if not provided, all steps will be included
   };
 
-  const stepsHierarchy = pipeline.outputNested();
   const stepsFlattened = pipeline.outputFlattened();
+
+  console.log(`Steps: ${JSON.stringify(stepsFlattened, null, 2)}`);
 
   const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
   const ganttChartHtml = pipeline.ganttGoogleChartHtml(ganttArgs);
 
-  // fs.writeFileSync('gantt.png', ganttChartBuffer);
-  // fs.writeFileSync('gantt.html', ganttChartHtml);
-
-  console.log('Steps Hierarchy: ', JSON.stringify(stepsHierarchy, null, 2));
+  fs.writeFileSync('gantt.png', ganttChartBuffer);
+  fs.writeFileSync('gantt.html', ganttChartHtml);
 
   // Make sure to flush any pending logs when your application is shutting down
   await httpTransport.flushAndStop();

@@ -60,5 +60,9 @@ class SamplePipeline {
   }
 }
 
-const pipeline = new SamplePipeline();
-pipeline.run();
+async function main() {
+  const pipeline = new SamplePipeline();
+  await pipeline.run();
+}
+
+main();
