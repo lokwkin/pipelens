@@ -7,6 +7,12 @@ from .step import (
 )
 from .pipeline import Pipeline
 from .pipeline_types import PipelineMeta
+from .extension.llm_track import (
+    LLMTrack, 
+    OpenAICompatibleChatCompletionResponse,
+    LLM_RESPONSE_RECORD_KEY_PREFIX,
+    Usage as LLMUsage
+)
 
 __all__ = [
     'Step',
@@ -15,5 +21,9 @@ __all__ = [
     'TimeMeta',
     'StepGanttArg',
     'Pipeline',
-    'PipelineMeta'
+    'PipelineMeta',
+    'LLMTrack',
+    'OpenAICompatibleChatCompletionResponse',
+    'LLM_RESPONSE_RECORD_KEY_PREFIX',
+    'LLMUsage'
 ]
