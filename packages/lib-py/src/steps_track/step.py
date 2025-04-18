@@ -346,6 +346,8 @@ class Step:
         Returns:
             List of TimeSpan objects suitable for Gantt chart generation
         """
+        min_start_ts = min([step.time.startTs for step in steps])
+        
         spans: List[TimeSpan] = []
 
         for step in steps:
@@ -358,8 +360,8 @@ class Step:
 
             spans.append(TimeSpan(
                 key=step.key,
-                startTs=step.time.startTs,
-                endTs=step.time.endTs
+                startTs=step.time.startTs - min_start_ts,
+                endTs=step.time.endTs - min_start_ts if step.time.endTs else None
             ))
 
         return spans

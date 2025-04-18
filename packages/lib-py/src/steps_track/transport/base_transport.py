@@ -21,7 +21,3 @@ class Transport(ABC):
     @abstractmethod
     async def finish_step(self, run_id: str, step: StepMeta) -> None:
         pass
-
-    async def flush_and_stop(self) -> None:
-        """Optional method to ensure all buffered data is sent before stopping."""
-        pass
