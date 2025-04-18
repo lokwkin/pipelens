@@ -2,7 +2,7 @@ import pytest
 import io
 import re  # Keep re for assertRegex equivalent
 from unittest.mock import patch, MagicMock  # Keep unittest.mock
-from .chart import (
+from steps_track.chart import (
     TimeSpan,
     GraphItem,
     GanttChartArgs,

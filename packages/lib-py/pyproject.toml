@@ -5,10 +5,11 @@ description = "An observability tool built to help tracking, visualizing and ins
 authors = ["lokwkin <lokwkin@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "steps_track"}]
+packages = [{include = "steps_track", from = "src"}]
 homepage = "https://github.com/lokwkin/steps-track"
 repository = "https://github.com/lokwkin/steps-track"
 keywords = ["steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"]
+
 
 
 [tool.poetry.dependencies]
