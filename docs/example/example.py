@@ -22,8 +22,8 @@ async def main():
     )
 
     pipeline = Pipeline('pipeline', options={
-        # 'auto_save': 'real_time',
-        # 'transport': http_transport  # Setting this will automatically transport logs to the dashboard
+        'auto_save': 'finish',
+        'transport': http_transport  # Setting this will automatically transport logs to the dashboard
     })
 
     # Set up event listeners
