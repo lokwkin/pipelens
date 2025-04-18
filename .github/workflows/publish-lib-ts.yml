@@ -9,7 +9,7 @@ on:
 jobs:
   # Add a job to trigger and wait for tests to complete
   test:
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test-lib-ts.yml
     
   build-and-publish:
     needs: test  # Wait for tests to complete successfully

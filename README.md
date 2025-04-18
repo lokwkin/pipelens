@@ -2,9 +2,11 @@
 
 [![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
-[![Test](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test.yml/badge.svg)
+[![Test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)
 
 StepsTrack is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
+
+It now supports both ***Python*** and ***Typescript / Node.js***
 
 <details>
 <summary>Background of StepsTrack</summary>
@@ -21,7 +23,7 @@ StepsTrack is an observability tool built to help ***tracking, visualizing and i
 </details>
 
 This repository is a **monorepo** containing following packages:
-- [Typescript library](./packages/lib-ts) that provides basic tracker and chart generation function for your pipeline
+- [Typescript](./packages/lib-ts) / [Python](./packages/lib-py) libraries that provides basic tracker and chart generation function for your pipeline
 - [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
 ## Features
@@ -47,12 +49,18 @@ Monitor and analyze pipeline executions through an interactive web interface
 ### Installation
 
 ```bash
+# Typescript
 npm install --save steps-track
+
+# Python
+pip install steps-track
 ```
 
 ## Tracking Pipeline Steps
 
 Create a pipeline and track steps with nested, sequential, or parallel logic:
+<details>
+<summary>Typescript</summary>
 
 ```typescript
 import { Pipeline, Step } from 'steps-track';
@@ -83,10 +91,44 @@ await pipeline.track(async (st: Step) => {
     ]);
 });
 ```
+</details>
+
+<details>
+<summary>Python</summary>
+
+```python
+from steps_track import Pipeline, Step, HttpTransport
+
+http_transport = HttpTransport(
+    base_url='http://localhost:3000',
+    batch_logs=True
+)
+
+# Create pipeline with HTTP transport
+pipeline = Pipeline('my-pipeline', 
+    auto_save='real_time',
+    transport=http_transport
+)
+
+# Run your pipeline
+async def pipeline_logic(st):
+    # Your pipeline steps here
+    pass
+
+await pipeline.track(pipeline_logic)
+
+# Make sure to flush any pending logs when your application is shutting down
+await http_transport.flush_and_stop()
+```
+
+</details>
 
 ### Exporting and Visualizing Executions
 
 Generate visual outputs to understand and analyze execution flow:
+
+<details>
+<summary>Typescript</summary>
 
 ```typescript
 // Generate a Gantt chart Buffer using quickchart.io
@@ -101,6 +143,25 @@ const executionGraphUrl = pipeline.executionGraphQuickchart();
 // Get the hierarchical output of all steps
 const stepsHierarchy = pipeline.outputNested();
 ```
+</details>
+
+<details>
+<summary>Python</summary>
+
+```python
+# Generate a Gantt chart Buffer using quickchart.io
+gantt_chart_buffer = await pipeline.gantt_quickchart()
+
+# Generate a Gantt chart HTML file with Google Charts
+gantt_chart_html = await pipeline.gantt_google_chart_html()
+
+# Generate an execution graph URL
+execution_graph_url = pipeline.execution_graph_quickchart()
+
+# Get the hierarchical output of all steps
+steps_hierarchy = pipeline.output_nested()
+```
+</details>
 
 **Sample Gantt Chart**
 
@@ -175,9 +236,6 @@ const stepsHierarchy = pipeline.outputNested();
 StepsTrack also provides **Event Emitting** listeners, **ES6 Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
-
-
-
 ## Using Dashboard
 
 StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
@@ -185,6 +243,9 @@ StepsTrack includes a dashboard that provides several features for monitoring an
 ### Initial Configuration
 
 During pipeline initialization, define a Transport to relay pipeline run data to dashboard later on. Currently supported a HttpTransport. See [Advanced Usage](./docs/advanced-usage.md) for more details.
+
+<details>
+<summary>Typescript</summary>
 
 ```typescript
 const httpTransport = new HttpTransport({
@@ -206,6 +267,36 @@ await pipeline.track(async (st) => {
 // Make sure to flush any pending logs when your application is shutting down
 await httpTransport.flushAndStop();
 ```
+</details>
+
+<details>
+<summary>Python</summary>
+
+```python
+from steps_track import Pipeline, Step, HttpTransport
+
+http_transport = HttpTransport(
+    base_url='http://localhost:3000',
+    batch_logs=True
+)
+
+# Create pipeline with HTTP transport
+pipeline = Pipeline('my-pipeline', 
+    auto_save='real_time',
+    transport=http_transport
+)
+
+# Run your pipeline
+async def pipeline_logic(st):
+    # Your pipeline steps here
+    pass
+
+await pipeline.track(pipeline_logic)
+
+# Make sure to flush any pending logs when your application is shutting down
+await http_transport.flush_and_stop()
+```
+</details>
 
 ### Starting up Dashboard
 
@@ -261,7 +352,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
     - [X] Custom step data display as column
     - [ ] Fix auto-refresh disabled when changed page
 - [ ] Use memory-store instead of storing nested steps class in runtime
-- [ ] Support Python version of steps tracker
+- [X] Support Python version of steps tracker
 
 
 ## License

@@ -1,5 +1,5 @@
-import { Pipeline, Step } from '../src';
-import { WithStep } from '../src/decorator';
+import { Pipeline, Step } from 'steps-track';
+import { WithStep } from 'steps-track';
 
 class SamplePipeline {
   pipelineTracker: Pipeline;
@@ -60,5 +60,9 @@ class SamplePipeline {
   }
 }
 
-const pipeline = new SamplePipeline();
-pipeline.run();
+async function main() {
+  const pipeline = new SamplePipeline();
+  await pipeline.run();
+}
+
+main();

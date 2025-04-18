@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "steps-track"
+version = "1.12.3"
+description = "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard."
+authors = ["lokwkin <lokwkin@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "steps_track", from = "src"}]
+homepage = "https://github.com/lokwkin/steps-track"
+repository = "https://github.com/lokwkin/steps-track"
+keywords = ["steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"]
+
+
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+pydantic = "^2.11.3"
+pyee = "^13.0.0"
+aiohttp = "^3.11.16"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-asyncio = "^0.26.0"
+aioresponses = "^0.7.8"
+
+[tool.pytest.ini_options] # Configure pytest-asyncio to avoid deprecation warning
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
