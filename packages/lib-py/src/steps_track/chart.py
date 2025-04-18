@@ -136,7 +136,7 @@ def generate_gantt_chart_google(time_spans: List[TimeSpan], args: Optional[Gantt
     height = max(args.min_height, len(time_spans) * 25)
 
     # Convert TimeSpan objects to dictionaries for JSON serialization
-    time_spans_dict = [span.dict() for span in time_spans]
+    time_spans_dict = [span.model_dump() for span in time_spans]
 
     # Create the HTML for a Google Gantt chart
     html = f"""

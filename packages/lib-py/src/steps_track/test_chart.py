@@ -67,8 +67,9 @@ class TestChartFunctions:
         url = generate_execution_graph_quickchart(items)
 
         assert "quickchart.io/graphviz" in url
-        assert "digraph G" in url
-        assert "A -> B" in url
+        # Check for URL-encoded version
+        assert "digraph%20G" in url
+        assert "A%20-%3E%20B" in url  # Check for encoded 'A -> B'
 
         # Test with multiple items and labels
         items = [
@@ -78,10 +79,12 @@ class TestChartFunctions:
         url = generate_execution_graph_quickchart(items)
 
         assert "quickchart.io/graphviz" in url
-        assert "digraph G" in url
-        assert "A -> B" in url
-        assert "B -> C" in url
-        assert 'label="Connection AB"' in url
+        # Check for URL-encoded versions
+        assert "digraph%20G" in url
+        assert "A%20-%3E%20B" in url
+        assert "B%20-%3E%20C" in url
+        # Check for encoded label
+        assert 'label%3D%22Connection%20AB%22' in url  # Encoded: label="Connection AB"
 
     def test_generate_gantt_chart_google(self):
         """Test generating Google Gantt Chart HTML"""
