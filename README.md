@@ -261,7 +261,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
     - [X] Custom step data display as column
     - [ ] Fix auto-refresh disabled when changed page
 - [ ] Use memory-store instead of storing nested steps class in runtime
-- [ ] Support Python version of steps tracker
+- [X] Support Python version of steps tracker
 
 
 ## License
