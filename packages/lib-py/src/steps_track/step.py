@@ -1,4 +1,5 @@
 import time
+import re
 # import asyncio # No longer needed here
 from typing import Any, Callable, Dict, List, Optional, Union, Awaitable
 from io import BytesIO
@@ -352,7 +353,7 @@ class Step:
             if filter_pattern:
                 if isinstance(filter_pattern, list) and step.key not in filter_pattern:
                     continue
-                elif isinstance(filter_pattern, str) and not step.key.startswith(filter_pattern):
+                elif isinstance(filter_pattern, str) and not re.match(filter_pattern, step.key):
                     continue
 
             spans.append(TimeSpan(
