@@ -13,6 +13,7 @@ from .extension.llm_track import (
     LLM_RESPONSE_RECORD_KEY_PREFIX,
     Usage as LLMUsage
 )
+from .decorator import with_step
 
 __all__ = [
     'Step',
@@ -25,5 +26,6 @@ __all__ = [
     'LLMTrack',
     'OpenAICompatibleChatCompletionResponse',
     'LLM_RESPONSE_RECORD_KEY_PREFIX',
-    'LLMUsage'
+    'LLMUsage',
+    'with_step'
 ]
