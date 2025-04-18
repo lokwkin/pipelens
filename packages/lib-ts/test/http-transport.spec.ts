@@ -222,15 +222,18 @@ describe('HttpTransport', () => {
       // Add events to reach max batch size
       await transport.initiateRun(mockPipelineMeta);
       await transport.initiateStep('test-run-id', mockStepMeta);
-      await transport.finishStep('test-run-id', mockStepMeta);
+      expect(mockedAxios.post).toHaveBeenCalledTimes(0);
 
       // This should trigger a flush as we set maxBatchSize to 3
+      await transport.finishStep('test-run-id', mockStepMeta);
+      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+
+      // This will not trigger a flush as we are not exceeding the max batch size
       await transport.finishRun(mockPipelineMeta, 'completed');
+      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
 
       // Allow any pending promises to resolve
       await Promise.resolve();
-
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
 
       // Check that post was called with the correct URL and headers
       expect(mockedAxios.post.mock.calls[0][0]).toBe('https://api.example.com/api/ingestion/batch');
