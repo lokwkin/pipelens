@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from ..pipeline import PipelineMeta
+from ..pipeline_types import PipelineMeta
 from ..step import StepMeta
 
 
@@ -24,4 +24,4 @@ class Transport(ABC):
 
     async def flush_and_stop(self) -> None:
         """Optional method to ensure all buffered data is sent before stopping."""
-        pass 
+        pass
