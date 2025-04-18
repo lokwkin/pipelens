@@ -16,10 +16,12 @@ pytestmark = pytest.mark.asyncio
 MOCK_PIPELINE_META = PipelineMeta(
     run_id='test-run-id',
     name='test-pipeline',
+    time=TimeMeta(
+        startTs=1000000000000,
+        endTs=1000000001000,
+        timeUsageMs=1000,
+    ),
     key='test-pipeline',
-    start_ts=1000000000000,
-    end_ts=1000000001000,
-    time_usage_ms=1000,
     status='running',  # Example status
     records={}
 )
