@@ -347,7 +347,7 @@ class Step:
             List of TimeSpan objects suitable for Gantt chart generation
         """
         min_start_ts = min([step.time.startTs for step in steps])
-        
+
         spans: List[TimeSpan] = []
 
         for step in steps:
