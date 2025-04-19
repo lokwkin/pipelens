@@ -1,6 +1,6 @@
 {
   "name": "steps-track",
-  "version": "1.12.4",
+  "version": "1.12.5",
   "description": "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
