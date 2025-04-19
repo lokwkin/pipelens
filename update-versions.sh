@@ -30,6 +30,11 @@ echo "Updating lib-ts package to version $ACTUAL_VERSION"
 cd "$ROOT_DIR/packages/lib-ts"
 npm version $ACTUAL_VERSION --no-git-tag-version
 
+# Update lib-py package
+echo "Updating lib-py package to version $ACTUAL_VERSION"
+cd "$ROOT_DIR/packages/lib-py"
+poetry version $ACTUAL_VERSION
+
 # Update dashboard package
 echo "Updating dashboard package to version $ACTUAL_VERSION"
 cd "$ROOT_DIR/packages/dashboard"
