@@ -1,4 +1,4 @@
-name: Lib-TS Tests
+name: lib-ts tests
 
 on:
   push:
