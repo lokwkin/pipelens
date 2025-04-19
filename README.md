@@ -105,9 +105,30 @@ pipeline = Pipeline('my-pipeline')
 
 # Run your pipeline
 async def pipeline_logic(st):
-    # Your pipeline steps here
-    pass
+    
+async def pipeline_track(st: Step):
+    # Track a simple step
+    result = await st.step('some_step', async lambda st: 
+        # ... your logic ...
+        st.record('key', 'value')  # Record data for analysis
+        
+        return 'step_result'  # Results are automatically recorded
+    )
+    
+    # Track nested steps
+    await st.step('parent', async lambda st:
+        await st.step('child_1', async lambda st: pass)
+        await st.step('child_2', async lambda st: pass)
+    )
+    
+    # Track parallel steps
+    import asyncio
+    await asyncio.gather(
+        st.step('parallel_1', async lambda st: pass),
+        st.step('parallel_2', async lambda st: pass)
+    )
 
+# Run the pipeline
 await pipeline.track(pipeline_logic)
 
 # Make sure to flush any pending logs when your application is shutting down
