@@ -10,4 +10,4 @@ __all__ = [
     'OpenAICompatibleChatCompletionResponse',
     'LLM_RESPONSE_RECORD_KEY_PREFIX',
     'LLMUsage'
-] 
+]

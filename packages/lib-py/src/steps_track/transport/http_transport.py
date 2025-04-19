@@ -34,9 +34,9 @@ class HttpTransportOptions(BaseModel):
 
 
 class HttpTransport(Transport):
-    def __init__(self, **kwargs):
-        self.options = HttpTransportOptions(**kwargs)
-        self.base_url = self.options.base_url if self.options.base_url.endswith('/') else f"{self.options.base_url}/"
+    def __init__(self, options: HttpTransportOptions):
+        self.options = options
+        self.base_url = options.base_url if options.base_url.endswith('/') else f"{options.base_url}/"
         self.headers = {'Content-Type': 'application/json'}
         self._event_cache: List[LogEvent] = []
         self._flush_task: Optional[asyncio.Task] = None

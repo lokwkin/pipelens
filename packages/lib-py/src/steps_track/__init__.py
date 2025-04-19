@@ -8,7 +8,7 @@ from .step import (
 from .pipeline import Pipeline
 from .pipeline_types import PipelineMeta
 from .extension.llm_track import (
-    LLMTrack, 
+    LLMTrack,
     OpenAICompatibleChatCompletionResponse,
     LLM_RESPONSE_RECORD_KEY_PREFIX,
     Usage as LLMUsage

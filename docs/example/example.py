@@ -2,7 +2,7 @@ import asyncio
 import json
 import random
 from steps_track import Step, Pipeline, StepGanttArg
-from steps_track.transport import HttpTransport
+from steps_track.transport import HttpTransport, HttpTransportOptions
 
 
 async def parse_page(page: str):
@@ -13,13 +13,13 @@ async def parse_page(page: str):
 
 async def main():
     # HTTP transport for sending data to a dashboard
-    http_transport = HttpTransport(
+    http_transport = HttpTransport(HttpTransportOptions(
         base_url='http://localhost:3001/',  # URL of your dashboard
         batch_logs=True,  # Enable batching for better performance
         flush_interval=5000,  # Flush logs every 5 seconds
         max_batch_size=50,  # Maximum batch size before forcing a flush
         debug=True
-    )
+    ))
 
     pipeline = Pipeline('pipeline', options={
         'auto_save': 'finish',

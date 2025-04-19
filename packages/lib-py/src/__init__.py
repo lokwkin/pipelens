@@ -12,4 +12,4 @@ __all__ = [
     'NestedStepMeta',
     'TimeMeta',
     'StepGanttArg'
-] 
+]

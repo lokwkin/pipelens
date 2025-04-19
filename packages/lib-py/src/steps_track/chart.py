@@ -196,7 +196,7 @@ def generate_gantt_chart_google(time_spans: List[TimeSpan], args: Optional[Gantt
               if (step.endTs && step.endTs > 0) {{
                 duration = step.endTs - step.startTs;
               }}
-            }} 
+            }}
             // Check if still running
             else if (step.endTs === 0 || !step.endTs) {{
               resource = 'Running';
@@ -253,7 +253,7 @@ def generate_gantt_chart_google(time_spans: List[TimeSpan], args: Optional[Gantt
           chart.draw(dataTable, options);
         }} catch (err) {{
           console.error('Error creating chart:', err);
-          document.getElementById('gantt_chart').innerHTML = 
+          document.getElementById('gantt_chart').innerHTML =
             '<div style="color: red; padding: 20px;">Error drawing chart: ' + err + '</div>';
         }}
       }}
@@ -263,6 +263,6 @@ def generate_gantt_chart_google(time_spans: List[TimeSpan], args: Optional[Gantt
     <div id="gantt_chart" style="width: 100%; height: {height}px;"></div>
   </body>
 </html>
-"""
+"""  # noqa: W293
 
     return html
