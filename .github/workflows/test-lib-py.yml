@@ -1,4 +1,4 @@
-name: Python Library Tests
+name: Lib-PY Tests
 
 on:
   push:

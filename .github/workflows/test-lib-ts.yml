@@ -1,4 +1,4 @@
-name: Typescript Library Tests
+name: Lib-TS Tests
 
 on:
   push:
