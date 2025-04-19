@@ -104,9 +104,8 @@ from steps_track import Pipeline, Step, HttpTransport
 pipeline = Pipeline('my-pipeline')
 
 # Run your pipeline
-async def pipeline_logic(st):
-    
-async def pipeline_track(st: Step):
+async def pipeline_logic(st: Step):
+
     # Track a simple step
     result = await st.step('some_step', async lambda st: 
         # ... your logic ...
@@ -122,7 +121,6 @@ async def pipeline_track(st: Step):
     )
     
     # Track parallel steps
-    import asyncio
     await asyncio.gather(
         st.step('parallel_1', async lambda st: pass),
         st.step('parallel_2', async lambda st: pass)
