@@ -1,4 +1,4 @@
-name: Publish StepsTrack to NPM
+name: publish lib-ts to npm
 
 on:
   push:

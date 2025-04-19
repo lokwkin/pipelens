@@ -1,4 +1,4 @@
-name: Publish StepsTrack to PyPI
+name: publish lib-py to pypi
 
 on:
   push:
