@@ -99,16 +99,8 @@ await pipeline.track(async (st: Step) => {
 ```python
 from steps_track import Pipeline, Step, HttpTransport
 
-http_transport = HttpTransport(
-    base_url='http://localhost:3000',
-    batch_logs=True
-)
-
 # Create pipeline with HTTP transport
-pipeline = Pipeline('my-pipeline', 
-    auto_save='real_time',
-    transport=http_transport
-)
+pipeline = Pipeline('my-pipeline')
 
 # Run your pipeline
 async def pipeline_logic(st):
@@ -275,10 +267,10 @@ await httpTransport.flushAndStop();
 ```python
 from steps_track import Pipeline, Step, HttpTransport
 
-http_transport = HttpTransport(
+http_transport = HttpTransport(HttpTransportOptions(
     base_url='http://localhost:3000',
     batch_logs=True
-)
+))
 
 # Create pipeline with HTTP transport
 pipeline = Pipeline('my-pipeline', 
