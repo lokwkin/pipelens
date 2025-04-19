@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "steps-track"
-version = "1.12.3"
+version = "1.12.4"
 description = "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard."
 authors = ["lokwkin <lokwkin@gmail.com>"]
 license = "MIT"
