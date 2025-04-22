@@ -174,6 +174,11 @@ export class SQLStorageAdapter implements StorageAdapter {
         query = query.andWhere('start_time', '<=', options.endDate.getTime());
       }
 
+      // Apply runId filter
+      if (options?.runId) {
+        query = query.andWhere('run_id', options.runId);
+      }
+
       // Apply sorting
       query = query.orderBy('start_time', 'desc');
 

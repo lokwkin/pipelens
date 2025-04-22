@@ -6,6 +6,7 @@ export type FilterOptions = {
   startDate?: Date;
   endDate?: Date;
   status?: 'completed' | 'failed' | 'running';
+  runId?: string;
 };
 
 export type RunMeta = {

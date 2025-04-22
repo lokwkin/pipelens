@@ -183,6 +183,7 @@ const ui = {
     const nextButton = document.getElementById('pagination-next');
     const pageSizeSelect = document.getElementById('pagination-page-size');
     const paginationContainer = document.getElementById('runs-pagination');
+    const runIdSearchInput = document.getElementById('run-id-search');
 
     // Initialize pagination state if it doesn't exist
     if (!app.state.pagination) {
@@ -213,8 +214,11 @@ const ui = {
       const pageSize = parseInt(pageSizeSelect.value, 10) || app.state.pagination.pageSize;
       app.state.pagination.pageSize = pageSize;
 
-      // Fetch data with pagination
-      const response = await api.loadRuns(pipeline, dateRange, app.state.pagination);
+      // Get Run ID search value
+      const runIdSearch = runIdSearchInput.value.trim();
+
+      // Fetch data with pagination and search
+      const response = await api.loadRuns(pipeline, dateRange, app.state.pagination, runIdSearch);
       const runs = response.items;
       const pagination = response.pagination;
 
