@@ -26,7 +26,7 @@ export function setupDashboardRoutes(storageAdapter: StorageAdapter, upload: mul
   router.get('/pipelines/:pipelineName/runs', async (req, res) => {
     try {
       const { pipelineName } = req.params;
-      const { startDate, endDate, status, page, pageSize } = req.query;
+      const { startDate, endDate, status, page, pageSize, runId } = req.query;
 
       const options: any = {};
 
@@ -40,6 +40,11 @@ export function setupDashboardRoutes(storageAdapter: StorageAdapter, upload: mul
 
       if (status) {
         options.status = status as string;
+      }
+
+      // Add runId filter if present
+      if (runId) {
+        options.runId = runId as string;
       }
 
       // Convert pagination parameters

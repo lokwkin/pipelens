@@ -24,9 +24,10 @@ const api = {
    * @param {string} pipeline - Pipeline name
    * @param {Object} dateRange - Date range for filtering
    * @param {Object} pagination - Pagination options
+   * @param {string} runIdSearch - Run ID search parameter
    * @returns {Promise<Object>} Object containing runs array and pagination metadata
    */
-  async loadRuns(pipeline, dateRange, pagination = { page: 1, pageSize: 10 }) {
+  async loadRuns(pipeline, dateRange, pagination = { page: 1, pageSize: 10 }, runIdSearch = '') {
     try {
       // Build query parameters
       let url = `/api/dashboard/pipelines/${pipeline}/runs`;
@@ -35,6 +36,11 @@ const api = {
       // Add pagination parameters
       params.append('page', pagination.page);
       params.append('pageSize', pagination.pageSize);
+
+      // Add run ID search parameter if provided
+      if (runIdSearch) {
+        params.append('runId', runIdSearch);
+      }
 
       if (dateRange.timePreset !== 'custom') {
         // For preset selections, calculate the start date

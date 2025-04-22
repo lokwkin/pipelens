@@ -387,6 +387,29 @@ const app = {
 
     // Initialize file import functionality
     this.initImportUI();
+
+    // Run ID Search
+    const runIdSearchInput = document.getElementById('run-id-search');
+    const runIdSearchButton = document.getElementById('run-id-search-button');
+
+    const triggerRunSearch = () => {
+      const pipeline = document.getElementById('global-pipeline-select').value;
+      if (pipeline) {
+        // Reset to page 1 when searching
+        if (app.state.pagination) {
+          app.state.pagination.page = 1;
+        }
+        ui.loadRuns(pipeline);
+      }
+    };
+
+    runIdSearchButton.addEventListener('click', triggerRunSearch);
+
+    runIdSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        triggerRunSearch();
+      }
+    });
   },
 
   /**
