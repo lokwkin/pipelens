@@ -7,6 +7,9 @@ import {
 } from './storage-adapter';
 import { StepMeta, PipelineMeta } from 'steps-track';
 import { Knex, knex } from 'knex';
+import pg from 'pg';
+
+pg.types.setTypeParser(pg.types.builtins.INT8, parseInt);
 
 interface ConnectionConfig extends Knex.Config {}
 
