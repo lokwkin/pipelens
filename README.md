@@ -60,6 +60,8 @@ pip install steps-track
 ## Tracking Pipeline Steps
 
 Create a pipeline and track steps with nested, sequential, or parallel logic:
+
+#### Simple Usage
 <details>
 <summary>Typescript</summary>
 
@@ -109,7 +111,7 @@ async def pipeline_logic(st: Step):
     async def some_task(some_args: str):
         # ... your logic ...
         st.record('key', 'value')  # Record data for analysis
-        return 'step_result'  # Results are automatically recorded
+        return 'some_result'  # Results are automatically recorded
 
     # Track a simple step
     result = await st.step('some_step', async lambda st: some_task(your_args, st))
@@ -129,7 +131,106 @@ async def pipeline_logic(st: Step):
 # Run the pipeline
 await pipeline.track(pipeline_logic)
 ```
+</details>
 
+#### Using Decorators
+<details>
+<summary>Typescript</summary>
+
+```typescript
+import { Pipeline, Step, WithStep } from 'steps-track';
+
+class PipelineController {
+  private pipeline: Pipeline;
+
+  constructor() {
+    this.pipeline = new Pipeline('my_pipeline');
+  }
+
+  /**
+   * Method to run the pipeline
+   */
+  public async run() {
+    await this.pipeline.track(async (st: Step) => {
+      await this.someStep('some_value', st);
+      await this.parentFunc(st);
+    });
+  }
+
+  @WithStep('some_step')
+  async someStep(str: string, st: Step) {
+    // ... some logic ...
+    st.record('key', 'value');  // Record data for analysis
+
+    return 'step_result'  // Results are automatically recorded
+  }
+
+  @WithStep('child')
+  async childFunc(param: number, st: Step) {
+    // ... some logic ...
+  }
+
+  @WithStep('parent')
+  async parentFunc(st: Step) {
+    // Track nested steps
+    await this.childFunc(1, st);
+    await this.childFunc(2, st);
+
+    // Track parallel steps
+    await Promise.all([
+        this.childFunc(3, st),
+        this.childFunc(4, st),
+    ]);
+  }
+}
+
+const controller = new PipelineController();
+await controller.run();
+```
+</details>
+
+<details>
+<summary>Python</summary>
+
+```python
+import asyncio
+from steps_track import Pipeline, Step, HttpTransport
+
+class PipelineController:
+    def __init__(self):
+        self.pipeline = Pipeline('my_pipeline')
+
+    async def run(self):
+        """Method to run the pipeline"""
+        await self.pipeline.track(self._run_steps)
+
+    async def _run_steps(self, st: Step):
+        """Actual pipeline implementation method"""
+        await st.step('some_step', lambda current_st: self.some_step('some_value', current_st))
+        await st.step('parent', self.parent_func)
+
+    async def some_step(self, input_str: str, st: Step):
+        # ... some logic ...
+        st.record('key', 'value')  # Record data for analysis
+        return 'some_result'  # Results are automatically recorded
+
+    async def child_func(self, param: int, st: Step):
+        # ... some logic ...
+
+    async def parent_func(self, st: Step): 
+        # Track nested steps
+        await st.step('child_1', lambda current_st: self.child_func(1, current_st))
+        await st.step('child_2', lambda current_st: self.child_func(2, current_st))
+
+        # Track parallel steps
+        await asyncio.gather(
+            st.step('child_3', lambda current_st: self.child_func(3, current_st)),
+            st.step('child_4', lambda current_st: self.child_func(4, current_st)),
+        )
+
+controller = PipelineController()
+await controller.run()
+```
 </details>
 
 ### Exporting and Visualizing Executions
