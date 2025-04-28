@@ -138,7 +138,7 @@ await pipeline.track(pipeline_logic)
 ```
 </details>
 
-#### Using Decorators
+#### Using Decorators (Recommended)
 <details>
 <summary>Typescript</summary>
 
