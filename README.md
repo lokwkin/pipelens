@@ -2,6 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
+[![pypi version](https://badge.fury.io/py/steps-track.svg)](https://pypi.org/project/steps-track/)
+[![pypi downloads](https://pepy.tech/badge/steps-track)](https://pepy.tech/project/steps-track)
 [![lib-ts test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)
 
