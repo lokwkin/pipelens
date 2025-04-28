@@ -1,12 +1,14 @@
 # StepsTrack
-*TL;DR - Tracks every data and metrics during your pipeline run, then visualize it in easily tracable way.*
 
 [![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
 [![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
 [![lib-ts test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)
 
-StepsTrack is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
+*TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.*
+
+
+**StepsTrack** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
 
 It now supports both ***Python*** and ***Typescript / Node.js***
 
