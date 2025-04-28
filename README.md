@@ -198,8 +198,7 @@ await controller.run();
 <summary>Python</summary>
 
 ```python
-import asyncio
-from steps_track import Pipeline, Step, HttpTransport
+from steps_track import Pipeline, Step, with_step
 
 class PipelineController:
     def __init__(self):
@@ -211,26 +210,29 @@ class PipelineController:
 
     async def _run_steps(self, st: Step):
         """Actual pipeline implementation method"""
-        await st.step('some_step', lambda current_st: self.some_step('some_value', current_st))
-        await st.step('parent', self.parent_func)
+        await self.some_step('some_value', st)
+        await self.parent_func(st)
 
+    @with_step('some_step')
     async def some_step(self, input_str: str, st: Step):
         # ... some logic ...
-        st.record('key', 'value')  # Record data for analysis
+        await st.record('key', 'value')  # Record data for analysis
         return 'some_result'  # Results are automatically recorded
 
+    @with_step('child')
     async def child_func(self, param: int, st: Step):
         # ... some logic ...
 
-    async def parent_func(self, st: Step): 
+    @with_step('parent')
+    async def parent_func(self, st: Step):
         # Track nested steps
-        await st.step('child_1', lambda current_st: self.child_func(1, current_st))
-        await st.step('child_2', lambda current_st: self.child_func(2, current_st))
+        await self.child_func(1, st)
+        await self.child_func(2, st)
 
         # Track parallel steps
         await asyncio.gather(
-            st.step('child_3', lambda current_st: self.child_func(3, current_st)),
-            st.step('child_4', lambda current_st: self.child_func(4, current_st)),
+            self.child_func(3, st),
+            self.child_func(4, st),
         )
 
 controller = PipelineController()
