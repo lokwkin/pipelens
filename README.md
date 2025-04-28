@@ -62,7 +62,7 @@ npm install --save steps-track
 pip install steps-track
 ```
 
-## Tracking Pipeline Steps
+### Tracking Pipeline Steps
 
 Create a pipeline and track steps with nested, sequential, or parallel logic:
 
