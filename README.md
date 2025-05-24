@@ -427,27 +427,27 @@ See [Dashboard](./packages/dashboard) for more details.
 
 Details of a pipeline run. From here you can examine all the steps running in the pipeline, their auto-captured data and results as well as the time usage information.
 
-<img src="./docs/dashboard-inspect-results.gif" width="60%">
+<img src="./docs/dashboard-inspect-results.gif" width="80%">
 
 ### Real-time Execution Monitoring
 
 The dashboard includes auto-refreshing option, allowing you to monitor real-time pipeline runs.
 
-<img src="./docs/dashboard-run-history.gif" width="60%">
+<img src="./docs/dashboard-run-history.gif" width="80%">
 
-<img src="./docs/dashboard-real-time-steps.gif" width="60%">
+<img src="./docs/dashboard-real-time-steps.gif" width="80%">
 
 ### Gantt Chart Visualization for pipeline
 
 Gantt Chart for visualizing the time usages of each steps in a pipeline run. You can see real-time progress of the pipeline, highlighted by status of running / success / failed.
 
-<img src="./docs/dashboard-gantt.gif" width="60%">
+<img src="./docs/dashboard-gantt.gif" width="80%">
 
 ### Step Execution Stats
 
 Step Execution Stats. Aggregated from past run histories with basic statistical information for performance analyzing.
 
-<img src="./docs/dashboard-stats.gif" width="60%">
+<img src="./docs/dashboard-stats.gif" width="80%">
 
 ## Roadmap and To Dos
 - [X] Decorator support for easier integration.
