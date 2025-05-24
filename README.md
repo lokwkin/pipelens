@@ -327,8 +327,7 @@ steps_hierarchy = pipeline.output_nested()
                 {
                     "name": "page_2",
                     "key": "document-pipeline.parsing.page_2",
-                    "time": {
-                        "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
+                    "time": { "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
                     "records": {},
                     "result": "page_2_content",
                     "substeps": []
@@ -350,7 +349,7 @@ steps_hierarchy = pipeline.output_nested()
 
 ### Advanced Usages
 
-StepsTrack also provides **Event Emitting** listeners, **ES6 Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+StepsTrack also provides **Event Emitting** listeners, **ES6/Python Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
 ## Using Dashboard
