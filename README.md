@@ -7,7 +7,7 @@
 [![lib-ts test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)
 
-*TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.*
+***TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.***
 
 <img src="./docs/gantt-heading.png" width="80%">
 
