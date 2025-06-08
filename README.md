@@ -63,7 +63,7 @@ npm install --save steps-track
 pip install steps-track
 ```
 
-## Tracking Pipeline Steps
+### Tracking Pipeline Steps
 
 Create a pipeline and track steps with nested, sequential, or parallel logic:
 
@@ -139,7 +139,7 @@ await pipeline.track(pipeline_logic)
 ```
 </details>
 
-#### Using Decorators
+#### Using Decorators (Recommended)
 <details>
 <summary>Typescript</summary>
 
@@ -328,8 +328,7 @@ steps_hierarchy = pipeline.output_nested()
                 {
                     "name": "page_2",
                     "key": "document-pipeline.parsing.page_2",
-                    "time": {
-                        "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
+                    "time": { "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
                     "records": {},
                     "result": "page_2_content",
                     "substeps": []
@@ -351,7 +350,7 @@ steps_hierarchy = pipeline.output_nested()
 
 ### Advanced Usages
 
-StepsTrack also provides **Event Emitting** listeners, **ES6 Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+StepsTrack also provides **Event Emitting** listeners, **ES6/Python Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
 ## Using Dashboard
@@ -429,27 +428,27 @@ See [Dashboard](./packages/dashboard) for more details.
 
 Details of a pipeline run. From here you can examine all the steps running in the pipeline, their auto-captured data and results as well as the time usage information.
 
-<img src="./docs/dashboard-inspect-results.gif" width="60%">
+<img src="./docs/dashboard-inspect-results.gif" width="80%">
 
 ### Real-time Execution Monitoring
 
 The dashboard includes auto-refreshing option, allowing you to monitor real-time pipeline runs.
 
-<img src="./docs/dashboard-run-history.gif" width="60%">
+<img src="./docs/dashboard-run-history.gif" width="80%">
 
-<img src="./docs/dashboard-real-time-steps.gif" width="60%">
+<img src="./docs/dashboard-real-time-steps.gif" width="80%">
 
 ### Gantt Chart Visualization for pipeline
 
 Gantt Chart for visualizing the time usages of each steps in a pipeline run. You can see real-time progress of the pipeline, highlighted by status of running / success / failed.
 
-<img src="./docs/dashboard-gantt.gif" width="60%">
+<img src="./docs/dashboard-gantt.gif" width="80%">
 
 ### Step Execution Stats
 
 Step Execution Stats. Aggregated from past run histories with basic statistical information for performance analyzing.
 
-<img src="./docs/dashboard-stats.gif" width="60%">
+<img src="./docs/dashboard-stats.gif" width="80%">
 
 ## Roadmap and To Dos
 - [X] Decorator support for easier integration.
