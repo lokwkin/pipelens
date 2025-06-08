@@ -9,6 +9,7 @@
 
 *TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.*
 
+<img src="./docs/gantt-heading.png" width="50%">
 
 **StepsTrack** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
 
