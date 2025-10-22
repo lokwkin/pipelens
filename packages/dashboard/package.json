@@ -1,6 +1,6 @@
 {
   "name": "pipelens-dashboard",
-  "version": "1.12.7",
+  "version": "1.13.0",
   "description": "Dashboard for visualizing pipelens data",
   "main": "dist/index.js",
   "scripts": {
