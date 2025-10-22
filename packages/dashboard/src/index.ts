@@ -17,12 +17,12 @@ const argv = yargs(hideBin(process.argv))
   .option('sqlite_path', {
     describe: 'SQLite path for sqlite storage',
     type: 'string',
-    default: process.env.SQLITE_PATH || './data/steps-track.db',
+    default: process.env.SQLITE_PATH || './data/pipelens.db',
   })
   .option('postgres_url', {
     describe: 'PostgreSQL connection URL',
     type: 'string',
-    default: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/stepstrack',
+    default: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/pipelens',
   })
   .option('port', {
     alias: 'p',

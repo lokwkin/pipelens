@@ -1,7 +1,7 @@
 {
-  "name": "steps-track-monorepo",
+  "name": "pipelens-monorepo",
   "version": "1.12.7",
-  "description": "Monorepo for steps-track library and dashboard",
+  "description": "Monorepo for pipelens library and dashboard",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lokwkin/steps-track.git"
+    "url": "git+https://github.com/lokwkin/pipelens.git"
   },
   "author": "lokwkin <lokwkin@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lokwkin/steps-track/issues"
+    "url": "https://github.com/lokwkin/pipelens/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "homepage": "https://github.com/lokwkin/pipelens#readme",
   "devDependencies": {
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",

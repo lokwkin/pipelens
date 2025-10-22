@@ -1,19 +1,19 @@
-# steps-track/lib-ts
+# pipelens/lib-ts
 
-This is the Typescript library implemenation for **[steps-track](https://github.com/lokwkin/steps-track)**
+This is the Typescript library implemenation for **[pipelens](https://github.com/lokwkin/pipelens)**
 
-StepsTrack is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.
+PipeLens is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.
 
 ## Installation
 
 ```bash
-npm install steps-track
+npm install pipelens
 ```
 
 ## Quick Start
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 const httpTransport = new HttpTransport({
   baseUrl: 'http://localhost:3000',
@@ -44,4 +44,4 @@ const exported = pipeline.outputPipelineLogs();
 const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
 ```
 
-See [GitHub repository](https://github.com/lokwkin/steps-track#readme) for more usages and repository introduction.
+See [GitHub repository](https://github.com/lokwkin/pipelens#readme) for more usages and repository introduction.

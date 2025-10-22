@@ -1,5 +1,5 @@
-import { Pipeline, Step } from 'steps-track';
-import { WithStep } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
+import { WithStep } from 'pipelens';
 
 class SamplePipeline {
   pipelineTracker: Pipeline;

@@ -1,7 +1,7 @@
 {
-  "name": "steps-track-dashboard",
+  "name": "pipelens-dashboard",
   "version": "1.12.7",
-  "description": "Dashboard for visualizing steps-track data",
+  "description": "Dashboard for visualizing pipelens data",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json --outDir ./dist && cp -r src/public ./dist/",
@@ -20,7 +20,7 @@
     "opener": "^1.5.2",
     "pg": "^8.14.1",
     "sqlite3": "^5.1.7",
-    "steps-track": "file:../lib-ts",
+    "pipelens": "file:../lib-ts",
     "uuid": "^11.0.3",
     "yargs": "^17.7.2"
   },

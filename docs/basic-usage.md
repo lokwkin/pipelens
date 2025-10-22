@@ -1,19 +1,19 @@
-# Basic Usage of StepsTrack
+# Basic Usage of Pipelens
 
-This guide will help you get started with integrating StepsTrack into your project.
+This guide will help you get started with integrating Pipelens into your project.
 
 ## Installation
 
 ```bash
-npm install --save steps-track
+npm install --save pipelens
 ```
 
 ## Basic Pipeline Integration
 
-The simplest way to use StepsTrack is to create a `Pipeline` instance and use the `track` method to wrap your execution flow:
+The simplest way to use Pipelens is to create a `Pipeline` instance and use the `track` method to wrap your execution flow:
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 // Create a new pipeline with a name
 const pipeline = new Pipeline('my-pipeline');
@@ -116,7 +116,7 @@ console.log('Steps Hierarchy:', JSON.stringify(stepsHierarchy, null, 2));
 
 ## Error Handling
 
-StepsTrack automatically captures errors in steps:
+Pipelens automatically captures errors in steps:
 
 ```typescript
 await pipeline.track(async (st: Step) => {

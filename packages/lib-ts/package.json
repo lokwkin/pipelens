@@ -1,13 +1,13 @@
 {
-  "name": "steps-track",
+  "name": "pipelens",
   "version": "1.12.7",
   "description": "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "keywords": [
-    "steps-track",
-    "steps",
-    "track",
+    "pipelens",
+    "pipeline",
+    "lens",
     "pipeline",
     "observability",
     "monitoring",
@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lokwkin/steps-track.git"
+    "url": "git+https://github.com/lokwkin/pipelens.git"
   },
   "author": "lokwkin <lokwkin@gmail.com>",
   "license": "MIT",
@@ -56,9 +56,9 @@
     "testEnvironment": "node"
   },
   "bugs": {
-    "url": "https://github.com/lokwkin/steps-track/issues"
+    "url": "https://github.com/lokwkin/pipelens/issues"
   },
-  "homepage": "https://github.com/lokwkin/steps-track#readme",
+  "homepage": "https://github.com/lokwkin/pipelens#readme",
   "dependencies": {
     "axios": "^1.8.4",
     "uuid": "^11.1.0"

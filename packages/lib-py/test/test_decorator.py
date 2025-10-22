@@ -1,7 +1,7 @@
 import pytest
 
-from steps_track import Step
-from steps_track.decorator import with_step
+from pipelens import Step
+from pipelens.decorator import with_step
 
 
 @pytest.mark.asyncio

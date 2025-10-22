@@ -1,28 +1,28 @@
-# StepsTrack
+# PipeLens
 
-[![npm version](https://badge.fury.io/js/steps-track.svg)](https://badge.fury.io/js/steps-track)
-[![npm downloads](https://img.shields.io/npm/dt/steps-track.svg)](https://www.npmjs.com/package/steps-track)
-[![pypi version](https://badge.fury.io/py/steps-track.svg)](https://pypi.org/project/steps-track/)
-[![pypi downloads](https://pepy.tech/badge/steps-track)](https://pepy.tech/project/steps-track)
-[![lib-ts test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-ts.yml/badge.svg)
-[![lib-py test](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/steps-track/actions/workflows/test-lib-py.yml/badge.svg)
+[![npm version](https://badge.fury.io/js/pipelens.svg)](https://badge.fury.io/js/pipelens)
+[![npm downloads](https://img.shields.io/npm/dt/pipelens.svg)](https://www.npmjs.com/package/pipelens)
+[![pypi version](https://badge.fury.io/py/pipelens.svg)](https://pypi.org/project/pipelens/)
+[![pypi downloads](https://pepy.tech/badge/pipelens)](https://pepy.tech/project/pipelens)
+[![lib-ts test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)
+[![lib-py test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)
 
 <img src="./docs/gantt-heading.png" width="80%">
 
 ***TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.***
 
-**StepsTrack** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
+**PipeLens** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
 
 It now supports both ***Python*** and ***Typescript / Node.js***
 
 <details>
-<summary>Background of StepsTrack</summary>
+<summary>Background of PipeLens</summary>
 
-> StepsTrack is a lightweight inspection and debugging tool originally built to monitor an agentic Retrieval-Augmented Generation (RAG) pipeline running in a production environment—where visibility, performance, and stability are critical.
+> PipeLens is a lightweight inspection and debugging tool originally built to monitor an agentic Retrieval-Augmented Generation (RAG) pipeline running in a production environment—where visibility, performance, and stability are critical.
 > 
 > When chaining multiple LLM agents with custom logic and dynamic inputs, non-deterministic nature of LLM outputs of each steps often lead to dynamic route of logics and behaviors. I needed a inspection tool but the existing tools didn't provide the granularity I needed to trace what happened inside each step of the pipeline.
 > 
-> So I built StepsTrack to do just that: trace, inspect, and understand every step of each request. It helped me quickly spot bottlenecks, unexpected behaviors and performance drags, and address them effectively.
+> So I built PipeLens to do just that: trace, inspect, and understand every step of each request. It helped me quickly spot bottlenecks, unexpected behaviors and performance drags, and address them effectively.
 > 
 > I'm open-sourcing it in the hope that it helps others building and operating complex LLM pipelines.
 >
@@ -47,7 +47,7 @@ Monitor and analyze pipeline executions through an interactive web interface
 - Gantt Chart Visualization for pipeline
 - Step Execution Stats
 
-*Note: StepsTrack is designed for any pipeline-based / multi-steps logic, especially agentic LLM pipelines*
+*Note: PipeLens is designed for any pipeline-based / multi-steps logic, especially agentic LLM pipelines*
 
 ## Getting Started
 
@@ -59,10 +59,10 @@ This repository is a **monorepo** containing following packages:
 
 ```bash
 # Typescript
-npm install --save steps-track
+npm install --save pipelens
 
 # Python
-pip install steps-track
+pip install pipelens
 ```
 
 ### Tracking Pipeline Steps
@@ -74,7 +74,7 @@ Create a pipeline and track steps with nested, sequential, or parallel logic:
 <summary>Typescript</summary>
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 const pipeline = new Pipeline('my_pipeline');
 
@@ -108,7 +108,7 @@ await pipeline.track(async (st: Step) => {
 <summary>Python</summary>
 
 ```python
-from steps_track import Pipeline, Step, HttpTransport
+from pipelens import Pipeline, Step, HttpTransport
 
 # Create pipeline with HTTP transport
 pipeline = Pipeline('my-pipeline')
@@ -146,7 +146,7 @@ await pipeline.track(pipeline_logic)
 <summary>Typescript</summary>
 
 ```typescript
-import { Pipeline, Step, WithStep } from 'steps-track';
+import { Pipeline, Step, WithStep } from 'pipelens';
 
 class PipelineController {
   private pipeline: Pipeline;
@@ -201,7 +201,7 @@ await controller.run();
 <summary>Python</summary>
 
 ```python
-from steps_track import Pipeline, Step, with_step
+from pipelens import Pipeline, Step, with_step
 
 class PipelineController:
     def __init__(self):
@@ -352,12 +352,12 @@ steps_hierarchy = pipeline.output_nested()
 
 ### Advanced Usages
 
-StepsTrack also provides **Event Emitting** listeners, **ES6/Python Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
+PipeLens also provides **Event Emitting** listeners, **ES6/Python Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
 
 ## Using Dashboard
 
-StepsTrack includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
+PipeLens includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
 
 ### Initial Configuration
 
@@ -392,7 +392,7 @@ await httpTransport.flushAndStop();
 <summary>Python</summary>
 
 ```python
-from steps_track import Pipeline, Step, HttpTransport
+from pipelens import Pipeline, Step, HttpTransport
 
 http_transport = HttpTransport(HttpTransportOptions(
     base_url='http://localhost:3000',
@@ -421,7 +421,7 @@ await http_transport.flush_and_stop()
 
 ```bash
 # Uses SQLite storage as default
-docker run -p 3000:3000 lokwkin/steps-track-dashboard
+docker run -p 3000:3000 lokwkin/pipelens-dashboard
 ```
 
 See [Dashboard](./packages/dashboard) for more details.
@@ -460,7 +460,7 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - [X] Support real-time step exdcution monitoring.
 - [X] Convert into mono-repo and split dashboard as independent dockerized module
 - [X] Use GoogleChart / QuickChart instead of local chart.js generation
-- [X] Enhance StepsTrack Monitoring Dashboard UI/UX
+- [X] Enhance PipeLens Monitoring Dashboard UI/UX
 - [X] Allow importing external logs into dashboard
 - [X] Use Sqlite as a more appropriate persistence storage for analytic
 - [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.

@@ -1,5 +1,5 @@
 /**
- * Chart visualization functions for StepsTrack Portal
+ * Chart visualization functions for Pipelens Portal
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

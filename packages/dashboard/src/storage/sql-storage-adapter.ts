@@ -5,7 +5,7 @@ import {
   StorageAdapter,
   DEFAULT_DATA_RETENTION_DAYS,
 } from './storage-adapter';
-import { StepMeta, PipelineMeta } from 'steps-track';
+import { StepMeta, PipelineMeta } from 'pipelens';
 import { Knex, knex } from 'knex';
 import pg from 'pg';
 
