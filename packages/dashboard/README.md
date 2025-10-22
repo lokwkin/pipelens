@@ -1,6 +1,6 @@
-# steps-track/dashboard
+# pipelens/dashboard
 
-This is the Dashboard implementation for **steps-track**.
+This is the Dashboard implementation for **pipelens**.
 
 ## Usage
 
@@ -24,8 +24,8 @@ The dashboard supports multiple storage options and can be configured via comman
 | Option | CLI Flag | Environment Variable | Description | Default |
 |--------|----------|----------------------|-------------|---------|
 | Storage Type | `--storage_option`, `-o` | `STORAGE_OPTION` | Storage type to use (`sqlite`, or `postgres`) | `sqlite` |
-| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./data/steps-track.db` |
-| PostgreSQL URL | `--postgres_url` | `POSTGRES_URL` | PostgreSQL connection URL | `postgres://postgres:postgres@localhost:5432/stepstrack` |
+| SQLite Path | `--sqlite_path` | `SQLITE_PATH` | SQLite file path for sqlite storage | `./data/pipelens.db` |
+| PostgreSQL URL | `--postgres_url` | `POSTGRES_URL` | PostgreSQL connection URL | `postgres://postgres:postgres@localhost:5432/pipelens` |
 | Port | `--port`, `-p` | `PORT` | Port to run the dashboard server on | `3000` |
 
 Command line arguments take priority over environment variables.
@@ -37,7 +37,7 @@ Command line arguments take priority over environment variables.
 npm start -- --storage_option sqlite --sqlite_path ./my-database.db
 
 # Use PostgreSQL storage
-npm start -- --storage_option postgres --postgres_url postgres://user:password@host:5432/stepstrack
+npm start -- --storage_option postgres --postgres_url postgres://user:password@host:5432/pipelens
 
 # Short form with aliases
 npm start -- -o sqlite -p 8080
@@ -47,13 +47,13 @@ npm start -- -o sqlite -p 8080
 
 ```bash
 # Basic quick start with SQLite
-docker run -p 3000:3000 lokwkin/steps-track-dashboard
+docker run -p 3000:3000 lokwkin/pipelens-dashboard
 
 # Use SQLite storage 
-docker run -p 3000:3000 -v $(pwd)/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/steps-track.db lokwkin/steps-track-dashboard
+docker run -p 3000:3000 -v $(pwd)/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/pipelens.db lokwkin/pipelens-dashboard
 
 # Use PostgreSQL storage
-docker run -p 3000:3000 -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/stepstrack lokwkin/steps-track-dashboard
+docker run -p 3000:3000 -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/pipelens lokwkin/pipelens-dashboard
 ```
 
-See [GitHub repository](https://github.com/lokwkin/steps-track#readme) for repository introduction and usage description.
+See [GitHub repository](https://github.com/lokwkin/pipelens#readme) for repository introduction and usage description.

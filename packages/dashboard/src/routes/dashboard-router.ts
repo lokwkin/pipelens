@@ -1,7 +1,7 @@
 import { StorageAdapter } from '../storage/storage-adapter';
 import { v4 as uuidv4 } from 'uuid';
 import { Request, Response, Router } from 'express';
-import { PipelineMeta, StepMeta } from 'steps-track';
+import { PipelineMeta, StepMeta } from 'pipelens';
 import multer from 'multer';
 
 /**

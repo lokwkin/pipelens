@@ -5,9 +5,9 @@ from aioresponses import aioresponses
 from pydantic import ValidationError
 from yarl import URL
 
-from steps_track.step import StepMeta, TimeMeta
-from steps_track.pipeline import PipelineMeta
-from steps_track.transport.http_transport import HttpTransport, HttpTransportOptions
+from pipelens.step import StepMeta, TimeMeta
+from pipelens.pipeline import PipelineMeta
+from pipelens.transport.http_transport import HttpTransport, HttpTransportOptions
 
 # Mark all tests in this module as asyncio
 pytestmark = pytest.mark.asyncio

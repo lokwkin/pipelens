@@ -1,21 +1,21 @@
-# steps-track/lib-py
+# pipelens/lib-py
 
-This is the Python library implementation for **[steps-track](https://github.com/lokwkin/steps-track)**
+This is the Python library implementation for **[pipelens](https://github.com/lokwkin/pipelens)**
 
-StepsTrack is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.
+PipeLens is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.
 
 ## Installation
 
 ```bash
-pip install steps-track
+pip install pipelens
 ```
 
 ## Quick Start
 
 ```python
 import asyncio
-from steps_track import Pipeline, Step
-from steps_track.transport import HttpTransport
+from pipelens import Pipeline, Step
+from pipelens.transport import HttpTransport
 
 async def main():
     http_transport = HttpTransport(
@@ -52,4 +52,4 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-See [GitHub repository](https://github.com/lokwkin/steps-track#readme) for more usages and repository introduction. 
+See [GitHub repository](https://github.com/lokwkin/pipelens#readme) for more usages and repository introduction. 

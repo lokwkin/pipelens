@@ -13,7 +13,7 @@ npm install --save steps-track
 The simplest way to use StepsTrack is to create a `Pipeline` instance and use the `track` method to wrap your execution flow:
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 // Create a new pipeline with a name
 const pipeline = new Pipeline('my-pipeline');

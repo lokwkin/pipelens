@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "steps-track"
+name = "pipelens"
 version = "1.12.7"
 description = "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard."
 authors = ["lokwkin <lokwkin@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "steps_track", from = "src"}]
-homepage = "https://github.com/lokwkin/steps-track"
-repository = "https://github.com/lokwkin/steps-track"
-keywords = ["steps-track", "steps", "track", "pipeline", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"]
+packages = [{include = "pipelens", from = "src"}]
+homepage = "https://github.com/lokwkin/pipelens"
+repository = "https://github.com/lokwkin/pipelens"
+keywords = ["pipelens", "pipeline", "lens", "observability", "monitoring", "rag", "llm", "visualization", "tracing", "tracking", "debugging", "analytics", "performance", "metrics"]
 
 
 

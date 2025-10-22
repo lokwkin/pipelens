@@ -7,7 +7,7 @@ This guide covers advanced usage patterns for StepsTrack, including decorators, 
 StepsTrack provides decorators for easier integration with ES6 classes:
 
 ```typescript
-import { Pipeline, Step, WithStep } from 'steps-track';
+import { Pipeline, Step, WithStep } from 'pipelens';
 
 class MyPipeline {
   @WithStep('parsing')
@@ -98,7 +98,7 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 StepsTrack supports automatically transporting near real-time data to [StepsTrack Dashbaord](../packages/dashboard) for analytic purpose.
 
 ```typescript
-import { Pipeline, FileStorageAdapter } from 'steps-track';
+import { Pipeline, FileStorageAdapter } from 'pipelens';
 
 // HTTP transport for sending data to a dashboard
 const httpTransport = new HttpTransport({
@@ -169,7 +169,7 @@ const executionGraphUrl = pipeline.executionGraphQuickchart({
 ### Example: AI Pipeline Integration
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 async function aiPipeline(query: string) {
   const pipeline = new Pipeline('ai-pipeline');
@@ -219,7 +219,7 @@ async function aiPipeline(query: string) {
 ### Example: Data Processing Pipeline
 
 ```typescript
-import { Pipeline, Step } from 'steps-track';
+import { Pipeline, Step } from 'pipelens';
 
 async function processData(data: any[]) {
   const pipeline = new Pipeline('data-processing');
@@ -263,7 +263,7 @@ async function processData(data: any[]) {
 StepsTrack provides built-in support for tracking and analyzing LLM responses and token usage through the `LLMTrack` helper extension.
 
 ```typescript
-import { Pipeline, Step, LLMTrack } from 'steps-track';
+import { Pipeline, Step, LLMTrack } from 'pipelens';
 import { OpenAI } from 'openai';
 
 async function llmPipeline(query: string) {

@@ -1,5 +1,5 @@
 import { SQLStorageAdapter } from '../src/storage/sql-storage-adapter';
-import { PipelineMeta, StepMeta } from 'steps-track';
+import { PipelineMeta, StepMeta } from 'pipelens';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,7 +7,7 @@ import { Knex } from 'knex';
 
 describe('SQLStorageAdapter', () => {
   let adapter: SQLStorageAdapter;
-  const testDbPath = path.join(__dirname, 'test-steps-track.db');
+  const testDbPath = path.join(__dirname, 'test-pipelens.db');
 
   // Create SQLite Knex config
   const createSqliteConfig = (dbPath: string): Knex.Config => ({

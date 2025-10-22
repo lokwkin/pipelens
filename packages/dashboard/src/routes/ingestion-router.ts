@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PipelineMeta } from 'steps-track';
+import { PipelineMeta } from 'pipelens';
 import { StorageAdapter } from '../storage/storage-adapter';
 
 /**

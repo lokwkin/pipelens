@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Step, Pipeline, StepGanttArg, HttpTransport } from 'steps-track';
+import { Step, Pipeline, StepGanttArg, HttpTransport } from 'pipelens';
 import * as fs from 'fs';
 
 const parsePage = (page: string) => {
