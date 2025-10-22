@@ -7,9 +7,9 @@
 [![lib-ts test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)
 
-*TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.*
+<img src="./docs/gantt-heading.png" width="80%">
 
-<img src="./docs/gantt-heading.png" width="50%">
+***TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.***
 
 **PipeLens** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
 
@@ -29,9 +29,7 @@ It now supports both ***Python*** and ***Typescript / Node.js***
 > Contributions welcome!
 </details>
 
-This repository is a **monorepo** containing following packages:
-- [Typescript](./packages/lib-ts) / [Python](./packages/lib-py) libraries that provides basic tracker and chart generation function for your pipeline
-- [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
+⭐🌟 ***Sounds interesting? Kindly give it a Star, it means a lot!*** ⭐🌟
 
 ## Features
 
@@ -52,6 +50,10 @@ Monitor and analyze pipeline executions through an interactive web interface
 *Note: PipeLens is designed for any pipeline-based / multi-steps logic, especially agentic LLM pipelines*
 
 ## Getting Started
+
+This repository is a **monorepo** containing following packages:
+- [Typescript](./packages/lib-ts) / [Python](./packages/lib-py) libraries that provides basic tracker and chart generation function for your pipeline
+- [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
 ### Installation
 
