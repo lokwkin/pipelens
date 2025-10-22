@@ -1,5 +1,5 @@
 /**
- * Main application code for StepsTrack Portal
+ * Main application code for Pipelens Portal
  */
 
 // Global app object

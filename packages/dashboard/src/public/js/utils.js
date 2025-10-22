@@ -1,5 +1,5 @@
 /**
- * Utility functions for StepsTrack Portal
+ * Utility functions for Pipelens Portal
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

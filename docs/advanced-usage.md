@@ -1,10 +1,10 @@
-# Advanced Usage of StepsTrack
+# Advanced Usage of Pipelens
 
-This guide covers advanced usage patterns for StepsTrack, including decorators, event handling, persistent storage, and visualization customization.
+This guide covers advanced usage patterns for Pipelens, including decorators, event handling, persistent storage, and visualization customization.
 
 ## Using Decorators
 
-StepsTrack provides decorators for easier integration with ES6 classes:
+Pipelens provides decorators for easier integration with ES6 classes:
 
 ```typescript
 import { Pipeline, Step, WithStep } from 'pipelens';
@@ -49,7 +49,7 @@ await pipeline.track(async (st) => {
 
 ## Event Handling
 
-StepsTrack emits events during step execution that you can listen to:
+Pipelens emits events during step execution that you can listen to:
 
 ```typescript
 /**
@@ -95,7 +95,7 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 
 ## Transporting Logs to Dashboard
 
-StepsTrack supports automatically transporting near real-time data to [StepsTrack Dashbaord](../packages/dashboard) for analytic purpose.
+Pipelens supports automatically transporting near real-time data to [Pipelens Dashbaord](../packages/dashboard) for analytic purpose.
 
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'pipelens';
@@ -260,7 +260,7 @@ async function processData(data: any[]) {
 
 ## LLM Usage Tracking
 
-StepsTrack provides built-in support for tracking and analyzing LLM responses and token usage through the `LLMTrack` helper extension.
+Pipelens provides built-in support for tracking and analyzing LLM responses and token usage through the `LLMTrack` helper extension.
 
 ```typescript
 import { Pipeline, Step, LLMTrack } from 'pipelens';
@@ -301,4 +301,4 @@ async function llmPipeline(query: string) {
   // }
 }
 ```
-For more information, refer to the [StepsTrack GitHub repository](https://github.com/lokwkin/steps-track). 
+For more information, refer to the [Pipelens GitHub repository](https://github.com/lokwkin/pipelens). 

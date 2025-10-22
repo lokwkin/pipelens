@@ -1,5 +1,5 @@
 /**
- * UI manipulation functions for StepsTrack Portal
+ * UI manipulation functions for Pipelens Portal
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -1,5 +1,5 @@
 /**
- * API functions for StepsTrack Portal
+ * API functions for Pipelens Portal
  * Handles all communication with the backend API
  */
 

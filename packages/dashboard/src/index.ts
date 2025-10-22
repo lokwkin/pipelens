@@ -22,7 +22,7 @@ const argv = yargs(hideBin(process.argv))
   .option('postgres_url', {
     describe: 'PostgreSQL connection URL',
     type: 'string',
-    default: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/stepstrack',
+    default: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/pipelens',
   })
   .option('port', {
     alias: 'p',
