@@ -453,25 +453,13 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 <img src="./docs/dashboard-stats.gif" width="80%">
 
 ## Roadmap and To Dos
-- [X] Decorator support for easier integration.
-- [X] Generate speed analysis stats from multiple runs.
-- [X] Add Redis / File support for persistent data storage.
-- [X] Dashboard to monitor execution logs and results.
-- [X] Support real-time step exdcution monitoring.
-- [X] Convert into mono-repo and split dashboard as independent dockerized module
-- [X] Use GoogleChart / QuickChart instead of local chart.js generation
-- [X] Enhance PipeLens Monitoring Dashboard UI/UX
-- [X] Allow importing external logs into dashboard
-- [X] Use Sqlite as a more appropriate persistence storage for analytic
-- [X] Migrate dashboard storage to Dashboard. Use transport to relay logs.
-- [X] Optional LLM-extension that optimize for LLM response and usage tracking
-- [X] Data Retention Configuration
-- [ ] Dashboard UX
-    - [X] Filter to show selected step children 
-    - [X] Custom step data display as column
-    - [ ] Fix auto-refresh disabled when changed page
-- [ ] Use memory-store instead of storing nested steps class in runtime
-- [X] Support Python version of steps tracker
+- Dashboard fix auto-refresh disabled when changed page
+- Dashboard UI styling revamp
+- Add integration test for data transporting
+- Use memory-store instead of storing nested steps class in runtime
+- Enhance support for FastAPI with dependency injection
+- Support Open telemetry integration
+- Re-structure readme and documentations
 
 
 ## License
