@@ -9,15 +9,21 @@
 
 <img src="./docs/gantt-heading.png" width="80%">
 
-***TLDR: Tracks every data and metrics during your pipeline run, and visualize it in easily tracable way.***
+⭐ **Building LLM applications without a framework?** ⭐
 
-**PipeLens** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. It is originally developed as a go-to tool to inspect runtime data of an agentic RAG pipeline.
+⭐ **Not sure what’s slow or what’s happening under the hood?** ⭐
 
-It now supports both ***Python*** and ***Typescript / Node.js***
+⭐ **You’ve come to the right place!** ⭐
+
+## What is PipeLens?
+
+**PipeLens** is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a pipeline-based / multi-steps application. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard. 
+
+It supports both *Python* and *Typescript / Node.js*
 
 <details>
-<summary>Background of PipeLens</summary>
-
+<summary>Some Background of the Project</summary>
+    
 > PipeLens is a lightweight inspection and debugging tool originally built to monitor an agentic Retrieval-Augmented Generation (RAG) pipeline running in a production environment—where visibility, performance, and stability are critical.
 > 
 > When chaining multiple LLM agents with custom logic and dynamic inputs, non-deterministic nature of LLM outputs of each steps often lead to dynamic route of logics and behaviors. I needed a inspection tool but the existing tools didn't provide the granularity I needed to trace what happened inside each step of the pipeline.
@@ -29,7 +35,7 @@ It now supports both ***Python*** and ***Typescript / Node.js***
 > Contributions welcome!
 </details>
 
-⭐🌟 ***Sounds interesting? Kindly give it a Star, it means a lot!*** ⭐🌟
+***Sounds interesting? Kindly give it a Star, it means a lot! 🙏***
 
 ## Features
 
