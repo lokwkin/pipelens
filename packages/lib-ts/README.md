@@ -2,8 +2,6 @@
 
 This is the Typescript library implemenation for **[pipelens](https://github.com/lokwkin/pipelens)**
 
-PipeLens is an observability tool built to help ***tracking, visualizing and inspecting*** intermediate steps in a complex ***pipeline-based application***. It automatically captures and stores the intermediate data, results and execution times of each steps in a pipeline, visualizing the execution details and allowing easier debug or analysis through an analytic dashboard.
-
 ## Installation
 
 ```bash
