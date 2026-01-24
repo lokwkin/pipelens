@@ -2,12 +2,13 @@ import requests
 from typing import List, Optional
 from io import BytesIO
 from pydantic import BaseModel
+from urllib.parse import quote
 
-QUICKCHART_URL = 'https://quickchart.io'
+QUICKCHART_URL = "https://quickchart.io"
 
 
 class GanttChartArgs(BaseModel):
-    unit: str = 'ms'
+    unit: str = "ms"
     min_height: int = 300
     min_width: int = 500
 
@@ -34,11 +35,13 @@ def generate_execution_graph_quickchart(graph_items: List[GraphItem]) -> str:
         A URL that can be used to display the execution graph.
     """
     param = f"digraph G {{{';'.join([f'{item.descriptor}{f' [label=\"{item.label}\"]' if item.label else ''}' for item in graph_items])}}}"
-    chart_url = f"{QUICKCHART_URL}/graphviz?graph={requests.utils.quote(param)}"
+    chart_url = f"{QUICKCHART_URL}/graphviz?graph={quote(param)}"
     return chart_url
 
 
-async def generate_gantt_chart_quickchart(time_spans: List[TimeSpan], args: Optional[GanttChartArgs] = None) -> BytesIO:
+async def generate_gantt_chart_quickchart(
+    time_spans: List[TimeSpan], args: Optional[GanttChartArgs] = None
+) -> BytesIO:
     """
     Generates a Gantt chart as a PNG image using the QuickChart API.
 
@@ -62,36 +65,37 @@ async def generate_gantt_chart_quickchart(time_spans: List[TimeSpan], args: Opti
         "data": {
             "labels": [
                 f"{span.key} - {(span.endTs - span.startTs) / (1 if args.unit == 'ms' else 1000)}{args.unit}"
-                if span.endTs else f"{span.key} - N/A{args.unit}"
+                if span.endTs
+                else f"{span.key} - N/A{args.unit}"
                 for span in time_spans
             ],
             "datasets": [
                 {
                     "data": [
                         [
-                            span.startTs / (1 if args.unit == 'ms' else 1000),
-                            (span.endTs or max_end_ts) / (1 if args.unit == 'ms' else 1000)
-                        ] for span in time_spans
+                            span.startTs / (1 if args.unit == "ms" else 1000),
+                            (span.endTs or max_end_ts)
+                            / (1 if args.unit == "ms" else 1000),
+                        ]
+                        for span in time_spans
                     ]
                 }
-            ]
+            ],
         },
         "options": {
-            "legend": {
-                "display": False
-            },
+            "legend": {"display": False},
             "scales": {
                 "xAxes": [
                     {
                         "position": "top",
                         "ticks": {
                             "min": 0,
-                            "max": max_end_ts / (1 if args.unit == 'ms' else 1000)
-                        }
+                            "max": max_end_ts / (1 if args.unit == "ms" else 1000),
+                        },
                     }
                 ]
-            }
-        }
+            },
+        },
     }
 
     # Calculate width and height based on the number of timeSpans
@@ -106,9 +110,9 @@ async def generate_gantt_chart_quickchart(time_spans: List[TimeSpan], args: Opti
                 "chart": chart_data,
                 "width": str(width),
                 "height": str(height),
-                "format": "png"  # This returns a PNG image as buffer
+                "format": "png",  # This returns a PNG image as buffer
             },
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
         # Return the buffer
@@ -118,7 +122,9 @@ async def generate_gantt_chart_quickchart(time_spans: List[TimeSpan], args: Opti
         raise Exception("Failed to generate chart with QuickChart API")
 
 
-def generate_gantt_chart_google(time_spans: List[TimeSpan], args: Optional[GanttChartArgs] = None) -> str:
+def generate_gantt_chart_google(
+    time_spans: List[TimeSpan], args: Optional[GanttChartArgs] = None
+) -> str:
     """
     Generates an HTML page containing a Google Gantt Chart visualization.
 

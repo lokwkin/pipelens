@@ -8,7 +8,7 @@ from pipelens.chart import (
     GanttChartArgs,
     generate_execution_graph_quickchart,
     generate_gantt_chart_quickchart,
-    generate_gantt_chart_google
+    generate_gantt_chart_google,
 )
 
 # Combine synchronous and asynchronous tests into one class structure
@@ -74,7 +74,7 @@ class TestChartFunctions:
         # Test with multiple items and labels
         items = [
             GraphItem(descriptor="A -> B", label="Connection AB"),
-            GraphItem(descriptor="B -> C")
+            GraphItem(descriptor="B -> C"),
         ]
         url = generate_execution_graph_quickchart(items)
 
@@ -84,55 +84,55 @@ class TestChartFunctions:
         assert "A%20-%3E%20B" in url
         assert "B%20-%3E%20C" in url
         # Check for encoded label
-        assert 'label%3D%22Connection%20AB%22' in url  # Encoded: label="Connection AB"
+        assert "label%3D%22Connection%20AB%22" in url  # Encoded: label="Connection AB"
 
     def test_generate_gantt_chart_google(self):
         """Test generating Google Gantt Chart HTML"""
         time_spans = [
             TimeSpan(key="Task 1", startTs=1000, endTs=2000),
             TimeSpan(key="Task 2", startTs=1500, endTs=3000),
-            TimeSpan(key="Task 3", startTs=2000, endTs=0)  # Running task
+            TimeSpan(key="Task 3", startTs=2000, endTs=0),  # Running task
         ]
 
         html = generate_gantt_chart_google(time_spans)
 
         # Verify it's proper HTML
-        assert html.strip().startswith('<!DOCTYPE html>')
-        assert '<html>' in html
-        assert '</html>' in html
+        assert html.strip().startswith("<!DOCTYPE html>")
+        assert "<html>" in html
+        assert "</html>" in html
 
         # Check for Google Charts inclusion
-        assert 'google.charts.load' in html
-        assert 'google.visualization.Gantt' in html
+        assert "google.charts.load" in html
+        assert "google.visualization.Gantt" in html
 
         # Check our data is included
-        assert 'Task 1' in html
-        assert 'Task 2' in html
-        assert 'Task 3' in html
+        assert "Task 1" in html
+        assert "Task 2" in html
+        assert "Task 3" in html
 
         # Check for running task handling
-        assert 'Running' in html
+        assert "Running" in html
 
         # Check for proper height using regex
-        assert re.search(r'height: \d+px', html) is not None
+        assert re.search(r"height: \d+px", html) is not None
 
     def test_generate_gantt_chart_google_with_args(self):
         """Test generating Google Gantt Chart HTML with custom args"""
         time_spans = [
             TimeSpan(key="Task 1", startTs=1000, endTs=2000),
-            TimeSpan(key="Task 2", startTs=1500, endTs=3000)
+            TimeSpan(key="Task 2", startTs=1500, endTs=3000),
         ]
 
         args = GanttChartArgs(min_height=600)
         html = generate_gantt_chart_google(time_spans, args)
 
         # Verify custom height
-        assert 'height: 600px' in html
+        assert "height: 600px" in html
 
     # --- Asynchronous Tests ---
 
     @pytest.mark.asyncio
-    @patch('requests.post')
+    @patch("requests.post")
     async def test_generate_gantt_chart_quickchart(self, mock_post):
         """Test generating Gantt chart PNG with the QuickChart API"""
         # Mock the response
@@ -144,7 +144,7 @@ class TestChartFunctions:
         # Test with basic time spans
         time_spans = [
             TimeSpan(key="Task 1", startTs=1000, endTs=2000),
-            TimeSpan(key="Task 2", startTs=1500, endTs=3000)
+            TimeSpan(key="Task 2", startTs=1500, endTs=3000),
         ]
 
         chart_data = await generate_gantt_chart_quickchart(time_spans)
@@ -158,23 +158,23 @@ class TestChartFunctions:
         # Use call_args.kwargs for keyword arguments
         call_args_dict = mock_post.call_args.kwargs
 
-        assert call_args_dict['headers']['Content-Type'] == 'application/json'
+        assert call_args_dict["headers"]["Content-Type"] == "application/json"
 
         # Verify JSON payload structure
-        json_data = call_args_dict['json']
-        assert json_data['format'] == 'png'
+        json_data = call_args_dict["json"]
+        assert json_data["format"] == "png"
         # Use >= comparison for flexibility
-        assert int(json_data['width']) >= 500
-        assert int(json_data['height']) >= 300
+        assert int(json_data["width"]) >= 500
+        assert int(json_data["height"]) >= 300
 
         # Verify chart data structure
-        chart_config = json_data['chart']
-        assert chart_config['type'] == 'horizontalBar'
-        assert len(chart_config['data']['labels']) == 2
-        assert len(chart_config['data']['datasets'][0]['data']) == 2
+        chart_config = json_data["chart"]
+        assert chart_config["type"] == "horizontalBar"
+        assert len(chart_config["data"]["labels"]) == 2
+        assert len(chart_config["data"]["datasets"][0]["data"]) == 2
 
     @pytest.mark.asyncio
-    @patch('requests.post')
+    @patch("requests.post")
     async def test_generate_gantt_chart_quickchart_with_args(self, mock_post):
         """Test generating Gantt chart with custom arguments"""
         mock_response = MagicMock()
@@ -184,7 +184,7 @@ class TestChartFunctions:
 
         time_spans = [
             TimeSpan(key="Task 1", startTs=1000, endTs=2000),
-            TimeSpan(key="Task 2", startTs=1500, endTs=3000)
+            TimeSpan(key="Task 2", startTs=1500, endTs=3000),
         ]
 
         args = GanttChartArgs(unit="s", min_height=400, min_width=800)
@@ -192,22 +192,24 @@ class TestChartFunctions:
 
         mock_post.assert_called_once()
         call_args_dict = mock_post.call_args.kwargs
-        json_data = call_args_dict['json']
+        json_data = call_args_dict["json"]
 
-        assert int(json_data['width']) >= 800
-        assert int(json_data['height']) >= 400
+        assert int(json_data["width"]) >= 800
+        assert int(json_data["height"]) >= 400
 
-        chart_config = json_data['chart']
+        chart_config = json_data["chart"]
         # Use 'in' for substring check, more robust than any()
-        assert all("s" in label for label in chart_config['data']['labels'])
+        assert all("s" in label for label in chart_config["data"]["labels"])
 
     @pytest.mark.asyncio
-    @patch('requests.post')
+    @patch("requests.post")
     async def test_generate_gantt_chart_quickchart_error(self, mock_post):
         """Test error handling in generate_gantt_chart_quickchart"""
         mock_post.side_effect = Exception("API error")
 
         time_spans = [TimeSpan(key="Task 1", startTs=1000, endTs=2000)]
 
-        with pytest.raises(Exception, match="Failed to generate chart with QuickChart API"):
+        with pytest.raises(
+            Exception, match="Failed to generate chart with QuickChart API"
+        ):
             await generate_gantt_chart_quickchart(time_spans)

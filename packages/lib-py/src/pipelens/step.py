@@ -1,5 +1,6 @@
 import time
 import re
+
 # import asyncio # No longer needed here
 from typing import Any, Callable, Dict, List, Optional, Union, Awaitable
 from io import BytesIO
@@ -11,7 +12,7 @@ from .chart import (
     generate_gantt_chart_google,
     TimeSpan,
     GraphItem,
-    GanttChartArgs
+    GanttChartArgs,
 )
 
 
@@ -31,7 +32,7 @@ class StepMeta(BaseModel):
 
 
 class NestedStepMeta(StepMeta):
-    substeps: List['NestedStepMeta'] = []
+    substeps: List["NestedStepMeta"] = []
 
 
 class StepGanttArg(BaseModel):
@@ -44,10 +45,16 @@ class StepGanttArg(BaseModel):
 # Type aliases for listener function signatures
 RecordListener = Callable[[str, Any, Optional[StepMeta]], Optional[Awaitable[None]]]
 StepStartListener = Callable[[str, Optional[StepMeta]], Optional[Awaitable[None]]]
-StepSuccessListener = Callable[[str, Any, Optional[StepMeta]], Optional[Awaitable[None]]]
-StepErrorListener = Callable[[str, Exception, Optional[StepMeta]], Optional[Awaitable[None]]]
+StepSuccessListener = Callable[
+    [str, Any, Optional[StepMeta]], Optional[Awaitable[None]]
+]
+StepErrorListener = Callable[
+    [str, Exception, Optional[StepMeta]], Optional[Awaitable[None]]
+]
 StepCompleteListener = Callable[[str, Optional[StepMeta]], Optional[Awaitable[None]]]
-StepRecordListener = Callable[[str, str, Any, Optional[StepMeta]], Optional[Awaitable[None]]]
+StepRecordListener = Callable[
+    [str, str, Any, Optional[StepMeta]], Optional[Awaitable[None]]
+]
 
 
 class Step:
@@ -59,16 +66,14 @@ class Step:
     def __init__(
         self,
         name: str,
-        parent: Optional['Step'] = None,
+        parent: Optional["Step"] = None,
         key: Optional[str] = None,
-        event_emitter: Optional[AsyncIOEventEmitter] = None
+        event_emitter: Optional[AsyncIOEventEmitter] = None,
     ):
         self.name = name
         self.records: Dict[str, Any] = {}
         self.time = TimeMeta(
-            startTs=int(time.time() * 1000),
-            endTs=None,
-            timeUsageMs=None
+            startTs=int(time.time() * 1000), endTs=None, timeUsageMs=None
         )
 
         # Key handling logic
@@ -77,7 +82,7 @@ class Step:
         elif parent:
             self.key = f"{parent.key}.{self.name.replace('.', '_')}"
         else:
-            self.key = self.name.replace('.', '_')
+            self.key = self.name.replace(".", "_")
 
         self.parent = parent
         self.ctx = self
@@ -86,7 +91,7 @@ class Step:
         self.error = None
         self._emitter = event_emitter if event_emitter else AsyncIOEventEmitter()
 
-    async def track(self, callable_fn: Callable[['Step'], Awaitable[Any]]) -> Any:
+    async def track(self, callable_fn: Callable[["Step"], Awaitable[Any]]) -> Any:
         """
         Track the execution of a callable function.
 
@@ -129,10 +134,10 @@ class Step:
             time=self.time,
             records=self.records,
             result=self.result,
-            error=str(self.error) if self.error else None
+            error=str(self.error) if self.error else None,
         )
 
-    async def run(self, callable_fn: Callable[['Step'], Awaitable[Any]]) -> Any:
+    async def run(self, callable_fn: Callable[["Step"], Awaitable[Any]]) -> Any:
         """
         Run the provided callable function and track its execution.
 
@@ -148,19 +153,21 @@ class Step:
         self.time.startTs = int(time.time() * 1000)
         try:
             # Emit start event on THIS step's emitter only
-            self._emitter.emit('step-start', self.key, self.get_step_meta())
+            self._emitter.emit("step-start", self.key, self.get_step_meta())
 
             # Execute the callable
             self.result = await callable_fn(self.ctx)
 
             # Emit success event on THIS step's emitter only
-            self._emitter.emit('step-success', self.key, self.result, self.get_step_meta())
+            self._emitter.emit(
+                "step-success", self.key, self.result, self.get_step_meta()
+            )
 
             return self.result
         except Exception as e:
             self.error = e
             # Emit error event on THIS step's emitter only
-            self._emitter.emit('step-error', self.key, e, self.get_step_meta())
+            self._emitter.emit("step-error", self.key, e, self.get_step_meta())
             raise e
         finally:
             # Record end time
@@ -168,9 +175,11 @@ class Step:
             self.time.timeUsageMs = self.time.endTs - self.time.startTs
 
             # Emit complete event on THIS step's emitter only
-            self._emitter.emit('step-complete', self.key, self.get_step_meta())
+            self._emitter.emit("step-complete", self.key, self.get_step_meta())
 
-    async def step(self, name: str, callable_fn: Callable[['Step'], Awaitable[Any]]) -> Any:
+    async def step(
+        self, name: str, callable_fn: Callable[["Step"], Awaitable[Any]]
+    ) -> Any:
         """
         Create a new substep and run it.
 
@@ -188,21 +197,23 @@ class Step:
         duplicates = len([s for s in self.steps if s.key == child_step.key])
         if duplicates > 0:
             new_key = f"{child_step.key}___{duplicates}"
-            print(f"Step with key '{child_step.key}' already exists under same parent step. "
-                  f"Assigning a new key '{new_key}' to avoid confusion.")
+            print(
+                f"Step with key '{child_step.key}' already exists under same parent step. "
+                f"Assigning a new key '{new_key}' to avoid confusion."
+            )
             child_step.key = new_key
 
         self.steps.append(child_step)
         return await child_step.run(callable_fn)
 
-    def log(self, key: str, data: Any) -> 'Step':
+    def log(self, key: str, data: Any) -> "Step":
         """
         @deprecated: Use record() instead.
         """
         print("Step.log() is deprecated, use Step.record() instead")
         return self.record(key, data)
 
-    async def record(self, record_key: str, data: Any) -> 'Step':
+    async def record(self, record_key: str, data: Any) -> "Step":
         """
         Record a key-value pair associated with this step.
 
@@ -217,14 +228,14 @@ class Step:
         meta = self.get_step_meta()
 
         # Emit deprecated 'record' event on THIS step's emitter only
-        self._emitter.emit('record', record_key, data, meta)
+        self._emitter.emit("record", record_key, data, meta)
 
         # Emit 'step-record' event on THIS step's emitter only
-        self._emitter.emit('step-record', self.key, record_key, data, meta)
+        self._emitter.emit("step-record", self.key, record_key, data, meta)
 
         return self
 
-    def on(self, event_type: str, listener: Callable) -> 'Step':
+    def on(self, event_type: str, listener: Callable) -> "Step":
         """
         Register an event listener for a specified event type.
 
@@ -259,7 +270,7 @@ class Step:
             records=self.records,
             result=self.result,
             error=str(self.error) if self.error else None,
-            substeps=[step.output_nested() for step in self.steps]
+            substeps=[step.output_nested() for step in self.steps],
         )
 
     def output_flattened(self) -> List[StepMeta]:
@@ -277,9 +288,9 @@ class Step:
                 time=self.time,
                 records=self.records,
                 result=self.result,
-                error=str(self.error) if self.error else None
+                error=str(self.error) if self.error else None,
             ),
-            *substeps
+            *substeps,
         ]
 
     def get_records(self) -> Dict[str, Any]:
@@ -313,16 +324,15 @@ class Step:
         Returns:
             A URL string that can be used to view the execution graph
         """
+
         def build_graph(step: Step) -> List[GraphItem]:
             item = GraphItem(
                 descriptor=f'"{step.key}"',
-                label=f"{step.name}{f'\\n{step.time.timeUsageMs}ms' if step.time.timeUsageMs else ''}"
+                label=f"{step.name}{f'\\n{step.time.timeUsageMs}ms' if step.time.timeUsageMs else ''}",
             )
 
             if step.parent:
-                linkage = GraphItem(
-                    descriptor=f'"{step.parent.key}" -> "{step.key}"'
-                )
+                linkage = GraphItem(descriptor=f'"{step.parent.key}" -> "{step.key}"')
                 # Combine this item, the linkage, and all items from substeps
                 all_items = [item, linkage]
                 for s in step.steps:
@@ -355,14 +365,18 @@ class Step:
             if filter_pattern:
                 if isinstance(filter_pattern, list) and step.key not in filter_pattern:
                     continue
-                elif isinstance(filter_pattern, str) and not re.match(filter_pattern, step.key):
+                elif isinstance(filter_pattern, str) and not re.match(
+                    filter_pattern, step.key
+                ):
                     continue
 
-            spans.append(TimeSpan(
-                key=step.key,
-                startTs=step.time.startTs - min_start_ts,
-                endTs=step.time.endTs - min_start_ts if step.time.endTs else None
-            ))
+            spans.append(
+                TimeSpan(
+                    key=step.key,
+                    startTs=step.time.startTs - min_start_ts,
+                    endTs=step.time.endTs - min_start_ts if step.time.endTs else None,
+                )
+            )
 
         return spans
 
@@ -380,7 +394,9 @@ class Step:
         return await Step.gantt_quick_chart_static(steps, args)
 
     @staticmethod
-    async def gantt_quick_chart_static(steps: List[StepMeta], args: Optional[StepGanttArg] = None) -> BytesIO:
+    async def gantt_quick_chart_static(
+        steps: List[StepMeta], args: Optional[StepGanttArg] = None
+    ) -> BytesIO:
         """
         Generate a Gantt chart via QuickChart.io from a list of step metadata.
 
@@ -402,8 +418,7 @@ class Step:
 
         filter_pattern = args.filter if args else None
         return await generate_gantt_chart_quickchart(
-            Step._get_gantt_spans(steps, filter_pattern),
-            chart_args
+            Step._get_gantt_spans(steps, filter_pattern), chart_args
         )
 
     def gantt_google_chart_html(self, args: Optional[StepGanttArg] = None) -> str:
@@ -420,7 +435,9 @@ class Step:
         return Step.gantt_google_chart_html_static(steps, args)
 
     @staticmethod
-    def gantt_google_chart_html_static(steps: List[StepMeta], args: Optional[StepGanttArg] = None) -> str:
+    def gantt_google_chart_html_static(
+        steps: List[StepMeta], args: Optional[StepGanttArg] = None
+    ) -> str:
         """
         Generate an HTML page with a Google Gantt Chart from a list of step metadata.
 
@@ -442,8 +459,7 @@ class Step:
 
         filter_pattern = args.filter if args else None
         return generate_gantt_chart_google(
-            Step._get_gantt_spans(steps, filter_pattern),
-            chart_args
+            Step._get_gantt_spans(steps, filter_pattern), chart_args
         )
 
     @staticmethod
@@ -469,7 +485,7 @@ class Step:
                 time=current.time,
                 records=current.records,
                 result=current.result,
-                error=current.error
+                error=current.error,
             )
             flattened.append(step_meta)
 
