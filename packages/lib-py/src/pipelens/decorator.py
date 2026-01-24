@@ -4,7 +4,7 @@ from typing import Any, Callable, TypeVar, cast
 
 from .step import Step
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def with_step(step_name: str) -> Callable[[F], F]:
@@ -23,6 +23,7 @@ def with_step(step_name: str) -> Callable[[F], F]:
     Raises:
         TypeError: If the last argument is not a Step instance
     """
+
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -35,8 +36,10 @@ def with_step(step_name: str) -> Callable[[F], F]:
             if not parent_step or not isinstance(parent_step, Step):
                 signature = inspect.signature(func)
                 func_name = func.__qualname__
-                raise TypeError(f"The last argument of method `{func_name}` must be a `Step`. "
-                                f"Signature: {signature}")
+                raise TypeError(
+                    f"The last argument of method `{func_name}` must be a `Step`. "
+                    f"Signature: {signature}"
+                )
 
             # Create the substep and execute the original function with the substep
             # replacing the parent step in the argument list

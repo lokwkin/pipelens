@@ -11,7 +11,11 @@ class Transport(ABC):
         pass
 
     @abstractmethod
-    async def finish_run(self, pipeline_meta: PipelineMeta, status: Literal["completed", "failed", "running"]) -> None:
+    async def finish_run(
+        self,
+        pipeline_meta: PipelineMeta,
+        status: Literal["completed", "failed", "running"],
+    ) -> None:
         pass
 
     @abstractmethod

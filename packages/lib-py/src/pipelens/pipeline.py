@@ -13,11 +13,7 @@ class Pipeline(Step):
     and retrieving metadata about the pipeline and its steps.
     """
 
-    def __init__(
-        self,
-        name: str,
-        options: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self, name: str, options: Optional[Dict[str, Any]] = None):
         """
         Initialize a new Pipeline.
 
@@ -31,54 +27,63 @@ class Pipeline(Step):
         super().__init__(name)
 
         options = options or {}
-        self.run_id = options.get('run_id', str(uuid.uuid4()))
-        self.auto_save = options.get('auto_save', 'off')
-        self.transport: Optional[Transport] = options.get('transport')
+        self.run_id = options.get("run_id", str(uuid.uuid4()))
+        self.auto_save = options.get("auto_save", "off")
+        self.transport: Optional[Transport] = options.get("transport")
 
         # Validate transport is provided when auto_save is enabled
-        if self.auto_save != 'off':
+        if self.auto_save != "off":
             if not self.transport:
                 raise ValueError("Transport must be provided when auto_save is enabled")
 
         # Set up event handlers based on auto_save configuration
-        if self.auto_save == 'real_time':
+        if self.auto_save == "real_time":
             # Handle step start events
-            self.on('step-start', self._handle_step_start)
+            self.on("step-start", self._handle_step_start)
             # Handle step complete events
-            self.on('step-complete', self._handle_step_complete)
-        elif self.auto_save == 'finish':
+            self.on("step-complete", self._handle_step_complete)
+        elif self.auto_save == "finish":
             # Handle only pipeline completion
-            self.on('step-complete', self._handle_pipeline_complete)
+            self.on("step-complete", self._handle_pipeline_complete)
 
-    async def _handle_step_start(self, key: str, step_meta: Optional[StepMeta] = None) -> None:
+    async def _handle_step_start(
+        self, key: str, step_meta: Optional[StepMeta] = None
+    ) -> None:
         """Handle step start events for real-time saving."""
         if key == self.get_key():
             # This step marks the pipeline start
-            await self.transport.initiate_run(self.output_pipeline_meta())
+            if self.transport:
+                await self.transport.initiate_run(self.output_pipeline_meta())
 
         if not step_meta:
             return
 
-        await self.transport.initiate_step(self.run_id, step_meta)
+        if self.transport:
+            await self.transport.initiate_step(self.run_id, step_meta)
 
-    async def _handle_step_complete(self, key: str, step_meta: Optional[StepMeta] = None) -> None:
+    async def _handle_step_complete(
+        self, key: str, step_meta: Optional[StepMeta] = None
+    ) -> None:
         """Handle step complete events for real-time saving."""
         if not step_meta:
             return
 
-        await self.transport.finish_step(self.run_id, step_meta)
+        if self.transport:
+            await self.transport.finish_step(self.run_id, step_meta)
 
         if key == self.get_key():
             # This step marks the pipeline completion
-            status = "failed" if step_meta.error else "completed"
-            await self.transport.finish_run(self.output_pipeline_meta(), status)
+            if self.transport:
+                await self.transport.finish_run(self.output_pipeline_meta(), "failed" if step_meta.error else "completed")
 
-    async def _handle_pipeline_complete(self, key: str, step_meta: Optional[StepMeta] = None) -> None:
+    async def _handle_pipeline_complete(
+        self, key: str, step_meta: Optional[StepMeta] = None
+    ) -> None:
         """Handle pipeline completion for finish-only saving."""
         if key == self.get_key():
             # This step marks the pipeline completion
-            status = "failed" if step_meta and step_meta.error else "completed"
-            await self.transport.finish_run(self.output_pipeline_meta(), status)
+            if self.transport:
+                await self.transport.finish_run(self.output_pipeline_meta(), "failed" if step_meta and step_meta.error else "completed")
 
     def get_run_id(self) -> str:
         """Get the run ID for this pipeline."""
@@ -98,5 +103,5 @@ class Pipeline(Step):
             **step_meta.model_dump(),
             log_version=1,
             run_id=self.get_run_id(),
-            steps=self.output_flattened()
+            steps=self.output_flattened(),
         )
