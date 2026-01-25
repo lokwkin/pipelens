@@ -150,7 +150,29 @@ class ApiClient {
   async loadRunDetails(runId: string): Promise<Step[] | null> {
     try {
       const response = await fetch(`/api/dashboard/runs/${runId}/steps`);
-      return await response.json();
+      const data = await response.json();
+      
+      // Transform API response to match Step interface
+      if (Array.isArray(data)) {
+        return data.map((item: any) => {
+          // Handle timestamp conversion - API returns milliseconds timestamp
+          const startTs = item.time?.startTs ?? item.startTime;
+          const endTs = item.time?.endTs ?? item.endTime;
+          
+          return {
+            stepKey: item.key || item.stepKey || '',
+            stepName: item.name || item.stepName || '',
+            startTime: startTs ? (typeof startTs === 'number' ? new Date(startTs).toISOString() : startTs) : '',
+            endTime: endTs ? (typeof endTs === 'number' ? new Date(endTs).toISOString() : endTs) : null,
+            duration: item.time?.timeUsageMs ?? item.duration ?? 0,
+            status: item.error ? 'error' : (item.status || 'completed'),
+            records: item.records,
+            result: item.result,
+          };
+        });
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error loading run details:', error);
       return null;
