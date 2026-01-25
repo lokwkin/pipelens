@@ -99,24 +99,31 @@ function AppContent() {
     const selectedPipeline = getSelectedPipeline();
     const currentPath = location.pathname;
     
+    // Use selected pipeline, or first available pipeline, or empty string
+    const pipelineToUse = selectedPipeline || (pipelines.length > 0 ? pipelines[0] : '');
+    
     // Map internal view IDs to paths
     if (view === 'runs-view') {
-      if (selectedPipeline) {
-        navigate(`/pipelines/${encodeURIComponent(selectedPipeline)}/runs`);
+      if (pipelineToUse) {
+        navigate(`/pipelines/${encodeURIComponent(pipelineToUse)}/runs`);
       } else {
-        navigate('/import');
+        // If no pipelines available, still navigate to runs view with empty pipeline
+        // The RunsView component will show "Select a pipeline to view runs"
+        navigate('/pipelines/_/runs');
       }
     } else if (view === 'step-stats-view') {
-      if (selectedPipeline) {
-        navigate(`/pipelines/${encodeURIComponent(selectedPipeline)}/stats`);
+      if (pipelineToUse) {
+        navigate(`/pipelines/${encodeURIComponent(pipelineToUse)}/stats`);
       } else {
-        navigate('/import');
+        // If no pipelines available, still navigate to stats view with empty pipeline
+        // The StepStatsView component will show "Select a pipeline and step to view instances"
+        navigate('/pipelines/_/stats');
       }
     } else if (view === 'import-view') {
       navigate('/import');
     } else if (view === 'settings-view') {
-      if (selectedPipeline) {
-        navigate(`/settings/${encodeURIComponent(selectedPipeline)}`);
+      if (pipelineToUse) {
+        navigate(`/settings/${encodeURIComponent(pipelineToUse)}`);
       } else {
         navigate('/settings');
       }
@@ -214,13 +221,15 @@ function RunsViewWrapper({ dateRange }: { dateRange: DateRange }) {
   const { pipeline } = useParams<{ pipeline: string }>();
   const navigate = useNavigate();
   const decodedPipeline = pipeline ? decodeURIComponent(pipeline) : '';
+  // Treat '_' as empty pipeline (placeholder for when no pipeline is selected)
+  const pipelineToUse = decodedPipeline === '_' ? '' : decodedPipeline;
 
   return (
     <RunsView
-      pipeline={decodedPipeline}
+      pipeline={pipelineToUse}
       dateRange={dateRange}
       onRunClick={(runId) => {
-        navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/runs/${encodeURIComponent(runId)}`);
+        navigate(`/pipelines/${encodeURIComponent(pipelineToUse || '_')}/runs/${encodeURIComponent(runId)}`);
       }}
     />
   );
@@ -251,24 +260,26 @@ function StepStatsViewWrapper({ dateRange }: { dateRange: DateRange }) {
   const { stepName, pipeline } = useParams<{ stepName?: string; pipeline: string }>();
   const navigate = useNavigate();
   const decodedPipeline = pipeline ? decodeURIComponent(pipeline) : '';
+  // Treat '_' as empty pipeline (placeholder for when no pipeline is selected)
+  const pipelineToUse = decodedPipeline === '_' ? '' : decodedPipeline;
   const decodedStepName = stepName ? decodeURIComponent(stepName) : undefined;
 
   const handleStepChange = (newStep: string) => {
     if (newStep) {
-      navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/stats/${encodeURIComponent(newStep)}`);
+      navigate(`/pipelines/${encodeURIComponent(pipelineToUse || '_')}/stats/${encodeURIComponent(newStep)}`);
     } else {
-      navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/stats`);
+      navigate(`/pipelines/${encodeURIComponent(pipelineToUse || '_')}/stats`);
     }
   };
 
   return (
     <StepStatsView
-      pipeline={decodedPipeline}
+      pipeline={pipelineToUse}
       dateRange={dateRange}
       initialStepName={decodedStepName}
       onStepChange={handleStepChange}
       onRunClick={(runId) => {
-        navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/runs/${encodeURIComponent(runId)}`);
+        navigate(`/pipelines/${encodeURIComponent(pipelineToUse || '_')}/runs/${encodeURIComponent(runId)}`);
       }}
     />
   );
