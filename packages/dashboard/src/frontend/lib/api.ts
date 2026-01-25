@@ -55,6 +55,22 @@ export interface StepTimeSeriesData {
     stepKey: string;
     duration: number;
     status: string;
+    stepMeta?: {
+      key: string;
+      name: string;
+      time: {
+        startTs: number;
+        endTs: number;
+        timeUsageMs: number;
+      };
+      records?: any;
+      result?: any;
+      error?: string;
+    };
+    records?: any;
+    result?: any;
+    startTime?: string;
+    endTime?: string;
   }>;
   stats: StepStats;
   pagination: {
@@ -175,6 +191,17 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('Error loading run details:', error);
+      return null;
+    }
+  }
+
+  async loadRunData(runId: string): Promise<{ pipeline: string } | null> {
+    try {
+      const response = await fetch(`/api/dashboard/runs/${runId}`);
+      const data = await response.json();
+      return data?.meta ? { pipeline: data.meta.pipeline } : null;
+    } catch (error) {
+      console.error('Error loading run data:', error);
       return null;
     }
   }

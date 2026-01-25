@@ -79,7 +79,7 @@ export default function ImportView() {
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h5 className="text-lg font-medium mb-2">Drag & Drop Files Here</h5>
+          <h5 className="text-base font-semibold mb-2">Drag & Drop Files Here</h5>
           <p className="text-muted-foreground mb-4">or</p>
           <Button>
             Browse Files

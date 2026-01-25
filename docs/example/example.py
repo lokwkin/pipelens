@@ -14,7 +14,7 @@ async def parse_page(page: str):
 async def main():
     # HTTP transport for sending data to a dashboard
     http_transport = HttpTransport(HttpTransportOptions(
-        base_url='http://localhost:3001/',  # URL of your dashboard
+        base_url='http://localhost:3000/',  # URL of your dashboard
         batch_logs=True,  # Enable batching for better performance
         flush_interval=5000,  # Flush logs every 5 seconds
         max_batch_size=50,  # Maximum batch size before forcing a flush

@@ -143,10 +143,32 @@ function AppContent() {
                 params.delete('runId');
                 navigate({ search: params.toString() });
               }}
+              onStepNameClick={(stepName, pipelineFromRun) => {
+                const params = new URLSearchParams(searchParams);
+                params.set('view', 'step-stats-view');
+                params.set('stepName', stepName);
+                // Use pipeline from run if available, otherwise use selectedPipeline
+                const pipelineToUse = pipelineFromRun || selectedPipeline;
+                if (pipelineToUse) {
+                  params.set('pipeline', pipelineToUse);
+                }
+                navigate({ search: params.toString() });
+              }}
             />
           )}
           {currentView === 'step-stats-view' && (
-            <StepStatsView pipeline={selectedPipeline} dateRange={dateRange} />
+            <StepStatsView
+              pipeline={selectedPipeline}
+              dateRange={dateRange}
+              initialStepName={searchParams.get('stepName') || undefined}
+              onRunClick={(runId) => {
+                const params = new URLSearchParams(searchParams);
+                params.set('view', 'run-detail');
+                params.set('runId', runId);
+                params.delete('stepName');
+                navigate({ search: params.toString() });
+              }}
+            />
           )}
           {currentView === 'import-view' && <ImportView />}
           {currentView === 'settings-view' && <SettingsView pipeline={selectedPipeline} />}

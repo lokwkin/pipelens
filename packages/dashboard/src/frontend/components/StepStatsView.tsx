@@ -7,21 +7,44 @@ import { Button } from './ui/button';
 import { api, type DateRange, type StepTimeSeriesData } from '@/lib/api';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { cn } from '@/lib/utils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import React from 'react';
 
 interface StepStatsViewProps {
   pipeline: string;
   dateRange: DateRange;
+  onRunClick?: (runId: string) => void;
+  initialStepName?: string;
 }
 
-export default function StepStatsView({ pipeline, dateRange }: StepStatsViewProps) {
+export default function StepStatsView({ pipeline, dateRange, onRunClick, initialStepName }: StepStatsViewProps) {
   const [stepNames, setStepNames] = useState<string[]>([]);
-  const [selectedStep, setSelectedStep] = useState<string>('');
+  const [selectedStep, setSelectedStep] = useState<string>(initialStepName || '');
   const [data, setData] = useState<StepTimeSeriesData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
   });
+
+  // Update selected step when initialStepName changes (e.g., from URL)
+  useEffect(() => {
+    if (initialStepName && stepNames.includes(initialStepName)) {
+      setSelectedStep(initialStepName);
+    }
+  }, [initialStepName, stepNames]);
+
+  const toggleRow = (rowKey: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(rowKey)) {
+      newExpanded.delete(rowKey);
+    } else {
+      newExpanded.add(rowKey);
+    }
+    setExpandedRows(newExpanded);
+  };
 
   useEffect(() => {
     if (!pipeline) {
@@ -38,6 +61,7 @@ export default function StepStatsView({ pipeline, dateRange }: StepStatsViewProp
     }
 
     setLoading(true);
+    setExpandedRows(new Set()); // Reset expanded rows when data changes
     api
       .loadStepTimeSeries(pipeline, selectedStep, dateRange, pagination)
       .then(setData)
@@ -106,7 +130,7 @@ export default function StepStatsView({ pipeline, dateRange }: StepStatsViewProp
 
               {chartData.length > 0 && (
                 <div className="border border-border rounded bg-card p-4 mb-4">
-                    <h4 className="text-sm font-medium mb-4">Performance Over Time</h4>
+                    <h4 className="text-base font-semibold mb-4">Performance Over Time</h4>
                     <ResponsiveContainer width="100%" height={400}>
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -120,38 +144,112 @@ export default function StepStatsView({ pipeline, dateRange }: StepStatsViewProp
               )}
             </div>
 
-            <div className="border border-border rounded bg-card">
+            <div className="border border-border rounded bg-card overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Timestamp (UTC)</TableHead>
-                    <TableHead>Run ID</TableHead>
-                    <TableHead>Step Key</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="min-w-[180px]">Timestamp (UTC)</TableHead>
+                    <TableHead className="min-w-[120px]">Run ID</TableHead>
+                    <TableHead className="min-w-[150px]">Step Key</TableHead>
+                    <TableHead className="min-w-[100px]">Duration</TableHead>
+                    <TableHead className="min-w-[100px]">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data.timeSeries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-sm text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-12 text-sm text-muted-foreground">
                         No data found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    data.timeSeries.map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{format(new Date(item.timestamp), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
-                        <TableCell className="font-mono text-sm">{item.runId}</TableCell>
-                        <TableCell className="font-mono text-sm">{item.stepKey}</TableCell>
-                        <TableCell>{formatDuration(item.duration)}</TableCell>
-                        <TableCell>
-                          <Badge variant={item.status === 'error' ? 'destructive' : 'default'}>
-                            {item.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    data.timeSeries.map((item, idx) => {
+                      const rowKey = `${item.runId}-${item.stepKey}-${idx}`;
+                      const isExpanded = expandedRows.has(rowKey);
+                      const records = item.stepMeta?.records || item.records;
+                      const result = item.stepMeta?.result || item.result;
+                      const startTime = item.stepMeta?.time?.startTs 
+                        ? new Date(item.stepMeta.time.startTs).toISOString()
+                        : item.startTime;
+                      const endTime = item.stepMeta?.time?.endTs 
+                        ? new Date(item.stepMeta.time.endTs).toISOString()
+                        : item.endTime || item.timestamp;
+                      // Derive status from stepMeta.error or use item.status if available
+                      const status = item.status || (item.stepMeta?.error ? 'error' : 'completed');
+                      
+                      return (
+                        <React.Fragment key={rowKey}>
+                          <TableRow>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => toggleRow(rowKey)}
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{format(new Date(item.timestamp), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                            <TableCell 
+                              className={cn(
+                                "font-mono text-sm whitespace-nowrap",
+                                onRunClick && "cursor-pointer hover:text-primary hover:underline"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRunClick?.(item.runId);
+                              }}
+                            >
+                              {item.runId}
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">{item.stepKey}</TableCell>
+                            <TableCell className="whitespace-nowrap">{formatDuration(item.duration)}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <Badge variant={status === 'error' ? 'destructive' : 'default'}>
+                                {status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                          {isExpanded && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="bg-muted/50">
+                                <div className="p-4 space-y-2">
+                                  {startTime && (
+                                    <div>
+                                      <strong>Start Time:</strong>{' '}
+                                      {format(new Date(startTime), 'yyyy-MM-dd HH:mm:ss')}
+                                    </div>
+                                  )}
+                                  {endTime && (
+                                    <div>
+                                      <strong>End Time:</strong>{' '}
+                                      {format(new Date(endTime), 'yyyy-MM-dd HH:mm:ss')}
+                                    </div>
+                                  )}
+                                  {(records || result) && (
+                                    <div>
+                                      <strong>Details:</strong>
+                                      <pre className="mt-2 p-3 bg-background rounded text-xs overflow-auto max-h-96">
+                                        {JSON.stringify({ records, result }, null, 2)}
+                                      </pre>
+                                    </div>
+                                  )}
+                                  {!records && !result && (
+                                    <div className="text-sm text-muted-foreground">No additional details available</div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

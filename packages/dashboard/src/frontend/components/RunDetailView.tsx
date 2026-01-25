@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -9,18 +8,40 @@ import { ArrowLeft, ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { api, type Step } from '@/lib/api';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import GanttChart from './GanttChart';
 
 interface RunDetailViewProps {
   runId: string;
   onBack: () => void;
+  onStepNameClick?: (stepName: string, pipeline?: string) => void;
 }
 
-export default function RunDetailView({ runId, onBack }: RunDetailViewProps) {
+export default function RunDetailView({ runId, onBack, onStepNameClick }: RunDetailViewProps) {
   const [steps, setSteps] = useState<Step[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pipeline, setPipeline] = useState<string>('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!runId) return;
+
+    // Fetch run data to get pipeline
+    api.loadRunData(runId).then((data) => {
+      if (data) {
+        setPipeline(data.pipeline);
+      }
+    });
+
+    setLoading(true);
+    api
+      .loadRunDetails(runId)
+      .then((data) => {
+        if (data) setSteps(data);
+      })
+      .finally(() => setLoading(false));
+  }, [runId]);
 
   useEffect(() => {
     if (!runId) return;
@@ -42,6 +63,27 @@ export default function RunDetailView({ runId, onBack }: RunDetailViewProps) {
       newExpanded.add(stepKey);
     }
     setExpandedRows(newExpanded);
+  };
+
+  const handleGanttStepClick = (stepKey: string) => {
+    // Expand the row if not already expanded
+    const wasExpanded = expandedRows.has(stepKey);
+    if (!wasExpanded) {
+      toggleRow(stepKey);
+    }
+    
+    // Scroll to the row after a brief delay to ensure it's rendered (longer delay if we just expanded)
+    setTimeout(() => {
+      const rowElement = document.getElementById(`step-row-${stepKey}`);
+      if (rowElement) {
+        rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight the row briefly
+        rowElement.classList.add('bg-accent/50');
+        setTimeout(() => {
+          rowElement.classList.remove('bg-accent/50');
+        }, 1500);
+      }
+    }, wasExpanded ? 50 : 150);
   };
 
   const filteredSteps = steps.filter((step) => {
@@ -76,6 +118,8 @@ export default function RunDetailView({ runId, onBack }: RunDetailViewProps) {
           <div className="text-center py-12 text-sm text-muted-foreground">Loading...</div>
         ) : (
           <>
+            <GanttChart steps={steps} onStepClick={handleGanttStepClick} />
+            
             <div className="mb-4">
               <h3 className="text-base font-semibold mb-3">Total Steps: {steps.length}</h3>
               <div className="flex gap-3 mb-3">
@@ -138,7 +182,7 @@ export default function RunDetailView({ runId, onBack }: RunDetailViewProps) {
                       const isExpanded = expandedRows.has(step.stepKey);
                       return (
                         <React.Fragment key={step.stepKey}>
-                          <TableRow>
+                          <TableRow id={`step-row-${step.stepKey}`}>
                             <TableCell>
                               <Button
                                 variant="ghost"
@@ -154,7 +198,17 @@ export default function RunDetailView({ runId, onBack }: RunDetailViewProps) {
                               </Button>
                             </TableCell>
                             <TableCell className="font-mono text-sm">{step.stepKey}</TableCell>
-                            <TableCell>{step.stepName}</TableCell>
+                            <TableCell 
+                              className={cn(
+                                onStepNameClick && "cursor-pointer hover:text-primary hover:underline"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStepNameClick?.(step.stepName, pipeline);
+                              }}
+                            >
+                              {step.stepName}
+                            </TableCell>
                             <TableCell>{formatDuration(step.duration)}</TableCell>
                             <TableCell>{getStatusBadge(step.status)}</TableCell>
                           </TableRow>
