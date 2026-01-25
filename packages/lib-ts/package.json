@@ -1,6 +1,6 @@
 {
   "name": "pipelens",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
