@@ -1,6 +1,6 @@
 {
   "name": "pipelens-monorepo",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "Monorepo for pipelens library and dashboard",
   "private": true,
   "workspaces": [
