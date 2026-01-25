@@ -2,13 +2,17 @@
 import { Step, Pipeline, StepGanttArg, HttpTransport } from 'pipelens';
 import * as fs from 'fs';
 
+const randomInt = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
 const parsePage = (page: string) => {
   return new Promise((resolve) => {
     setTimeout(
       () => {
         resolve(page);
       },
-      Math.floor(Math.random() * 3000) + 500,
+      randomInt(500, 5000),
     );
   });
 };
@@ -16,7 +20,7 @@ const parsePage = (page: string) => {
 async function main() {
   // HTTP transport for sending data to a dashboard
   const httpTransport = new HttpTransport({
-    baseUrl: 'http://localhost:3001/', // URL of your dashboard
+    baseUrl: 'http://localhost:3000/', // URL of your dashboard
     batchLogs: true, // Enable batching for better performance
     flushInterval: 5000, // Flush logs every 5 seconds
     maxBatchSize: 50, // Maximum batch size before forcing a flush
@@ -44,18 +48,18 @@ async function main() {
       // Your logic here
       // ...
       st.record('foo', 'bar');
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, randomInt(100, 500)));
     });
 
     await st.step('parsing', async (st: Step) => {
       const pages = await st.step('preprocess', async (st: Step) => {
         // Some preprocess logic
         st.record('pageCount', 3);
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
+        await new Promise((resolve) => setTimeout(resolve, randomInt(1000, 3000)));
+        return Array.from({ length: 20 }, (_, idx) => `page_${idx + 1}`);
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, randomInt(100, 500)));
 
       // Concurrent substeps
       await Promise.all(
@@ -68,7 +72,7 @@ async function main() {
 
       await st
         .step('sample-error', async (st) => {
-          await new Promise((resolve) => setTimeout(resolve, 800));
+          await new Promise((resolve) => setTimeout(resolve, randomInt(100, 7000)));
           throw new Error('Sample Error');
         })
         .catch((err) => {

@@ -25,9 +25,6 @@ export class DashboardServer {
     const storage = multer.memoryStorage();
     this.upload = multer({ storage });
 
-    // Serve static files
-    this.app.use(express.static(path.join(__dirname, 'public')));
-
     this.app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
 
     // Set up routes - cleanly separated by responsibility
@@ -37,6 +34,15 @@ export class DashboardServer {
     // Mount the routers with their respective prefixes
     this.app.use('/api/ingestion', ingestionRoutes);
     this.app.use('/api/dashboard', dashboardRoutes);
+
+    // Serve static files from built React app
+    this.app.use(express.static(path.join(__dirname, 'public')));
+    
+    // Serve React app for all non-API routes (SPA routing)
+    this.app.get('*', (req, res) => {
+      // Serve index.html for all other routes (React Router will handle routing)
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    });
   }
 
   /**
