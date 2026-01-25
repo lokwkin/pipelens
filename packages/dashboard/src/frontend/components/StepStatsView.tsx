@@ -16,9 +16,10 @@ interface StepStatsViewProps {
   dateRange: DateRange;
   onRunClick?: (runId: string) => void;
   initialStepName?: string;
+  onStepChange?: (stepName: string) => void;
 }
 
-export default function StepStatsView({ pipeline, dateRange, onRunClick, initialStepName }: StepStatsViewProps) {
+export default function StepStatsView({ pipeline, dateRange, onRunClick, initialStepName, onStepChange }: StepStatsViewProps) {
   const [stepNames, setStepNames] = useState<string[]>([]);
   const [selectedStep, setSelectedStep] = useState<string>(initialStepName || '');
   const [data, setData] = useState<StepTimeSeriesData | null>(null);
@@ -82,7 +83,10 @@ export default function StepStatsView({ pipeline, dateRange, onRunClick, initial
   return (
     <div className="space-y-4">
         <div className="mb-4">
-          <Select value={selectedStep} onValueChange={setSelectedStep}>
+          <Select value={selectedStep} onValueChange={(value) => {
+            setSelectedStep(value);
+            onStepChange?.(value);
+          }}>
             <SelectTrigger className="w-[300px]">
               <SelectValue placeholder="Select a step" />
             </SelectTrigger>

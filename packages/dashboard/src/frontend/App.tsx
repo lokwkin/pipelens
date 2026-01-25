@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, useSearchParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useSearchParams, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 import { api, type DateRange } from './lib/api';
 import Sidebar from './components/Sidebar';
 import RunsView from './components/RunsView';
@@ -10,11 +10,10 @@ import SettingsView from './components/SettingsView';
 import DateRangeSelector from './components/DateRangeSelector';
 
 function AppContent() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pipelines, setPipelines] = useState<string[]>([]);
-  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
-  const [currentView, setCurrentView] = useState<string>('runs-view');
   const [dateRange, setDateRange] = useState<DateRange>({
     timePreset: '1440',
     startDate: null,
@@ -26,23 +25,10 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const pipeline = searchParams.get('pipeline') || '';
-    const viewParam = searchParams.get('view');
-    // Map URL view params to internal view IDs
-    const viewMap: Record<string, string> = {
-      'runs-view': 'runs-view',
-      'run-detail': 'run-detail',
-      'step-stats-view': 'step-stats-view',
-      'import': 'import-view',
-      'settings': 'settings-view',
-    };
-    const view = viewMap[viewParam || ''] || 'runs-view';
     const timePreset = searchParams.get('timePreset') || '1440';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    setSelectedPipeline(pipeline);
-    setCurrentView(view);
     setDateRange({
       timePreset,
       startDate,
@@ -50,30 +36,91 @@ function AppContent() {
     });
   }, [searchParams]);
 
-  const handlePipelineChange = (pipeline: string) => {
-    setSelectedPipeline(pipeline);
-    const params = new URLSearchParams(searchParams);
-    if (pipeline) {
-      params.set('pipeline', pipeline);
-    } else {
-      params.delete('pipeline');
+  // Get current view from pathname
+  const getCurrentView = () => {
+    const path = location.pathname;
+    if (path.startsWith('/pipelines/') && path.includes('/runs/')) {
+      return 'run-detail';
     }
-    navigate({ search: params.toString() });
+    if (path.startsWith('/pipelines/') && path.includes('/stats/')) {
+      return 'step-stats-view';
+    }
+    if (path.startsWith('/pipelines/') && path.includes('/runs')) {
+      return 'runs-view';
+    }
+    if (path.startsWith('/pipelines/') && path.includes('/stats')) {
+      return 'step-stats-view';
+    }
+    if (path === '/import') {
+      return 'import-view';
+    }
+    if (path.startsWith('/settings')) {
+      return 'settings-view';
+    }
+    return 'runs-view';
+  };
+
+  // Get selected pipeline from pathname
+  const getSelectedPipeline = () => {
+    const match = location.pathname.match(/^\/pipelines\/([^/]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  };
+
+  const handlePipelineChange = (pipeline: string) => {
+    const currentPath = location.pathname;
+    const currentView = getCurrentView();
+    
+    // Preserve current view when changing pipeline
+    if (pipeline) {
+      if (currentView === 'runs-view' || currentView === 'run-detail') {
+        navigate(`/pipelines/${encodeURIComponent(pipeline)}/runs`);
+      } else if (currentView === 'step-stats-view') {
+        // Extract stepName if present
+        const stepMatch = currentPath.match(/\/stats\/(.+)$/);
+        if (stepMatch) {
+          navigate(`/pipelines/${encodeURIComponent(pipeline)}/stats/${encodeURIComponent(stepMatch[1])}`);
+        } else {
+          navigate(`/pipelines/${encodeURIComponent(pipeline)}/stats`);
+        }
+      } else {
+        navigate(`/pipelines/${encodeURIComponent(pipeline)}/runs`);
+      }
+    } else {
+      // If no pipeline selected, go to import or settings based on current view
+      if (currentView === 'settings-view') {
+        navigate('/settings');
+      } else {
+        navigate('/import');
+      }
+    }
   };
 
   const handleViewChange = (view: string) => {
-    setCurrentView(view);
-    const params = new URLSearchParams(searchParams);
-    // Map internal view IDs to URL params
-    const viewParamMap: Record<string, string> = {
-      'runs-view': 'runs-view',
-      'run-detail': 'run-detail',
-      'step-stats-view': 'step-stats-view',
-      'import-view': 'import',
-      'settings-view': 'settings',
-    };
-    params.set('view', viewParamMap[view] || view);
-    navigate({ search: params.toString() });
+    const selectedPipeline = getSelectedPipeline();
+    const currentPath = location.pathname;
+    
+    // Map internal view IDs to paths
+    if (view === 'runs-view') {
+      if (selectedPipeline) {
+        navigate(`/pipelines/${encodeURIComponent(selectedPipeline)}/runs`);
+      } else {
+        navigate('/import');
+      }
+    } else if (view === 'step-stats-view') {
+      if (selectedPipeline) {
+        navigate(`/pipelines/${encodeURIComponent(selectedPipeline)}/stats`);
+      } else {
+        navigate('/import');
+      }
+    } else if (view === 'import-view') {
+      navigate('/import');
+    } else if (view === 'settings-view') {
+      if (selectedPipeline) {
+        navigate(`/settings/${encodeURIComponent(selectedPipeline)}`);
+      } else {
+        navigate('/settings');
+      }
+    }
   };
 
   const handleDateRangeChange = (newDateRange: DateRange) => {
@@ -99,6 +146,9 @@ function AppContent() {
     navigate({ search: params.toString() });
   };
 
+  const currentView = getCurrentView();
+  const selectedPipeline = getSelectedPipeline();
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar
@@ -118,64 +168,115 @@ function AppContent() {
               {currentView === 'import-view' && 'Import Logs'}
               {currentView === 'settings-view' && 'Settings'}
             </h1>
-            <DateRangeSelector dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />
+            {(currentView === 'runs-view' || currentView === 'step-stats-view') && (
+              <DateRangeSelector dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />
+            )}
           </div>
         </div>
         <div className="flex-1 overflow-auto p-8 bg-muted/30">
-          {currentView === 'runs-view' && (
-            <RunsView
-              pipeline={selectedPipeline}
-              dateRange={dateRange}
-              onRunClick={(runId) => {
-                const params = new URLSearchParams(searchParams);
-                params.set('view', 'run-detail');
-                params.set('runId', runId);
-                navigate({ search: params.toString() });
-              }}
+          <Routes>
+            <Route path="/" element={<Navigate to="/import" replace />} />
+            <Route
+              path="/pipelines/:pipeline/runs"
+              element={
+                <RunsViewWrapper dateRange={dateRange} />
+              }
             />
-          )}
-          {currentView === 'run-detail' && (
-            <RunDetailView
-              runId={searchParams.get('runId') || ''}
-              onBack={() => {
-                const params = new URLSearchParams(searchParams);
-                params.set('view', 'runs-view');
-                params.delete('runId');
-                navigate({ search: params.toString() });
-              }}
-              onStepNameClick={(stepName, pipelineFromRun) => {
-                const params = new URLSearchParams(searchParams);
-                params.set('view', 'step-stats-view');
-                params.set('stepName', stepName);
-                // Use pipeline from run if available, otherwise use selectedPipeline
-                const pipelineToUse = pipelineFromRun || selectedPipeline;
-                if (pipelineToUse) {
-                  params.set('pipeline', pipelineToUse);
-                }
-                navigate({ search: params.toString() });
-              }}
+            <Route
+              path="/pipelines/:pipeline/runs/:runId"
+              element={
+                <RunDetailViewWrapper />
+              }
             />
-          )}
-          {currentView === 'step-stats-view' && (
-            <StepStatsView
-              pipeline={selectedPipeline}
-              dateRange={dateRange}
-              initialStepName={searchParams.get('stepName') || undefined}
-              onRunClick={(runId) => {
-                const params = new URLSearchParams(searchParams);
-                params.set('view', 'run-detail');
-                params.set('runId', runId);
-                params.delete('stepName');
-                navigate({ search: params.toString() });
-              }}
+            <Route
+              path="/pipelines/:pipeline/stats"
+              element={
+                <StepStatsViewWrapper dateRange={dateRange} />
+              }
             />
-          )}
-          {currentView === 'import-view' && <ImportView />}
-          {currentView === 'settings-view' && <SettingsView pipeline={selectedPipeline} />}
+            <Route
+              path="/pipelines/:pipeline/stats/:stepName"
+              element={
+                <StepStatsViewWrapper dateRange={dateRange} />
+              }
+            />
+            <Route path="/import" element={<ImportView />} />
+            <Route path="/settings" element={<SettingsView pipeline="" />} />
+            <Route path="/settings/:pipeline" element={<SettingsViewWrapper />} />
+          </Routes>
         </div>
       </div>
     </div>
   );
+}
+
+function RunsViewWrapper({ dateRange }: { dateRange: DateRange }) {
+  const { pipeline } = useParams<{ pipeline: string }>();
+  const navigate = useNavigate();
+  const decodedPipeline = pipeline ? decodeURIComponent(pipeline) : '';
+
+  return (
+    <RunsView
+      pipeline={decodedPipeline}
+      dateRange={dateRange}
+      onRunClick={(runId) => {
+        navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/runs/${encodeURIComponent(runId)}`);
+      }}
+    />
+  );
+}
+
+function RunDetailViewWrapper() {
+  const { runId, pipeline } = useParams<{ runId: string; pipeline: string }>();
+  const navigate = useNavigate();
+  const decodedPipeline = pipeline ? decodeURIComponent(pipeline) : '';
+
+  return (
+    <RunDetailView
+      runId={runId || ''}
+      onBack={() => {
+        navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/runs`);
+      }}
+      onStepNameClick={(stepName, pipelineFromRun) => {
+        const pipelineToUse = pipelineFromRun || decodedPipeline;
+        if (pipelineToUse) {
+          navigate(`/pipelines/${encodeURIComponent(pipelineToUse)}/stats/${encodeURIComponent(stepName)}`);
+        }
+      }}
+    />
+  );
+}
+
+function StepStatsViewWrapper({ dateRange }: { dateRange: DateRange }) {
+  const { stepName, pipeline } = useParams<{ stepName?: string; pipeline: string }>();
+  const navigate = useNavigate();
+  const decodedPipeline = pipeline ? decodeURIComponent(pipeline) : '';
+  const decodedStepName = stepName ? decodeURIComponent(stepName) : undefined;
+
+  const handleStepChange = (newStep: string) => {
+    if (newStep) {
+      navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/stats/${encodeURIComponent(newStep)}`);
+    } else {
+      navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/stats`);
+    }
+  };
+
+  return (
+    <StepStatsView
+      pipeline={decodedPipeline}
+      dateRange={dateRange}
+      initialStepName={decodedStepName}
+      onStepChange={handleStepChange}
+      onRunClick={(runId) => {
+        navigate(`/pipelines/${encodeURIComponent(decodedPipeline)}/runs/${encodeURIComponent(runId)}`);
+      }}
+    />
+  );
+}
+
+function SettingsViewWrapper() {
+  const { pipeline } = useParams<{ pipeline: string }>();
+  return <SettingsView pipeline={pipeline ? decodeURIComponent(pipeline) : ''} />;
 }
 
 function App() {
