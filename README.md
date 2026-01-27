@@ -48,7 +48,7 @@ It supports both *Python* and *Typescript / Node.js*
 
 #### [2. Using Dashboard](#using-dashboard)
 Monitor and analyze pipeline executions through an interactive web interface
-- Detailed Steps Data and Results Insepection
+- Detailed Steps Data and Results Inspection
 - Real-time Execution Monitoring
 - Gantt Chart Visualization for pipeline
 - Step Execution Stats
@@ -58,8 +58,8 @@ Monitor and analyze pipeline executions through an interactive web interface
 ## Getting Started
 
 This repository is a **monorepo** containing following packages:
-- [Typescript](./packages/lib-ts) / [Python](./packages/lib-py) libraries that provides basic tracker and chart generation function for your pipeline
-- [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
+- [Typescript](./lib-ts) / [Python](./lib-py) libraries that provides basic tracker and chart generation function for your pipeline
+- [Dashboard](./dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
 ### Installation
 
@@ -114,32 +114,48 @@ await pipeline.track(async (st: Step) => {
 <summary>Python</summary>
 
 ```python
-from pipelens import Pipeline, Step, HttpTransport
+import asyncio
+from pipelens import Pipeline, Step
 
-# Create pipeline with HTTP transport
+# Create pipeline
 pipeline = Pipeline('my-pipeline')
 
 # Run your pipeline
 async def pipeline_logic(st: Step):
-
-    async def some_task(some_args: str):
+    async def some_task(some_args: str, step: Step):
         # ... your logic ...
-        st.record('key', 'value')  # Record data for analysis
+        await step.record('key', 'value')  # Record data for analysis
         return 'some_result'  # Results are automatically recorded
 
     # Track a simple step
-    result = await st.step('some_step', async lambda st: some_task(your_args, st))
+    async def some_step(step: Step):
+        return await some_task('your_args', step)
+    
+    result = await st.step('some_step', some_step)
     
     # Track nested steps
-    await st.step('parent', async lambda st:
-        await st.step('child_1', async lambda st: some_task(your_args, st))
-        await st.step('child_2', async lambda st: some_task(your_args, st))
-    )
+    async def parent_step(step: Step):
+        async def child_1(step: Step):
+            return await some_task('args', step)
+        
+        async def child_2(step: Step):
+            return await some_task('args', step)
+        
+        await step.step('child_1', child_1)
+        await step.step('child_2', child_2)
+    
+    await st.step('parent', parent_step)
     
     # Track parallel steps
+    async def parallel_1(step: Step):
+        return await some_task('args', step)
+    
+    async def parallel_2(step: Step):
+        return await some_task('args', step)
+    
     await asyncio.gather(
-        st.step('parallel_1', async lambda st: some_task(your_args, st)),
-        st.step('parallel_2', async lambda st: some_task(your_args, st))
+        st.step('parallel_1', parallel_1),
+        st.step('parallel_2', parallel_2)
     )
 
 # Run the pipeline
@@ -398,7 +414,8 @@ await httpTransport.flushAndStop();
 <summary>Python</summary>
 
 ```python
-from pipelens import Pipeline, Step, HttpTransport
+from pipelens import Pipeline, Step
+from pipelens.transport import HttpTransport, HttpTransportOptions
 
 http_transport = HttpTransport(HttpTransportOptions(
     base_url='http://localhost:3000',
@@ -425,14 +442,37 @@ await http_transport.flush_and_stop()
 
 ### Starting up Dashboard
 
+#### Docker Deployment (Recommended)
+
 ```bash
-# Uses SQLite storage as default
+# Basic quick start with SQLite (default)
 docker run -p 3000:3000 lokwkin/pipelens-dashboard
+
+# Use SQLite storage with custom path
+docker run -p 3000:3000 -v $(pwd)/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/pipelens.db lokwkin/pipelens-dashboard
+
+# Use PostgreSQL storage
+docker run -p 3000:3000 -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/pipelens lokwkin/pipelens-dashboard
 ```
 
-See [Dashboard](./packages/dashboard) for more details.
+#### Local Development
 
-### Detailed Steps Insepection
+For local development, you can run the dashboard from the `dashboard` directory:
+
+```bash
+cd dashboard
+
+# Install dependencies
+npm install
+
+# Run backend in development mode (with hot reload)
+npm run dev:backend
+
+# Run frontend in development mode (with hot reload) - in another terminal
+npm run dev:frontend
+```
+
+### Detailed Steps Inspection
 
 Details of a pipeline run. From here you can examine all the steps running in the pipeline, their auto-captured data and results as well as the time usage information.
 
@@ -465,7 +505,6 @@ Step Execution Stats. Aggregated from past run histories with basic statistical 
 - Use memory-store instead of storing nested steps class in runtime
 - Enhance support for FastAPI with dependency injection
 - Support Open telemetry integration
-- Re-structure readme and documentations
 
 
 ## License

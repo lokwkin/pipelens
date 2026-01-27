@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "rootDir": "./src/server/",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "./dist/server",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true
+  },
+  "include": ["src/server/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts", "src/frontend/**/*"]
+} 

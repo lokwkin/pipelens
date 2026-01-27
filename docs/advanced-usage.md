@@ -95,7 +95,7 @@ pipeline.on('step-complete', (stepKey, stepMeta) => {
 
 ## Transporting Logs to Dashboard
 
-Pipelens supports automatically transporting near real-time data to [Pipelens Dashbaord](../packages/dashboard) for analytic purpose.
+Pipelens supports automatically transporting near real-time data to [Pipelens Dashboard](../dashboard) for analytic purpose.
 
 ```typescript
 import { Pipeline, FileStorageAdapter } from 'pipelens';

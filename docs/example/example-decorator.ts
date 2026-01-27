@@ -1,5 +1,5 @@
-import { Pipeline, Step } from 'pipelens';
-import { WithStep } from 'pipelens';
+import { Pipeline, Step } from '../../lib-ts/dist';
+import { WithStep } from '../../lib-ts/dist';
 
 class SamplePipeline {
   pipelineTracker: Pipeline;
