@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/lib-ts
+        working-directory: lib-ts
     steps:
       - uses: actions/checkout@v4
 

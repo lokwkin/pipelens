@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/lib-py
+        working-directory: lib-py
     steps:
       - uses: actions/checkout@v4
 

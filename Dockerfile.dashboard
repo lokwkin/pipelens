@@ -1,0 +1,92 @@
+# ==============================================
+# LIB-TS BUILD STAGE
+# ==============================================
+# Build lib-ts first using separate stage
+# Since dashboard package.json uses "file:../lib-ts", lib-ts must be a sibling directory
+# We'll put dashboard files in /app and lib-ts in /lib-ts (parent directory)
+FROM node:20-bullseye-slim AS lib-ts-builder
+WORKDIR /lib-ts
+COPY lib-ts/package.json ./
+COPY lib-ts/tsconfig.json ./
+RUN npm install
+COPY lib-ts/src ./src
+RUN npm run build
+
+# ==============================================
+# DASHBOARD BUILD STAGE
+# ==============================================
+FROM node:20-bullseye-slim AS builder
+WORKDIR /app
+
+# Install dependencies for SQLite
+RUN apt-get update && apt-get install -y \
+    procps \
+    build-essential \
+    g++ \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    fonts-freefont-ttf \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built lib-ts from lib-ts-builder stage
+COPY --from=lib-ts-builder /lib-ts /lib-ts
+
+# Now copy dashboard package.json files to /app (current WORKDIR)
+COPY dashboard/package*.json ./
+
+# Copy TypeScript and build config files for dashboard
+COPY dashboard/tsconfig*.json ./
+COPY dashboard/vite.config.ts ./
+COPY dashboard/tailwind.config.js ./
+COPY dashboard/postcss.config.js ./
+COPY dashboard/components.json ./
+
+# Copy source code (both server and frontend)
+COPY dashboard/src/server ./src/server
+COPY dashboard/src/frontend ./src/frontend
+
+# Install all dashboard dependencies (including frontend dev dependencies)
+# This will link to /lib-ts via file:../lib-ts in package.json
+RUN npm ci
+
+# Build both backend and frontend
+RUN npm run build:all
+
+###################
+# PRODUCTION STAGE
+###################
+FROM node:20-bullseye-slim AS production
+
+WORKDIR /app
+
+# Install production dependencies for SQLite
+RUN apt-get update && apt-get install -y \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package.json files for production
+COPY dashboard/package*.json ./
+
+# Copy built lib-ts BEFORE npm ci (dashboard expects it at ../lib-ts relative to /app)
+# npm ci will create a symlink to this directory
+COPY --from=builder /lib-ts/dist /lib-ts/dist
+COPY --from=builder /lib-ts/package.json /lib-ts/package.json
+
+# Install only production dependencies and required peer dependencies
+# This will create a symlink from node_modules/pipelens to /lib-ts
+RUN npm ci --omit=dev
+
+# Copy built artifacts from builder stage
+COPY --from=builder /app/dist/server ./dist/server
+COPY --from=builder /app/dist/frontend ./dist/frontend
+
+# Set Node to production mode
+ENV NODE_ENV=production
+
+# Expose the port
+EXPOSE 3000
+
+# Set the command to run the application
+CMD ["node", "dist/server/index.js"]

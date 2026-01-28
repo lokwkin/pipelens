@@ -7,7 +7,7 @@
 [![lib-ts test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)
 
-<img src="./docs/gantt-heading.png" width="80%">
+<img src="./docs/pipelens.png" width="80%">
 
 ⭐ **Building LLM applications without a framework?** ⭐
 
@@ -48,7 +48,7 @@ It supports both *Python* and *Typescript / Node.js*
 
 #### [2. Using Dashboard](#using-dashboard)
 Monitor and analyze pipeline executions through an interactive web interface
-- Detailed Steps Data and Results Insepection
+- Detailed Steps Data and Results Inspection
 - Real-time Execution Monitoring
 - Gantt Chart Visualization for pipeline
 - Step Execution Stats
@@ -58,10 +58,12 @@ Monitor and analyze pipeline executions through an interactive web interface
 ## Getting Started
 
 This repository is a **monorepo** containing following packages:
-- [Typescript](./packages/lib-ts) / [Python](./packages/lib-py) libraries that provides basic tracker and chart generation function for your pipeline
-- [Dashboard](./packages/dashboard) that visualizes and allows you to monitor tracked data for analysis.
+- [Typescript](./lib-ts) / [Python](./lib-py) libraries that provides basic tracker and chart generation function for your pipeline
+- [Dashboard](./dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
-### Installation
+### Setup from your codebase
+
+#### Installation
 
 ```bash
 # Typescript
@@ -71,192 +73,113 @@ npm install --save pipelens
 pip install pipelens
 ```
 
-### Tracking Pipeline Steps
-
-Create a pipeline and track steps with nested, sequential, or parallel logic:
-
-#### Simple Usage
+#### Define steps in your code where you intended to track
 <details>
 <summary>Typescript</summary>
 
 ```typescript
-import { Pipeline, Step } from 'pipelens';
-
-const pipeline = new Pipeline('my_pipeline');
-
-await pipeline.track(async (st: Step) => {
-
-    // Track a simple step
-    await st.step('some_step', async (st: Step) => {
-
-      // ... your logic ...
-      st.record('key', 'value'); // Record data for analysis
-
-      return 'step_result'  // Results are automatically recorded
-    });
-    
-    // Track nested steps
-    await st.step('parent', async (st: Step) => {
-      await st.step('child_1', async (st: Step) => { /* ... */ });
-      await st.step('child_2', async (st: Step) => { /* ... */ });
-  });
-  
-    // Track parallel steps
-    await Promise.all([
-        st.step('parallel_1', async (st: Step) => { /* ... */ }),
-        st.step('parallel_2', async (st: Step) => { /* ... */ })
-    ]);
-});
-```
-</details>
-
-<details>
-<summary>Python</summary>
-
-```python
-from pipelens import Pipeline, Step, HttpTransport
-
-# Create pipeline with HTTP transport
-pipeline = Pipeline('my-pipeline')
-
-# Run your pipeline
-async def pipeline_logic(st: Step):
-
-    async def some_task(some_args: str):
-        # ... your logic ...
-        st.record('key', 'value')  # Record data for analysis
-        return 'some_result'  # Results are automatically recorded
-
-    # Track a simple step
-    result = await st.step('some_step', async lambda st: some_task(your_args, st))
-    
-    # Track nested steps
-    await st.step('parent', async lambda st:
-        await st.step('child_1', async lambda st: some_task(your_args, st))
-        await st.step('child_2', async lambda st: some_task(your_args, st))
-    )
-    
-    # Track parallel steps
-    await asyncio.gather(
-        st.step('parallel_1', async lambda st: some_task(your_args, st)),
-        st.step('parallel_2', async lambda st: some_task(your_args, st))
-    )
-
-# Run the pipeline
-await pipeline.track(pipeline_logic)
-```
-</details>
-
-#### Using Decorators (Recommended)
-<details>
-<summary>Typescript</summary>
-
-```typescript
+// ================================================
+// Using TypeScript Decorators
+// ================================================
 import { Pipeline, Step, WithStep } from 'pipelens';
 
-class PipelineController {
-  private pipeline: Pipeline;
-
-  constructor() {
-    this.pipeline = new Pipeline('my_pipeline');
-  }
-
-  /**
-   * Method to run the pipeline
-   */
-  public async run() {
-    await this.pipeline.track(async (st: Step) => {
-      await this.someStep('some_value', st);
-      await this.parentFunc(st);
-    });
-  }
-
-  @WithStep('some_step')
-  async someStep(str: string, st: Step) {
-    // ... some logic ...
-    st.record('key', 'value');  // Record data for analysis
-
-    return 'step_result'  // Results are automatically recorded
-  }
-
-  @WithStep('child')
-  async childFunc(param: number, st: Step) {
-    // ... some logic ...
-  }
-
-  @WithStep('parent')
-  async parentFunc(st: Step) {
-    // Track nested steps
-    await this.childFunc(1, st);
-    await this.childFunc(2, st);
-
-    // Track parallel steps
-    await Promise.all([
-        this.childFunc(3, st),
-        this.childFunc(4, st),
-    ]);
-  }
+@WithStep('some_step')
+async function someStep(inputStr: string, st: Step) {
+  // ... some logic ...
+  st.record('key', 'value'); // Record data for analysis
+  return 'some_result'; // Results are automatically recorded
 }
 
-const controller = new PipelineController();
-await controller.run();
-```
-</details>
+@WithStep('child')
+async function childFunc(param: number, st: Step) {
+  // ... some logic ...
+}
 
-<details>
-<summary>Python</summary>
+@WithStep('parent')
+async function parentFunc(st: Step) {
+  // Track nested steps
+  await childFunc(1, st);
+  await childFunc(2, st);
+  
+  // Track parallel steps
+  await Promise.all([
+    childFunc(3, st),
+    childFunc(4, st),
+  ]);
+}
 
-```python
-from pipelens import Pipeline, Step, with_step
+async function runPipeline(st: Step) {
+  await someStep('some_value', st);
+  await parentFunc(st);
+}
 
-class PipelineController:
-    def __init__(self):
-        self.pipeline = Pipeline('my_pipeline')
+const pipeline = new Pipeline('my_pipeline');
+await pipeline.track(runPipeline);
 
-    async def run(self):
-        """Method to run the pipeline"""
-        await self.pipeline.track(self._run_steps)
+// ================================================
+// Or you may optionally run without decorators
+// ================================================
+import { Pipeline, Step } from 'pipelens';
 
-    async def _run_steps(self, st: Step):
-        """Actual pipeline implementation method"""
-        await self.some_step('some_value', st)
-        await self.parent_func(st)
+// Create pipeline
+const pipeline = new Pipeline('my-pipeline');
 
-    @with_step('some_step')
-    async def some_step(self, input_str: str, st: Step):
-        # ... some logic ...
-        await st.record('key', 'value')  # Record data for analysis
-        return 'some_result'  # Results are automatically recorded
+// Define your pipeline logic without decorators
+async function pipelineLogic(st: Step) {
+  // Helper function for your business logic
+  async function someTask(someArgs: string, step: Step) {
+    // ... your logic ...
+    step.record('key', 'value'); // Record data for analysis
+    return 'some_result'; // Results are automatically recorded
+  }
 
-    @with_step('child')
-    async def child_func(self, param: int, st: Step):
-        # ... some logic ...
+  // Track a simple step
+  async function someStep(step: Step) {
+    return await someTask('your_args', step);
+  }
+  
+  const result = await st.step('some_step', someStep);
+  
+  // Track nested steps
+  async function parentStep(step: Step) {
+    async function child1(step: Step) {
+      return await someTask('args', step);
+    }
+    
+    async function child2(step: Step) {
+      return await someTask('args', step);
+    }
+    
+    await step.step('child_1', child1);
+    await step.step('child_2', child2);
+  }
+  
+  await st.step('parent', parentStep);
+  
+  // Track parallel steps
+  async function parallel1(step: Step) {
+    return await someTask('args', step);
+  }
+  
+  async function parallel2(step: Step) {
+    return await someTask('args', step);
+  }
+  
+  await Promise.all([
+    st.step('parallel_1', parallel1),
+    st.step('parallel_2', parallel2),
+  ]);
+}
 
-    @with_step('parent')
-    async def parent_func(self, st: Step):
-        # Track nested steps
-        await self.child_func(1, st)
-        await self.child_func(2, st)
+// Run the pipeline
+await pipeline.track(pipelineLogic);
 
-        # Track parallel steps
-        await asyncio.gather(
-            self.child_func(3, st),
-            self.child_func(4, st),
-        )
 
-controller = PipelineController()
-await controller.run()
-```
-</details>
+// ================================================
+// Some simple visualization functions to use if you 
+// don't want to integrate with dashboard
+// ================================================
 
-### Exporting and Visualizing Executions
-
-Generate visual outputs to understand and analyze execution flow:
-
-<details>
-<summary>Typescript</summary>
-
-```typescript
 // Generate a Gantt chart Buffer using quickchart.io
 const ganttChartBuffer = await pipeline.ganttQuickchart();
 
@@ -275,6 +198,96 @@ const stepsHierarchy = pipeline.outputNested();
 <summary>Python</summary>
 
 ```python
+# ================================================
+# Using Python Decorators
+# ================================================
+from pipelens import Pipeline, Step, with_step
+
+@with_step('some_step')
+async def some_step(input_str: str, st: Step):
+    # ... some logic ...
+    await st.record('key', 'value')  # Record data for analysis
+    return 'some_result'  # Results are automatically recorded
+
+@with_step('child')
+async def child_func(param: int, st: Step):
+    # ... some logic ...
+
+@with_step('parent')
+async def parent_func(st: Step):
+    # Track nested steps
+    await child_func(1, st)
+    await child_func(2, st)
+    
+    # Track parallel steps
+    import asyncio
+    await asyncio.gather(
+        child_func(3, st),
+        child_func(4, st),
+    )
+
+async def run_pipeline(st: Step):
+    await some_step('some_value', st)
+    await parent_func(st)
+
+pipeline = Pipeline('my_pipeline')
+await pipeline.track(run_pipeline)
+
+# ================================================
+# Or you may optionally run without decorators
+# ================================================
+import asyncio
+from pipelens import Pipeline, Step
+
+# Create pipeline
+pipeline = Pipeline('my-pipeline')
+
+async def pipeline_logic(st: Step):
+    # Helper function for your business logic
+    async def some_task(some_args: str, step: Step):
+        # ... your logic ...
+        await step.record('key', 'value')  # Record data for analysis
+        return 'some_result'  # Results are automatically recorded
+
+    # Track a simple step
+    async def some_step(step: Step):
+        return await some_task('your_args', step)
+    
+    result = await st.step('some_step', some_step)
+    
+    # Track nested steps
+    async def parent_step(step: Step):
+        async def child_1(step: Step):
+            return await some_task('args', step)
+        
+        async def child_2(step: Step):
+            return await some_task('args', step)
+        
+        await step.step('child_1', child_1)
+        await step.step('child_2', child_2)
+    
+    await st.step('parent', parent_step)
+    
+    # Track parallel steps
+    async def parallel_1(step: Step):
+        return await some_task('args', step)
+    
+    async def parallel_2(step: Step):
+        return await some_task('args', step)
+    
+    await asyncio.gather(
+        st.step('parallel_1', parallel_1),
+        st.step('parallel_2', parallel_2)
+    )
+
+# Run the pipeline
+await pipeline.track(pipeline_logic)
+
+# ================================================
+# Some simple visualization functions to use if you 
+# don't want to integrate with dashboard
+# ================================================
+
 # Generate a Gantt chart Buffer using quickchart.io
 gantt_chart_buffer = await pipeline.gantt_quickchart()
 
@@ -289,83 +302,14 @@ steps_hierarchy = pipeline.output_nested()
 ```
 </details>
 
-**Sample Gantt Chart**
-
-<img src="./docs/gantt-chart.png" width="50%">
-
-**Sample Execution Graph**
-
-<img src="./docs/execution-graph.png" width="50%">
-
-**Sample Hierarchy Output**
-
-<details>
-<summary>json</summary>
-
-```json
-{
-    "name": "document-parse",
-    "key": "document-parse",
-    "time": { "startTs": 1739357985509, "endTs": 1739357990192, "timeUsageMs": 4683 },
-    "records": {},
-    "substeps": [
-        {
-            "name": "preprocess",
-            "key": "document-pipeline.preprocess",
-            "time": { "startTs": 1739357985711, "endTs": 1739357986713, "timeUsageMs": 1002 },
-            "records": {
-                "pageCount": 3
-            },
-            "result": [ "page_1_content", "page_2_content"],
-            "substeps": []
-        },
-        {
-            "name": "parsing",
-            "key": "document-pipeline.parsing",
-            "time": { "startTs": 1739357985711, "endTs": 1739357990192, "timeUsageMs": 4481 },
-            "records": {},
-            "substeps": [
-                {
-                    "name": "page_1",
-                    "key": "document-pipeline.parsing.page_1",
-                    "time": { "startTs": 1739357987214, "endTs": 1739357990192, "timeUsageMs": 2978 },
-                    "records": {},
-                    "result": "page_1_content",
-                    "substeps": []
-                },
-                {
-                    "name": "page_2",
-                    "key": "document-pipeline.parsing.page_2",
-                    "time": { "startTs": 1739357987214, "endTs": 1739357989728, "timeUsageMs": 2514 },
-                    "records": {},
-                    "result": "page_2_content",
-                    "substeps": []
-                }
-            ]
-        },
-        {
-            "name": "sample-error",
-            "key": "document-pipeline.sample-error",
-            "time": { "startTs": 1739357990192, "endTs": 1739357990192, "timeUsageMs": 0},
-            "records": {},
-            "error": "Sample Error",
-            "substeps": []
-        }
-    ]
-}
-```
-</details>
-
-### Advanced Usages
 
 PipeLens also provides **Event Emitting** listeners, **ES6/Python Decorators** and - **LLM Tracking Extension** support for easier integration. For more detailed usages, check out the [Basic Usage](./docs/basic-usage.md) and [Advanced Usage](./docs/advanced-usage.md) guides.
 
-
-## Using Dashboard
+### Using Dashboard
 
 PipeLens includes a dashboard that provides several features for monitoring and analyzing pipeline executions. 
 
-### Initial Configuration
+#### Initial Configuration
 
 During pipeline initialization, define a Transport to relay pipeline run data to dashboard later on. Currently supported a HttpTransport. See [Advanced Usage](./docs/advanced-usage.md) for more details.
 
@@ -398,7 +342,8 @@ await httpTransport.flushAndStop();
 <summary>Python</summary>
 
 ```python
-from pipelens import Pipeline, Step, HttpTransport
+from pipelens import Pipeline, Step
+from pipelens.transport import HttpTransport, HttpTransportOptions
 
 http_transport = HttpTransport(HttpTransportOptions(
     base_url='http://localhost:3000',
@@ -423,49 +368,39 @@ await http_transport.flush_and_stop()
 ```
 </details>
 
-### Starting up Dashboard
+#### Starting up with Docker Deployment (Recommended)
 
 ```bash
-# Uses SQLite storage as default
+# Basic quick start with SQLite (default)
 docker run -p 3000:3000 lokwkin/pipelens-dashboard
+
+# Use SQLite storage with custom path
+docker run -p 3000:3000 -v $(pwd)/data:/app/data -e STORAGE_OPTION=sqlite -e SQLITE_PATH=/app/data/pipelens.db lokwkin/pipelens-dashboard
+
+# Use PostgreSQL storage
+docker run -p 3000:3000 -e STORAGE_OPTION=postgres -e POSTGRES_URL=postgres://user:password@host:5432/pipelens lokwkin/pipelens-dashboard
 ```
 
-See [Dashboard](./packages/dashboard) for more details.
+### Detailed Steps and Records Inspection
 
-### Detailed Steps Insepection
+Pipelens dashboard provides Gantt Chart for visualizing the time usages of each steps in a pipeline run. You can also see the data you recorded for each steps as well as the error message if error thrown.
 
-Details of a pipeline run. From here you can examine all the steps running in the pipeline, their auto-captured data and results as well as the time usage information.
+The dashboard also allows auto-refreshing, allowing you to monitor real-time pipeline runs.
 
-<img src="./docs/dashboard-inspect-results.gif" width="80%">
-
-### Real-time Execution Monitoring
-
-The dashboard includes auto-refreshing option, allowing you to monitor real-time pipeline runs.
-
-<img src="./docs/dashboard-run-history.gif" width="80%">
-
-<img src="./docs/dashboard-real-time-steps.gif" width="80%">
-
-### Gantt Chart Visualization for pipeline
-
-Gantt Chart for visualizing the time usages of each steps in a pipeline run. You can see real-time progress of the pipeline, highlighted by status of running / success / failed.
-
-<img src="./docs/dashboard-gantt.gif" width="80%">
+<img src="./docs/dashboard-run-detail.gif" width="80%">
 
 ### Step Execution Stats
 
-Step Execution Stats. Aggregated from past run histories with basic statistical information for performance analyzing.
+Aggregated from historical execution of a step, you can see the performance over time for optimization and improvements.
 
 <img src="./docs/dashboard-stats.gif" width="80%">
 
 ## Roadmap and To Dos
 - Dashboard fix auto-refresh disabled when changed page
-- Dashboard UI styling revamp
 - Add integration test for data transporting
 - Use memory-store instead of storing nested steps class in runtime
 - Enhance support for FastAPI with dependency injection
 - Support Open telemetry integration
-- Re-structure readme and documentations
 
 
 ## License
