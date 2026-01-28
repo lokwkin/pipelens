@@ -7,7 +7,7 @@
 [![lib-ts test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-ts.yml/badge.svg)
 [![lib-py test](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)](https://github.com/lokwkin/pipelens/actions/workflows/test-lib-py.yml/badge.svg)
 
-<img src="./docs/pipelens.png" width="80%">
+<img src="./docs/pipelens.png">
 
 ⭐ **Building LLM applications without a framework?** ⭐
 
@@ -387,13 +387,13 @@ Pipelens dashboard provides Gantt Chart for visualizing the time usages of each 
 
 The dashboard also allows auto-refreshing, allowing you to monitor real-time pipeline runs.
 
-<img src="./docs/dashboard-run-detail.gif" width="80%">
+<img src="./docs/dashboard-run-detail.gif">
 
 ### Step Execution Stats
 
 Aggregated from historical execution of a step, you can see the performance over time for optimization and improvements.
 
-<img src="./docs/dashboard-stats.gif" width="80%">
+<img src="./docs/dashboard-stats.gif">
 
 ## Roadmap and To Dos
 - Dashboard fix auto-refresh disabled when changed page
