@@ -141,13 +141,23 @@ export default function GanttChart({ steps, onStepClick }: GanttChartProps) {
               <span className="font-semibold text-foreground">Status:</span>{' '}
               <span className="text-muted-foreground capitalize">{hoveredStepData.status}</span>
             </div>
+            {hoveredStepData.status === 'error' && hoveredStepData.error && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <div>
+                  <span className="font-semibold text-destructive">Error:</span>
+                </div>
+                <div className="mt-1 text-destructive/90 text-xs break-words whitespace-pre-wrap font-mono">
+                  {hoveredStepData.error}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       <div className="border border-border rounded bg-card p-4">
         {/* Gantt bars - scrollable */}
-        <div className="max-h-[600px] overflow-y-auto space-y-1">
+        <div className="max-h-[500px] overflow-y-auto space-y-1">
           {chartData.steps.map((step) => (
             <div key={step.stepKey} className="flex items-center gap-4 min-h-[28px]">
               <div className="w-[300px] flex-shrink-0">

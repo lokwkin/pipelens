@@ -142,3 +142,27 @@ class TestDecorator:
         level3_step = level2_step.substeps[0]
         assert level3_step.name == "level3"
         assert level3_step.records["deep_value"] == "start:l1:l2"
+
+    async def test_with_step_decorator_standalone_function(self):
+        """Test that the decorator works with standalone functions (outside of classes)"""
+        main_step = Step("main-step")
+
+        @with_step("standalone-step")
+        async def standalone_function(param1: str, step: Step) -> str:
+            await step.record("param1", param1)
+            return f"Result from {step.get_name()} with {param1}"
+
+        result = await standalone_function("test-value", main_step)
+
+        # Check that the result includes the substep name
+        assert "Result from standalone-step with test-value" == result
+
+        # Check that the step hierarchy is correct
+        hierarchy = main_step.output_nested()
+        assert len(hierarchy.substeps) == 1
+        assert hierarchy.substeps[0].name == "standalone-step"
+
+        # Check that the record was added to the substep
+        flattened = main_step.output_flattened()
+        substep = [s for s in flattened if s.name == "standalone-step"][0]
+        assert substep.records["param1"] == "test-value"

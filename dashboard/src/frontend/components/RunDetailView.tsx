@@ -159,6 +159,14 @@ export default function RunDetailView({ runId, onBack, onStepNameClick }: RunDet
               <div>
                 <strong>Status:</strong> {selectedStepForDialog && getStatusBadge(selectedStepForDialog.status)}
               </div>
+              {selectedStepForDialog?.status === 'error' && selectedStepForDialog?.error && (
+                <div>
+                  <strong className="text-destructive">Error:</strong>
+                  <pre className="mt-2 p-4 bg-destructive/10 border border-destructive/20 rounded text-xs overflow-auto break-words whitespace-pre-wrap max-w-full text-destructive font-mono">
+                    {selectedStepForDialog.error}
+                  </pre>
+                </div>
+              )}
               {(selectedStepForDialog?.records || selectedStepForDialog?.result) && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -311,6 +319,14 @@ export default function RunDetailView({ runId, onBack, onStepNameClick }: RunDet
                                     <div>
                                       <strong>End Time:</strong>{' '}
                                       {format(new Date(step.endTime), 'yyyy-MM-dd HH:mm:ss')}
+                                    </div>
+                                  )}
+                                  {step.status === 'error' && step.error && (
+                                    <div>
+                                      <strong className="text-destructive">Error:</strong>
+                                      <pre className="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded text-xs overflow-auto max-h-96 break-words whitespace-pre-wrap max-w-full text-destructive font-mono">
+                                        {step.error}
+                                      </pre>
                                     </div>
                                   )}
                                   {(step.records || step.result) && (

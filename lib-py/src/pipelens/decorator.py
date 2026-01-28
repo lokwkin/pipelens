@@ -9,10 +9,12 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def with_step(step_name: str) -> Callable[[F], F]:
     """
-    Decorator that wraps the method as a substep of the parent step.
-    The parent step must be passed as the last argument of the method.
+    Decorator that wraps a function or method as a substep of the parent step.
+    The parent step must be passed as the last argument of the function.
 
-    Note: The `Step` instance that the callee method receives is a Substep.
+    Note: The `Step` instance that the callee function receives is a Substep.
+
+    Can be used on both standalone functions and class methods.
 
     Args:
         step_name: The name of the substep to create
@@ -37,7 +39,7 @@ def with_step(step_name: str) -> Callable[[F], F]:
                 signature = inspect.signature(func)
                 func_name = func.__qualname__
                 raise TypeError(
-                    f"The last argument of method `{func_name}` must be a `Step`. "
+                    f"The last argument of function `{func_name}` must be a `Step`. "
                     f"Signature: {signature}"
                 )
 

@@ -4,7 +4,7 @@ This guide covers advanced usage patterns for Pipelens, including decorators, ev
 
 ## Using Decorators
 
-Pipelens provides decorators for easier integration with ES6 classes:
+Pipelens provides decorators for easier integration. They can be used with both standalone functions and ES6 class methods:
 
 ```typescript
 import { Pipeline, Step, WithStep } from 'pipelens';
@@ -45,7 +45,71 @@ await pipeline.track(async (st) => {
 });
 ```
 
-**Important**: When using the decorator, the last argument of the decorated method MUST be a `Step` instance of the parent step.
+**Important**: When using the decorator, the last argument of the decorated function or method MUST be a `Step` instance of the parent step.
+
+### Using Decorators with Standalone Functions
+
+You can also use decorators with standalone functions (not just class methods):
+
+**TypeScript:**
+```typescript
+import { Pipeline, Step, WithStep } from 'pipelens';
+
+@WithStep('parsing')
+async function parsing(st: Step) {
+  const pages = await preprocess(st);
+  await Promise.all(
+    pages.map(async (page) => {
+      return await parsePage(page, st);
+    }),
+  );
+}
+
+@WithStep('preprocess')
+async function preprocess(st: Step) {
+  st.record('pageCount', 3);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
+}
+
+@WithStep('parsePage')
+async function parsePage(page: string, st: Step) {
+  return `processed-${page}`;
+}
+
+// Usage
+const pipeline = new Pipeline('my-pipeline');
+await pipeline.track(async (st) => {
+  await parsing(st);
+});
+```
+
+**Python:**
+```python
+from pipelens import Pipeline, Step, with_step
+
+@with_step('parsing')
+async def parsing(st: Step):
+    pages = await preprocess(st)
+    await asyncio.gather(*[parse_page(page, st) for page in pages])
+
+@with_step('preprocess')
+async def preprocess(st: Step):
+    await st.record('pageCount', 3)
+    await asyncio.sleep(1.0)
+    return [f"page_{i+1}" for i in range(3)]
+
+@with_step('parsePage')
+async def parse_page(page: str, st: Step):
+    return f"processed-{page}"
+
+# Usage
+async def run_pipeline(st: Step):
+    await parsing(st)
+
+pipeline = Pipeline('my-pipeline')
+await pipeline.track(run_pipeline)
+```
 
 ## Event Handling
 

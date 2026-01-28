@@ -37,6 +37,7 @@ export interface Step {
   status: string;
   records?: any;
   result?: any;
+  error?: string;
 }
 
 export interface StepStats {
@@ -184,6 +185,7 @@ class ApiClient {
             status: item.error ? 'error' : (item.status || 'completed'),
             records: item.records,
             result: item.result,
+            error: item.error,
           };
         });
       }
