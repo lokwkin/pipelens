@@ -40,11 +40,8 @@ async def main():
 
     await pipeline.track(pipeline_track)
 
-    # Export output
+    # Export output locally
     exported = pipeline.output_pipeline_meta()
-
-    # Gantt Chart Visualization
-    gantt_chart_buffer = await pipeline.gantt_quickchart()
 
 if __name__ == "__main__":
     asyncio.run(main())

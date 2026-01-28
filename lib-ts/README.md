@@ -35,11 +35,8 @@ await pipeline.track(async (st: Step) => {
   });
 });
 
-// Export output
+// Export output locally
 const exported = pipeline.outputPipelineLogs();
-
-// Gantt Chart Visualization
-const ganttChartBuffer = await pipeline.ganttQuickchart(ganttArgs);
 ```
 
 See [GitHub repository](https://github.com/lokwkin/pipelens#readme) for more usages and repository introduction.

@@ -4,53 +4,6 @@ This guide covers advanced usage patterns for Pipelens, including decorators, ev
 
 ## Using Decorators
 
-Pipelens provides decorators for easier integration. They can be used with both standalone functions and ES6 class methods:
-
-```typescript
-import { Pipeline, Step, WithStep } from 'pipelens';
-
-class MyPipeline {
-  @WithStep('parsing')
-  async parsing(st: Step) {
-    // Preprocessing
-    const pages = await this.preprocess(st);
-    
-    // Concurrently parse pages
-    await Promise.all(
-      pages.map(async (page) => {
-        return await this.parsePage(page, st);
-      }),
-    );
-  }
-
-  @WithStep('preprocess')
-  async preprocess(st: Step) {
-    st.record('pageCount', 3);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return Array.from({ length: 3 }, (_, idx) => `page_${idx + 1}`);
-  }
-
-  @WithStep('parsePage')
-  async parsePage(page: string, st: Step) {
-    // Process the page
-    return `processed-${page}`;
-  }
-}
-
-// Usage
-const pipeline = new Pipeline('my-pipeline');
-await pipeline.track(async (st) => {
-  const myPipeline = new MyPipeline();
-  await myPipeline.parsing(st);
-});
-```
-
-**Important**: When using the decorator, the last argument of the decorated function or method MUST be a `Step` instance of the parent step.
-
-### Using Decorators with Standalone Functions
-
-You can also use decorators with standalone functions (not just class methods):
-
 **TypeScript:**
 ```typescript
 import { Pipeline, Step, WithStep } from 'pipelens';
@@ -110,6 +63,9 @@ async def run_pipeline(st: Step):
 pipeline = Pipeline('my-pipeline')
 await pipeline.track(run_pipeline)
 ```
+
+**Important**: When using the decorator, the last argument of the decorated function or method MUST be a `Step` instance of the parent step.
+
 
 ## Event Handling
 
