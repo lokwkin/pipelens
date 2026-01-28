@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pipelens"
-version = "1.14.0"
+version = "1.14.1"
 description = "An observability tool built to track, inspect and visualize intermediate steps in a pipeline, allowing user to easily debug or analyze through a dashboard."
 authors = ["lokwkin <lokwkin@gmail.com>"]
 license = "MIT"
