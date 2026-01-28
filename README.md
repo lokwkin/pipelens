@@ -35,7 +35,7 @@ It supports both *Python* and *Typescript / Node.js*
 > Contributions welcome!
 </details>
 
-***Sounds interesting? Kindly give it a Star, it means a lot! 🙏***
+⭐ ***Sounds interesting? Kindly give it a Star!*** ⭐
 
 ## Features
 
