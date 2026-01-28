@@ -95,6 +95,17 @@ async def test_non_batched_init(non_batched_transport):
 async def test_non_batched_initiate_run(non_batched_transport, mock_aioresponse):
     mock_aioresponse.post(API_URL_PIPELINE_START, status=200)
     await non_batched_transport.initiate_run(MOCK_PIPELINE_META)
+    call_args = mock_aioresponse.requests[("POST", API_URL_PIPELINE_START)][0]
+    payload = call_args.kwargs["json"]
+    
+    # Verify camelCase field names for TypeScript compatibility
+    assert "runId" in payload, "Payload should contain 'runId' (camelCase), not 'run_id'"
+    assert "logVersion" in payload, "Payload should contain 'logVersion' (camelCase), not 'log_version'"
+    assert payload["runId"] == "test-run-id"
+    assert payload["logVersion"] == 1
+    assert "run_id" not in payload, "Payload should not contain snake_case 'run_id'"
+    assert "log_version" not in payload, "Payload should not contain snake_case 'log_version'"
+    
     mock_aioresponse.assert_called_once_with(
         API_URL_PIPELINE_START,
         method="POST",
@@ -107,6 +118,19 @@ async def test_non_batched_initiate_run(non_batched_transport, mock_aioresponse)
 async def test_non_batched_finish_run(non_batched_transport, mock_aioresponse):
     mock_aioresponse.post(API_URL_PIPELINE_FINISH, status=200)
     await non_batched_transport.finish_run(MOCK_PIPELINE_META, "completed")
+    call_args = mock_aioresponse.requests[("POST", API_URL_PIPELINE_FINISH)][0]
+    payload = call_args.kwargs["json"]
+    
+    # Verify camelCase field names in pipelineMeta
+    assert "pipelineMeta" in payload
+    pipeline_meta = payload["pipelineMeta"]
+    assert "runId" in pipeline_meta, "pipelineMeta should contain 'runId' (camelCase), not 'run_id'"
+    assert "logVersion" in pipeline_meta, "pipelineMeta should contain 'logVersion' (camelCase), not 'log_version'"
+    assert pipeline_meta["runId"] == "test-run-id"
+    assert pipeline_meta["logVersion"] == 1
+    assert "run_id" not in pipeline_meta, "pipelineMeta should not contain snake_case 'run_id'"
+    assert "log_version" not in pipeline_meta, "pipelineMeta should not contain snake_case 'log_version'"
+    
     expected_payload = {
         "pipelineMeta": MOCK_PIPELINE_META.model_dump(by_alias=True),
         "status": "completed",
@@ -246,9 +270,22 @@ async def test_batched_flush_on_max_size(batched_transport, mock_aioresponse):
     url_method = ("POST", API_URL_BATCH)
     assert url_method in mock_aioresponse.requests
 
-    assert mock_aioresponse.requests.get(url_method)[0].kwargs["data"] == json.dumps(
-        expected_payload_batch1
-    )
+    # Verify the actual payload has camelCase field names
+    actual_payload_data = mock_aioresponse.requests.get(url_method)[0].kwargs["data"]
+    actual_payload = json.loads(actual_payload_data)
+    
+    # Check pipeline event meta has camelCase fields
+    pipeline_event = actual_payload[0]
+    assert pipeline_event["type"] == "pipeline"
+    meta = pipeline_event["meta"]
+    assert "runId" in meta, "Batch payload meta should contain 'runId' (camelCase), not 'run_id'"
+    assert "logVersion" in meta, "Batch payload meta should contain 'logVersion' (camelCase), not 'log_version'"
+    assert meta["runId"] == "test-run-id"
+    assert meta["logVersion"] == 1
+    assert "run_id" not in meta, "Batch payload meta should not contain snake_case 'run_id'"
+    assert "log_version" not in meta, "Batch payload meta should not contain snake_case 'log_version'"
+
+    assert actual_payload_data == json.dumps(expected_payload_batch1)
 
     # Clear the events cache for last check
     batched_transport._event_cache.clear()
