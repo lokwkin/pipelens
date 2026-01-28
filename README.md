@@ -61,7 +61,9 @@ This repository is a **monorepo** containing following packages:
 - [Typescript](./lib-ts) / [Python](./lib-py) libraries that provides basic tracker and chart generation function for your pipeline
 - [Dashboard](./dashboard) that visualizes and allows you to monitor tracked data for analysis.
 
-### Installation
+### Setup from your codebase
+
+#### Installation
 
 ```bash
 # Typescript
@@ -70,8 +72,6 @@ npm install --save pipelens
 # Python
 pip install pipelens
 ```
-
-### Usage
 
 #### Define steps in your code where you intended to track
 <details>
