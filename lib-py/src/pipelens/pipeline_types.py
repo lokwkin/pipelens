@@ -1,5 +1,7 @@
 from typing import List
 
+from pydantic import Field, ConfigDict
+
 from .step import StepMeta
 
 
@@ -9,6 +11,8 @@ class PipelineMeta(StepMeta):
     Used for serializing pipeline execution data.
     """
 
-    log_version: int = 1  # Version of the log format
-    run_id: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    log_version: int = Field(default=1, alias="logVersion")  # Version of the log format
+    run_id: str = Field(alias="runId")
     steps: List[StepMeta] = []
