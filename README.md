@@ -1,4 +1,4 @@
-# PipeLens
+# PipeLens (Formerly Steps-track)
 
 [![npm version](https://badge.fury.io/js/pipelens.svg)](https://badge.fury.io/js/pipelens)
 [![npm downloads](https://img.shields.io/npm/dt/pipelens.svg)](https://www.npmjs.com/package/pipelens)
